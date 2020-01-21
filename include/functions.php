@@ -1707,12 +1707,9 @@ function dbconn($autoclean = false)
 	mysql_query("SET sql_mode=''");
 	mysql_select_db($mysql_db) or die('dbconn: mysql_select_db: ' + mysql_error());
 
-	userlogin();
-
-	if (!$useCronTriggerCleanUp && $autoclean) {
-		register_shutdown_function("autoclean");
-	}
+	if (PHP_SAPI != 'cli') userlogin();
 }
+
 function get_user_row($id)
 {
 	global $Cache, $CURUSER;
@@ -1816,28 +1813,6 @@ function userlogin() {
 	if ($enablesqldebug_tweak == 'yes' && get_user_class() >= $sqldebug_tweak) {
 		error_reporting(E_ALL & ~E_NOTICE);
 	}
-}
-
-function autoclean() {
-	global $autoclean_interval_one, $rootpath;
-	$now = TIMENOW;
-
-	$res = sql_query("SELECT value_u FROM avps WHERE arg = 'lastcleantime'");
-	$row = mysql_fetch_array($res);
-	if (!$row) {
-		sql_query("INSERT INTO avps (arg, value_u) VALUES ('lastcleantime',$now)") or sqlerr(__FILE__, __LINE__);
-		return false;
-	}
-	$ts = $row[0];
-	if ($ts + $autoclean_interval_one > $now) {
-		return false;
-	}
-	sql_query("UPDATE avps SET value_u=$now WHERE arg='lastcleantime' AND value_u = $ts") or sqlerr(__FILE__, __LINE__);
-	if (!mysql_affected_rows()) {
-		return false;
-	}
-	require_once($rootpath . 'include/cleanup.php');
-	return docleanup();
 }
 
 function unesc($x) {

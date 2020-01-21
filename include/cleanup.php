@@ -8,6 +8,7 @@ function printProgress($msg) {
 	ob_flush();
 	flush();
 }
+
 function docleanup($forceAll = 0, $printProgress = false) {
 	//require_once(get_langfile_path("cleanup.php",true));
 	global $lang_cleanup_target;

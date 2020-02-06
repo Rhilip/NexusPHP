@@ -3,6 +3,9 @@ if(!defined('IN_TRACKER'))
   die('Hacking attempt!');
 error_reporting(E_ERROR | E_PARSE);
 ini_set('display_errors', 0);
+
+include_once ($rootpath . 'vendor/autoload.php');
+
 include_once($rootpath . 'classes/class_cache.php'); //Require the caching class
 $Cache = NEW CACHE(); //Load the caching class
 $Cache->setLanguageFolderArray(get_langfolder_list());

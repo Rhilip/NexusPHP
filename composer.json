@@ -1,0 +1,5 @@
+{
+    "require": {
+        "rhilip/bencode": "^1.0"
+    }
+}

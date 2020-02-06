@@ -1,4 +1,7 @@
 <?php
+
+use Rhilip\Bencode\Bencode;
+
 require_once("include/bittorrent.php");
 dbconn();
 $id = (int)$_GET["id"];
@@ -81,73 +84,38 @@ if ($row['banned'] == 'yes' && get_user_class() < $seebanned_class)
 	permissiondenied();
 sql_query("UPDATE torrents SET hits = hits + 1 WHERE id = ".sqlesc($id)) or sqlerr(__FILE__, __LINE__);
 
-require_once "include/benc.php";
-
 if (strlen($CURUSER['passkey']) != 32) {
 	$CURUSER['passkey'] = md5($CURUSER['username'].date("Y-m-d H:i:s").$CURUSER['passhash']);
 	sql_query("UPDATE users SET passkey=".sqlesc($CURUSER[passkey])." WHERE id=".sqlesc($CURUSER[id]));
 }
 
-$dict = bdec_file($fn, $max_torrent_size);
-$dict['value']['announce']['value'] = $ssl_torrent . $base_announce_url . "?passkey=$CURUSER[passkey]";
-$dict['value']['announce']['string'] = strlen($dict['value']['announce']['value']).":".$dict['value']['announce']['value'];
-$dict['value']['announce']['strlen'] = strlen($dict['value']['announce']['string']);
-/*if ($announce_urls[1] != "") // add multi-tracker
-{
-	$dict['value']['announce-list']['type'] = "list";
-	$dict['value']['announce-list']['value'][0]['type'] = "list";
-	$dict['value']['announce-list']['value'][0]['value'][0]["type"] = "string";
-	$dict['value']['announce-list']['value'][0]['value'][0]["value"] = $ssl_torrent . $announce_urls[0] . "?passkey=$CURUSER[passkey]";
-	$dict['value']['announce-list']['value'][0]['value'][0]["string"] = strlen($dict['value']['announce-list']['value'][0]['value'][0]["value"]).":".$dict['value']['announce-list']['value'][0]['value'][0]["value"];
-	$dict['value']['announce-list']['value'][0]['value'][0]["strlen"] = strlen($dict['value']['announce-list']['value'][0]['value'][0]["string"]);
-	$dict['value']['announce-list']['value'][0]['string'] = "l".$dict['value']['announce-list']['value'][0]['value'][0]["string"]."e";
-	$dict['value']['announce-list']['value'][0]['strlen'] = strlen($dict['value']['announce-list']['value'][0]['string']);
-	$dict['value']['announce-list']['value'][1]['type'] = "list";
-	$dict['value']['announce-list']['value'][1]['value'][0]["type"] = "string";
-	$dict['value']['announce-list']['value'][1]['value'][0]["value"] = $ssl_torrent . $announce_urls[1] . "?passkey=$CURUSER[passkey]";
-	$dict['value']['announce-list']['value'][1]['value'][0]["string"] = strlen($dict['value']['announce-list']['value'][0]['value'][0]["value"]).":".$dict['value']['announce-list']['value'][0]['value'][0]["value"];
-	$dict['value']['announce-list']['value'][1]['value'][0]["strlen"] = strlen($dict['value']['announce-list']['value'][0]['value'][0]["string"]);
-	$dict['value']['announce-list']['value'][1]['string'] = "l".$dict['value']['announce-list']['value'][0]['value'][0]["string"]."e";
-	$dict['value']['announce-list']['value'][1]['strlen'] = strlen($dict['value']['announce-list']['value'][0]['string']);
-	$dict['value']['announce-list']['string'] = "l".$dict['value']['announce-list']['value'][0]['string'].$dict['value']['announce-list']['value'][1]['string']."e";
-	$dict['value']['announce-list']['strlen'] = strlen($dict['value']['announce-list']['string']);
-}*/
-/*
-header ("Expires: Tue, 1 Jan 1980 00:00:00 GMT");
-header ("Last-Modified: ".date("D, d M Y H:i:s"));
-header ("Cache-Control: no-store, no-cache, must-revalidate");
-header ("Cache-Control: post-check=0, pre-check=0", false);
-header ("Pragma: no-cache");
-header ("X-Powered-By: ".VERSION." (c) ".date("Y")." ".$SITENAME."");
-header ("Accept-Ranges: bytes");
-header ("Connection: close");
-header ("Content-Transfer-Encoding: binary");
-*/
+$dict = Bencode::load($fn);
+$dict['announce'] = $ssl_torrent . $base_announce_url . '?passkey=' . $CURUSER['passkey'];
+
+// add multi-tracker
+if (count($announce_urls) > 1) {
+	foreach ($announce_urls as $announce_url) {
+		/** d['announce-list'] = [[ tracker1, tracker2, tracker3 ]] */
+		$dict['announce-list'][0][] = $ssl_torrent . $announce_url . '?passkey=' . $CURUSER['passkey'];
+
+		/** d['announce-list'] = [ [tracker1], [backup1], [backup2] ] */
+		//$dict['announce-list'][] = [$ssl_torrent . $announce_url . "?passkey=" . $CURUSER['passkey']];
+	}
+}
 
 header("Content-Type: application/x-bittorrent");
 
-if ( str_replace("Gecko", "", $_SERVER['HTTP_USER_AGENT']) != $_SERVER['HTTP_USER_AGENT'])
-{
-	header ("Content-Disposition: attachment; filename=\"$torrentnameprefix.".$row["save_as"].".torrent\" ; charset=utf-8");
-}
-else if ( str_replace("Firefox", "", $_SERVER['HTTP_USER_AGENT']) != $_SERVER['HTTP_USER_AGENT'] )
-{
-	header ("Content-Disposition: attachment; filename=\"$torrentnameprefix.".$row["save_as"].".torrent\" ; charset=utf-8");
-}
-else if ( str_replace("Opera", "", $_SERVER['HTTP_USER_AGENT']) != $_SERVER['HTTP_USER_AGENT'] )
-{
-	header ("Content-Disposition: attachment; filename=\"$torrentnameprefix.".$row["save_as"].".torrent\" ; charset=utf-8");
-}
-else if ( str_replace("IE", "", $_SERVER['HTTP_USER_AGENT']) != $_SERVER['HTTP_USER_AGENT'] )
-{
-	header ("Content-Disposition: attachment; filename=".str_replace("+", "%20", rawurlencode("$torrentnameprefix." . $row["save_as"] .".torrent")));
-}
-else
-{
-	header ("Content-Disposition: attachment; filename=".str_replace("+", "%20", rawurlencode("$torrentnameprefix." . $row["save_as"] .".torrent")));
+if (str_replace("Gecko", "", $_SERVER['HTTP_USER_AGENT']) != $_SERVER['HTTP_USER_AGENT']) {
+	header("Content-Disposition: attachment; filename=\"$torrentnameprefix." . $row["save_as"] . ".torrent\" ; charset=utf-8");
+} else if (str_replace("Firefox", "", $_SERVER['HTTP_USER_AGENT']) != $_SERVER['HTTP_USER_AGENT']) {
+	header("Content-Disposition: attachment; filename=\"$torrentnameprefix." . $row["save_as"] . ".torrent\" ; charset=utf-8");
+} else if (str_replace("Opera", "", $_SERVER['HTTP_USER_AGENT']) != $_SERVER['HTTP_USER_AGENT']) {
+	header("Content-Disposition: attachment; filename=\"$torrentnameprefix." . $row["save_as"] . ".torrent\" ; charset=utf-8");
+} else if (str_replace("IE", "", $_SERVER['HTTP_USER_AGENT']) != $_SERVER['HTTP_USER_AGENT']) {
+	header("Content-Disposition: attachment; filename=" . str_replace("+", "%20", rawurlencode("$torrentnameprefix." . $row["save_as"] . ".torrent")));
+} else {
+	header("Content-Disposition: attachment; filename=" . str_replace("+", "%20", rawurlencode("$torrentnameprefix." . $row["save_as"] . ".torrent")));
 }
 
-//header ("Content-Disposition: attachment; filename=".$row["filename"]."");
-//ob_implicit_flush(true);
-print(benc($dict));
-?>
+print(Bencode::encode($dict));
+

@@ -1,6 +1,7 @@
 <?php
-require_once("include/benc.php");
 require_once("include/bittorrent.php");
+
+use Rhilip\Bencode;
 
 ini_set("upload_max_filesize",$max_torrent_size);
 dbconn();
@@ -94,120 +95,78 @@ bark("eek");
 if (!filesize($tmpname))
 bark($lang_takeupload['std_empty_file']);
 
-$dict = bdec_file($tmpname, $max_torrent_size);
-if (!isset($dict))
-bark($lang_takeupload['std_not_bencoded_file']);
+try {
+	$dict = Bencode\Bencode::load($tmpname);
+} catch (Bencode\ParseErrorException $e) {
+	bark($lang_takeupload['std_not_bencoded_file']);
+}
 
-function dict_check($d, $s) {
+function checkTorrentDict($dict, $key, $type = null)
+{
 	global $lang_takeupload;
-	if ($d["type"] != "dictionary")
-	bark($lang_takeupload['std_not_a_dictionary']);
-	$a = explode(":", $s);
-	$dd = $d["value"];
-	$ret = array();
-	foreach ($a as $k) {
-		unset($t);
-		if (preg_match('/^(.*)\((.*)\)$/', $k, $m)) {
-			$k = $m[1];
-			$t = $m[2];
-		}
-		if (!isset($dd[$k]))
-		bark($lang_takeupload['std_dictionary_is_missing_key']);
-		if (isset($t)) {
-			if ($dd[$k]["type"] != $t)
+
+	if (!is_array($dict)) bark($lang_takeupload['std_not_a_dictionary']);
+	$value = $dict[$key];
+	if (!isset($value)) bark($lang_takeupload['std_dictionary_is_missing_key']);
+	if (!is_null($type)) {
+		$isFunction = 'is_' . $type;
+		if (function_exists($isFunction) && !$isFunction($value)) {
 			bark($lang_takeupload['std_invalid_entry_in_dictionary']);
-			$ret[] = $dd[$k]["value"];
 		}
-		else
-		$ret[] = $dd[$k];
 	}
-	return $ret;
+	return $value;
 }
 
-function dict_get($d, $k, $t) {
-	global $lang_takeupload;
-	if ($d["type"] != "dictionary")
-	bark($lang_takeupload['std_not_a_dictionary']);
-	$dd = $d["value"];
-	if (!isset($dd[$k]))
-	return;
-	$v = $dd[$k];
-	if ($v["type"] != $t)
-	bark($lang_takeupload['std_invalid_dictionary_entry_type']);
-	return $v["value"];
-}
-
-list($ann, $info) = dict_check($dict, "announce(string):info");
-list($dname, $plen, $pieces) = dict_check($info, "name(string):piece length(integer):pieces(string)");
-
-/*
-if (!in_array($ann, $announce_urls, 1))
-{
-$aok=false;
-foreach($announce_urls as $au)
-{
-if($ann=="$au?passkey=$CURUSER[passkey]")  $aok=true;
-}
-if(!$aok)
-bark("Invalid announce url! Must be: " . $announce_urls[0] . "?passkey=$CURUSER[passkey]");
-}
-*/
-
+$info = checkTorrentDict($dict, 'info');
+$plen = checkTorrentDict($info, 'piece length', 'integer');  // Only Check without use
+$dname = checkTorrentDict($info, 'name', 'string');
+$pieces = checkTorrentDict($info, 'pieces', 'string');
 
 if (strlen($pieces) % 20 != 0)
 bark($lang_takeupload['std_invalid_pieces']);
 
 $filelist = array();
-$totallen = dict_get($info, "length", "integer");
+$totallen = $info['length'];
 if (isset($totallen)) {
 	$filelist[] = array($dname, $totallen);
 	$type = "single";
 }
 else {
-	$flist = dict_get($info, "files", "list");
-	if (!isset($flist))
-	bark($lang_takeupload['std_missing_length_and_files']);
-	if (!count($flist))
-	bark("no files");
+	$flist = checkTorrentDict($info, 'files', 'array');
+
+	if (!isset($flist)) bark($lang_takeupload['std_missing_length_and_files']);
+	if (!count($flist)) bark("no files");
+
 	$totallen = 0;
 	foreach ($flist as $fn) {
-		list($ll, $ff) = dict_check($fn, "length(integer):path(list)");
+		$ll = checkTorrentDict($fn, 'length', 'integer');
+		$path_key = isset($fn['path.utf-8']) ? 'path.utf-8' : 'path';
+		$ff = checkTorrentDict($fn, $path_key, 'list');
+
 		$totallen += $ll;
 		$ffa = array();
 		foreach ($ff as $ffe) {
-			if ($ffe["type"] != "string")
-			bark($lang_takeupload['std_filename_errors']);
+			if (!is_string($ffe)) bark($lang_takeupload['std_filename_errors']);
 			$ffa[] = $ffe["value"];
 		}
-		if (!count($ffa))
-		bark($lang_takeupload['std_filename_errors']);
+
+		if (!count($ffa)) bark($lang_takeupload['std_filename_errors']);
 		$ffe = implode("/", $ffa);
 		$filelist[] = array($ffe, $ll);
 	}
 	$type = "multi";
 }
 
-$dict['value']['announce']=bdec(benc_str( get_protocol_prefix() . $announce_urls[0]));  // change announce url to local
-$dict['value']['info']['value']['private']=bdec('i1e');  // add private tracker flag
+$dict['announce'] = get_protocol_prefix() . $announce_urls[0];  // change announce url to local
+$dict['info']['private'] = 1;
+
 //The following line requires uploader to re-download torrents after uploading
 //even the torrent is set as private and with uploader's passkey in it.
-$dict['value']['info']['value']['source']=bdec(benc_str( "[$BASEURL] $SITENAME"));
-unset($dict['value']['announce-list']); // remove multi-tracker capability
-unset($dict['value']['nodes']); // remove cached peers (Bitcomet & Azareus)
-$dict=bdec(benc($dict)); // double up on the becoding solves the occassional misgenerated infohash
-list($ann, $info) = dict_check($dict, "announce(string):info");
+$dict['info']['source'] = "[$BASEURL] $SITENAME";
+unset ($dict['announce-list']); // remove multi-tracker capability
+unset ($dict['nodes']); // remove cached peers (Bitcomet & Azareus)
 
-$infohash = pack("H*", sha1($info["string"]));
-
-function hex_esc2($matches) {
-	return sprintf("%02x", ord($matches[0]));
-}
-
-//die(phpinfo());
-
-//die("\\' pos:" . strpos($infohash,"\\") . ", after sqlesc:" . (strpos(sqlesc($infohash),"\\") == false ? "gone" : strpos(sqlesc($infohash),"\\")));
-
-//die(preg_replace_callback('/./s', "hex_esc2", $infohash));
+$infohash = pack("H*", sha1(Bencode\Bencode::encode($dict['info'])));   // double up on the becoding solves the occassional misgenerated infohash
 
 // ------------- start: check upload authority ------------------//
 $allowtorrents = user_can_upload("torrents");
@@ -344,13 +303,7 @@ foreach ($filelist as $file) {
 	@sql_query("INSERT INTO files (torrent, filename, size) VALUES ($id, ".sqlesc($file[0]).",".$file[1].")");
 }
 
-//move_uploaded_file($tmpname, "$torrent_dir/$id.torrent");
-$fp = fopen("$torrent_dir/$id.torrent", "w");
-if ($fp)
-{
-	@fwrite($fp, benc($dict), strlen(benc($dict)));
-	fclose($fp);
-}
+Bencode\Bencode::dump("$torrent_dir/$id.torrent",$dict);
 
 //===add karma
 KPS("+",$uploadtorrent_bonus,$CURUSER["id"]);
@@ -441,4 +394,3 @@ while($arr = mysql_fetch_array($res))
 }
 
 header("Location: " . get_protocol_prefix() . "$BASEURL/details.php?id=".htmlspecialchars($id)."&uploaded=1");
-?>

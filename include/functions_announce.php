@@ -1,5 +1,7 @@
 <?php
 # IMPORTANT: Do not edit below unless you know what you are doing!
+use Rhilip\Bencode\Bencode;
+
 if(!defined('IN_TRACKER'))
 	die('Hacking attempt!');
 include_once($rootpath . 'include/globalfunctions.php');
@@ -54,8 +56,9 @@ function block_browser()
 
 function benc_resp($d)
 {
-	benc_resp_raw(benc(array('type' => 'dictionary', 'value' => $d)));
+	benc_resp_raw(Bencode::encode($d));
 }
+
 function benc_resp_raw($x) {
 
 	header("Content-Type: text/plain; charset=utf-8");
@@ -68,11 +71,13 @@ function benc_resp_raw($x) {
 	else
 		echo $x;
 }
-function err($msg, $userid = 0, $torrentid = 0)
+
+function err($msg)
 {
-	benc_resp(array('failure reason' => array('type' => 'string', 'value' => $msg)));
+	benc_resp(['failure reason' => $msg]);
 	exit();
 }
+
 function check_cheater($userid, $torrentid, $uploaded, $downloaded, $anctime, $seeders=0, $leechers=0){
 	global $cheaterdet_security,$nodetect_security;
 
@@ -338,4 +343,4 @@ function check_client($peer_id, $agent, &$agent_familyid)
 		return "Banned Client, Please goto $BASEURL/faq.php#id29 for a list of acceptable clients";
 	}
 }
-?>
+

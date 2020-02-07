@@ -1,5 +1,10 @@
 {
-    "require": {
-        "rhilip/bencode": "^1.0"
+  "require": {
+    "rhilip/bencode": "^1.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "NexusPHP\\": "classes/"
     }
+  }
 }

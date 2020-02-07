@@ -4,9 +4,9 @@ dbconn();
 $action = $_GET['action'];
 $imagehash = $_GET['imagehash'];
 if ($action == "regimage") {
-    $query = "SELECT * FROM regimages WHERE imagehash= ".sqlesc($imagehash);
-    $sql = sql_query($query);
-    $regimage = mysql_fetch_array($sql);
+    $query = "SELECT * FROM regimages WHERE imagehash= ".\NexusPHP\Components\Database::escape($imagehash);
+    $sql = \NexusPHP\Components\Database::query($query);
+    $regimage = mysqli_fetch_array($sql);
     $imagestring = $regimage['imagestring'];
     for ($i=0;$i<strlen($imagestring);$i++) {
         $newstring .= $space.$imagestring[$i];

@@ -10,8 +10,8 @@ if (!preg_match("/.*userid=([0-9]+)\.png$/i", $_SERVER['REQUEST_URI'])) {
     die;
 }
 if (!$my_img = $Cache->get_value('userbar_'.$_SERVER['REQUEST_URI'])) {
-    $res = sql_query("SELECT username, uploaded, downloaded, class, privacy FROM users WHERE id=".sqlesc($userid)." LIMIT 1");
-    $row = mysql_fetch_array($res);
+    $res = \NexusPHP\Components\Database::query("SELECT username, uploaded, downloaded, class, privacy FROM users WHERE id=".\NexusPHP\Components\Database::escape($userid)." LIMIT 1");
+    $row = mysqli_fetch_array($res);
     if (!$row) {
         die;
     } elseif ($row['privacy'] == 'strong') {

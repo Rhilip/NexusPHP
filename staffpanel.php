@@ -20,8 +20,8 @@ if (get_user_class() >= UC_SYSOP) {
     print("<table width=80% border=1 cellspacing=0 cellpadding=5 align=center>");
     echo("<td class=colhead align=left>Option Name</td><td class=colhead align=left>Info</td>");
     $query = "SELECT * FROM sysoppanel";
-    $sql = sql_query($query);
-    while ($row = mysql_fetch_array($sql)) {
+    $sql = \NexusPHP\Components\Database::query($query);
+    while ($row = mysqli_fetch_array($sql)) {
         $id = $row['id'];
         $name = $row['name'];
         $url = $row['url'];
@@ -41,8 +41,8 @@ if (get_user_class() >= UC_ADMINISTRATOR) {
     print("<table width=80% border=1 cellspacing=0 cellpadding=5 align=center>");
     echo("<td class=colhead align=left>Option Name</td><td class=colhead align=left>Info</td>");
     $query = "SELECT * FROM adminpanel";
-    $sql = sql_query($query);
-    while ($row = mysql_fetch_array($sql)) {
+    $sql = \NexusPHP\Components\Database::query($query);
+    while ($row = mysqli_fetch_array($sql)) {
         $id = $row['id'];
         $name = $row['name'];
         $url = $row['url'];
@@ -62,8 +62,8 @@ if (get_user_class() >= UC_MODERATOR) {
     print("<table width=80% border=1 cellspacing=0 cellpadding=5 align=center>");
     echo("<td class=colhead align=left>Option Name</td><td class=colhead align=left>Info</td>");
     $query = "SELECT * FROM modpanel";
-    $sql = sql_query($query);
-    while ($row = mysql_fetch_array($sql)) {
+    $sql = \NexusPHP\Components\Database::query($query);
+    while ($row = mysqli_fetch_array($sql)) {
         $id = $row['id'];
         $name = $row['name'];
         $url = $row['url'];

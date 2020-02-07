@@ -97,7 +97,7 @@ if ($action) {
                 $country = $_POST["country"];
                 if ($showschool = 'yes') {
                     $school = $_POST["school"];
-                    $updateset[] = "school = ".sqlesc($school);
+                    $updateset[] = "school = ".\NexusPHP\Components\Database::escape($school);
                 }
                 $download = $_POST["download"];
                 $upload = $_POST["upload"];
@@ -111,34 +111,34 @@ if ($action) {
 
                 if (preg_match("/^http:\/\/[^\s'\"<>]+\.(jpg|gif|png|jpeg)$/i", $avatar) && !preg_match("/\.php/i", $avatar) && !preg_match("/\.js/i", $avatar) && !preg_match("/\.cgi/i", $avatar)) {
                     $avatar = htmlspecialchars(trim($avatar));
-                    $updateset[] = "avatar = " . sqlesc($avatar);
+                    $updateset[] = "avatar = " . \NexusPHP\Components\Database::escape($avatar);
                 }
                 $info = htmlspecialchars(trim($_POST["info"]));
 
-                $updateset[] = "parked = " . sqlesc($parked);
-                $updateset[] = "acceptpms = " . sqlesc($acceptpms);
-                $updateset[] = "deletepms = " . sqlesc($deletepms);
-                $updateset[] = "savepms = " . sqlesc($savepms);
-                $updateset[] = "commentpm = " . sqlesc($commentpm);
-                $updateset[] = "gender = " . sqlesc($gender);
+                $updateset[] = "parked = " . \NexusPHP\Components\Database::escape($parked);
+                $updateset[] = "acceptpms = " . \NexusPHP\Components\Database::escape($acceptpms);
+                $updateset[] = "deletepms = " . \NexusPHP\Components\Database::escape($deletepms);
+                $updateset[] = "savepms = " . \NexusPHP\Components\Database::escape($savepms);
+                $updateset[] = "commentpm = " . \NexusPHP\Components\Database::escape($commentpm);
+                $updateset[] = "gender = " . \NexusPHP\Components\Database::escape($gender);
                 if (is_valid_id($country)) {
-                    $updateset[] = "country = " . sqlesc($country);
+                    $updateset[] = "country = " . \NexusPHP\Components\Database::escape($country);
                 }
                 if (is_valid_id($download)) {
-                    $updateset[] = "download =  " . sqlesc($download);
+                    $updateset[] = "download =  " . \NexusPHP\Components\Database::escape($download);
                 }
                 if (is_valid_id($upload)) {
-                    $updateset[] = "upload =  " . sqlesc($upload);
+                    $updateset[] = "upload =  " . \NexusPHP\Components\Database::escape($upload);
                 }
                 if (is_valid_id($isp)) {
-                    $updateset[] = "isp =  " . sqlesc($isp);
+                    $updateset[] = "isp =  " . \NexusPHP\Components\Database::escape($isp);
                 }
-                //	$updateset[] = "tzoffset = " . sqlesc($tzoffset);
+                //	$updateset[] = "tzoffset = " . \NexusPHP\Components\Database::escape($tzoffset);
 
-                $updateset[] = "info = " . sqlesc($info);
+                $updateset[] = "info = " . \NexusPHP\Components\Database::escape($info);
 
-                $query = "UPDATE users SET " . implode(",", $updateset) . " WHERE id = ".sqlesc($CURUSER["id"]);
-                $result = sql_query($query);
+                $query = "UPDATE users SET " . implode(",", $updateset) . " WHERE id = ".\NexusPHP\Components\Database::escape($CURUSER["id"]);
+                $result = \NexusPHP\Components\Database::query($query);
                 if (!$result) {
                     sqlerr(__FILE__, __LINE__);
                 } else {
@@ -148,29 +148,29 @@ if ($action) {
             stdhead($lang_usercp['head_control_panel'].$lang_usercp['head_personal_settings'], true);
 
             $countries = "<option value=0>---- ".$lang_usercp['select_none_selected']." ----</option>\n";
-            $ct_r = sql_query("SELECT id,name FROM countries ORDER BY name") or die;
-            while ($ct_a = mysql_fetch_array($ct_r)) {
+            $ct_r = \NexusPHP\Components\Database::query("SELECT id,name FROM countries ORDER BY name") or die;
+            while ($ct_a = mysqli_fetch_array($ct_r)) {
                 $countries .= "<option value=".htmlspecialchars($ct_a[id])."" . (htmlspecialchars($CURUSER["country"]) == htmlspecialchars($ct_a['id']) ? " selected" : "") . ">".htmlspecialchars($ct_a[name])."</option>\n";
             }
             $isplist = "<option value=0>---- ".$lang_usercp['select_none_selected']." ----</option>\n";
-            $isp_r = sql_query("SELECT id,name FROM isp ORDER BY id ASC") or die;
-            while ($isp_a = mysql_fetch_array($isp_r)) {
+            $isp_r = \NexusPHP\Components\Database::query("SELECT id,name FROM isp ORDER BY id ASC") or die;
+            while ($isp_a = mysqli_fetch_array($isp_r)) {
                 $isplist .= "<option value=".htmlspecialchars($isp_a[id])."" . (htmlspecialchars($CURUSER["isp"]) == htmlspecialchars($isp_a['id']) ? " selected" : "") . ">".htmlspecialchars($isp_a[name])."</option>\n";
             }
             $downloadspeed = "<option value=0>---- ".$lang_usercp['select_none_selected']." ----</option>\n";
-            $ds_a = sql_query("SELECT id,name FROM downloadspeed ORDER BY id") or die;
-            while ($ds_b = mysql_fetch_array($ds_a)) {
+            $ds_a = \NexusPHP\Components\Database::query("SELECT id,name FROM downloadspeed ORDER BY id") or die;
+            while ($ds_b = mysqli_fetch_array($ds_a)) {
                 $downloadspeed .= "<option value=".htmlspecialchars($ds_b[id])."" . (htmlspecialchars($CURUSER["download"]) == htmlspecialchars($ds_b['id']) ? " selected" : "") . ">".htmlspecialchars($ds_b[name])."</option>\n";
             }
 
             $uploadspeed = "<option value=0>---- ".$lang_usercp['select_none_selected']." ----</option>\n";
-            $us_a = sql_query("SELECT id,name FROM uploadspeed ORDER BY id") or die;
-            while ($us_b = mysql_fetch_array($us_a)) {
+            $us_a = \NexusPHP\Components\Database::query("SELECT id,name FROM uploadspeed ORDER BY id") or die;
+            while ($us_b = mysqli_fetch_array($us_a)) {
                 $uploadspeed .= "<option value=".htmlspecialchars($us_b[id])."" . (htmlspecialchars($CURUSER["upload"]) == htmlspecialchars($us_b['id']) ? " selected" : "") . ">".htmlspecialchars($us_b[name])."</option>\n";
             }
-            $ra=sql_query("SELECT * FROM bitbucket WHERE public = '1'");
+            $ra=\NexusPHP\Components\Database::query("SELECT * FROM bitbucket WHERE public = '1'");
             $options='';
-            while ($sor=mysql_fetch_array($ra)) {
+            while ($sor=mysqli_fetch_array($ra)) {
                 $text.='<option value="'. get_protocol_prefix() . $BASEURL .'/bitbucket/'.$sor["name"].'">'.$sor["name"].'</option>';
             }
 
@@ -198,8 +198,8 @@ if ($action) {
         //School select
 if ($showschool == 'yes') {
     $schools = "<option value=35>---- ".$lang_usercp['select_none_selected']." ----</option>n";
-    $sc_r = sql_query("SELECT id,name FROM schools ORDER BY name") or die;
-    while ($sc_a = mysql_fetch_array($sc_r)) {
+    $sc_r = \NexusPHP\Components\Database::query("SELECT id,name FROM schools ORDER BY name") or die;
+    while ($sc_a = mysqli_fetch_array($sc_r)) {
         $schools .= "<option value=$sc_a[id]" . ($sc_a['id'] == $CURUSER['school'] ? " selected" : "") . ">$sc_a[name]</option>n";
     }
     tr($lang_usercp['row_school'], "<select name=school>$schools</select>", 1);
@@ -241,21 +241,21 @@ if ($showschool == 'yes') {
                 {
                     global $_POST;
                     $return = "";
-                    $r = sql_query("SELECT id FROM ".$dbtable) or sqlerr();
-                    $rows = mysql_num_rows($r);
+                    $r = \NexusPHP\Components\Database::query("SELECT id FROM ".$dbtable) or sqlerr();
+                    $rows = mysqli_num_rows($r);
                     for ($i = 0; $i < $rows; ++$i) {
-                        $a = mysql_fetch_assoc($r);
+                        $a = mysqli_fetch_assoc($r);
                         if ($_POST[$cbname.$a[id]] == 'yes') {
                             $return .= "[".$cbname.$a[id]."]";
                         }
                     }
                     return $return;
                 }
-                /*$r = sql_query("SELECT id FROM categories") or sqlerr();
-                $rows = mysql_num_rows($r);
+                /*$r = \NexusPHP\Components\Database::query("SELECT id FROM categories") or sqlerr();
+                $rows = mysqli_num_rows($r);
                 for ($i = 0; $i < $rows; ++$i)
                 {
-                    $a = mysql_fetch_assoc($r);
+                    $a = mysqli_fetch_assoc($r);
                     if ($_POST["cat$a[id]"] == 'yes')
                     $notifs .= "[cat$a[id]]";
                 }*/
@@ -290,13 +290,13 @@ if ($showschool == 'yes') {
                 } else {
                     $updateset[] = "fontsize = 'medium'";
                 }
-                $updateset[] = "notifs = " . sqlesc($notifs);
+                $updateset[] = "notifs = " . \NexusPHP\Components\Database::escape($notifs);
 
                 if (is_valid_id($stylesheet)) {
-                    $updateset[] = "stylesheet = " . sqlesc($stylesheet);
+                    $updateset[] = "stylesheet = " . \NexusPHP\Components\Database::escape($stylesheet);
                 }
                 if (is_valid_id($caticon)) {
-                    $updateset[] = "caticon = " . sqlesc($caticon);
+                    $updateset[] = "caticon = " . \NexusPHP\Components\Database::escape($caticon);
                 }
 
                 if (is_valid_id($sitelanguage)) {
@@ -305,53 +305,53 @@ if ($showschool == 'yes') {
                         set_langfolder_cookie($lang_folder);
                         header("Location: " . $_SERVER['PHP_SELF']);
                     }
-                    $updateset[] = "lang = " . sqlesc($sitelanguage);
+                    $updateset[] = "lang = " . \NexusPHP\Components\Database::escape($sitelanguage);
                 }
 
                 $updateset[] = "torrentsperpage = " . min(100, 0 + $_POST["torrentsperpage"]);
                 if ($showmovies['hot'] == "yes") {
                     $showhot = $_POST["show_hot"];
-                    $updateset[] = "showhot = " . sqlesc($showhot);
+                    $updateset[] = "showhot = " . \NexusPHP\Components\Database::escape($showhot);
                 }
                 if ($showmovies['classic'] == "yes") {
                     $showclassic = $_POST["show_classic"];
-                    $updateset[] = "showclassic = " . sqlesc($showclassic);
+                    $updateset[] = "showclassic = " . \NexusPHP\Components\Database::escape($showclassic);
                 }
                 if ($showtooltipsetting) {
                     $tooltip = $_POST['tooltip'];
-                    $updateset[] = "tooltip = " . sqlesc($tooltip);
+                    $updateset[] = "tooltip = " . \NexusPHP\Components\Database::escape($tooltip);
                 }
                 if ($enablead_advertisement == 'yes' && !$showaddisabled) {
                     $noad = ($_POST['showad'] == 'yes' ? "no" : "yes");
-                    $updateset[] = "noad = " . sqlesc($noad);
+                    $updateset[] = "noad = " . \NexusPHP\Components\Database::escape($noad);
                 }
                 $timetype = $_POST['timetype'];
-                $updateset[] = "timetype = " . sqlesc($timetype);
+                $updateset[] = "timetype = " . \NexusPHP\Components\Database::escape($timetype);
 
                 $appendsticky = ($_POST["appendsticky"] == 'yes' ? "yes" : "no");
-                $updateset[] = "appendsticky = " . sqlesc($appendsticky);
+                $updateset[] = "appendsticky = " . \NexusPHP\Components\Database::escape($appendsticky);
                 $appendnew = ($_POST["appendnew"] == 'yes' ? "yes" : "no");
-                $updateset[] = "appendnew = " . sqlesc($appendnew);
+                $updateset[] = "appendnew = " . \NexusPHP\Components\Database::escape($appendnew);
                 $appendpromotion = $_POST["appendpromotion"];
-                $updateset[] = "appendpromotion = " . sqlesc($appendpromotion);
+                $updateset[] = "appendpromotion = " . \NexusPHP\Components\Database::escape($appendpromotion);
                 $appendpicked = ($_POST["appendpicked"] == 'yes' ? "yes" : "no");
-                $updateset[] = "appendpicked = " . sqlesc($appendpicked);
+                $updateset[] = "appendpicked = " . \NexusPHP\Components\Database::escape($appendpicked);
                 $dlicon = ($_POST['dlicon'] == 'yes' ? "yes" : "no");
-                $updateset[] = "dlicon = " . sqlesc($dlicon);
+                $updateset[] = "dlicon = " . \NexusPHP\Components\Database::escape($dlicon);
                 $bmicon = ($_POST['bmicon'] == 'yes' ? "yes" : "no");
-                $updateset[] = "bmicon = " . sqlesc($bmicon);
+                $updateset[] = "bmicon = " . \NexusPHP\Components\Database::escape($bmicon);
 
                 $showcomnum = ($_POST["showcomnum"] == 'yes' ? "yes" : "no");
-                $updateset[] = "showcomnum = " . sqlesc($showcomnum);
+                $updateset[] = "showcomnum = " . \NexusPHP\Components\Database::escape($showcomnum);
                 if ($showtooltipsetting) {
                     $showlastcom = ($_POST["showlastcom"] == 'yes' ? "yes" : "no");
-                    $updateset[] = "showlastcom = " . sqlesc($showlastcom);
+                    $updateset[] = "showlastcom = " . \NexusPHP\Components\Database::escape($showlastcom);
                 }
                 $pmnum = ($_POST["pmnum"] < 1 || $_POST["pmnum"] > 100 ? 20 : floor($_POST["pmnum"]));
                 $updateset[] = "pmnum = " . $pmnum;
                 if ($showfunbox_main == 'yes') {
                     $showfb = ($_POST["showfb"] == 'yes' ? "yes" : "no");
-                    $updateset[] = "showfb = " . sqlesc($showfb);
+                    $updateset[] = "showfb = " . \NexusPHP\Components\Database::escape($showfb);
                 }
                 $sbnum = ($_POST["sbnum"] ? max(10, min(500, 0 + $_POST["sbnum"])) : 70);
                 $updateset[] = "sbnum = " . $sbnum;
@@ -363,45 +363,45 @@ if ($showschool == 'yes') {
                 } else {
                     $hidehb = 'no';
                 }
-                $updateset[] = "hidehb = " . sqlesc($hidehb);
+                $updateset[] = "hidehb = " . \NexusPHP\Components\Database::escape($hidehb);
                 if ($showextinfo['imdb'] == 'yes') {
                     if ($_POST["showimdb"] == 'yes') {
                         $showimdb = 'yes';
                     } else {
                         $showimdb = 'no';
                     }
-                    $updateset[] = "showimdb = " . sqlesc($showimdb);
+                    $updateset[] = "showimdb = " . \NexusPHP\Components\Database::escape($showimdb);
                 }
                 if ($_POST["showdescription"] == 'yes') {
                     $showdescription = 'yes';
                 } else {
                     $showdescription = 'no';
                 }
-                $updateset[] = "showdescription = " . sqlesc($showdescription);
+                $updateset[] = "showdescription = " . \NexusPHP\Components\Database::escape($showdescription);
                 if ($enablenfo_main == 'yes') {
                     if ($_POST["shownfo"] == 'yes') {
                         $shownfo = 'yes';
                     } else {
                         $shownfo = 'no';
                     }
-                    $updateset[] = "shownfo = " . sqlesc($shownfo);
+                    $updateset[] = "shownfo = " . \NexusPHP\Components\Database::escape($shownfo);
                 }
                 if ($_POST["smalldescr"] == 'yes') {
                     $showsmalldescr = 'yes';
                 } else {
                     $showsmalldescr = 'no';
                 }
-                $updateset[] = "showsmalldescr = " . sqlesc($showsmalldescr);
+                $updateset[] = "showsmalldescr = " . \NexusPHP\Components\Database::escape($showsmalldescr);
                 if ($_POST["showcomment"] == 'yes') {
                     $showcomment = 'yes';
                 } else {
                     $showcomment = 'no';
                 }
-                $updateset[] = "showcomment = " . sqlesc($showcomment);
+                $updateset[] = "showcomment = " . \NexusPHP\Components\Database::escape($showcomment);
 
-                $query = "UPDATE users SET " . implode(",", $updateset) . " WHERE id =".sqlesc($CURUSER["id"]);
+                $query = "UPDATE users SET " . implode(",", $updateset) . " WHERE id =".\NexusPHP\Components\Database::escape($CURUSER["id"]);
                 //stderr("",$query);
-                $result = sql_query($query) or sqlerr(__FILE__, __LINE__);
+                $result = \NexusPHP\Components\Database::query($query) or sqlerr(__FILE__, __LINE__);
                 header("Location: usercp.php?action=tracker&type=saved");
             }
             stdhead($lang_usercp['head_control_panel'].$lang_usercp['head_tracker_settings']);
@@ -588,9 +588,9 @@ if ($showsubcat) {
             $categories .= "<tr><td class=bottom><b>".$lang_usercp['text_show_dead_active']."</b><br /><select name=\"incldead\"><option value=\"0\" ".(strpos($CURUSER['notifs'], "[incldead=0]") !== false ? " selected" : "").">".$lang_usercp['select_including_dead']."</option><option value=\"1\" ".(strpos($CURUSER['notifs'], "[incldead=1]") !== false ||  strpos($CURUSER['notifs'], "incldead") == false ? " selected" : "").">".$lang_usercp['select_active']."</option><option value=\"2\" ".(strpos($CURUSER['notifs'], "[incldead=2]") !== false  ? " selected" : "").">".$lang_usercp['select_dead']."</option></select></td><td class=bottom align=left><b>".$lang_usercp['text_show_special_torrents']."</b><br /><select name=\"spstate\"><option value=\"0\" ".($special_state == 0 ? " selected" : "").">".$lang_usercp['select_all']."</option>".promotion_selection($special_state)."</select></td><td class=bottom><b>".$lang_usercp['text_show_bookmarked']."</b><br /><select name=\"inclbookmarked\"><option value=\"0\" ".(strpos($CURUSER['notifs'], "[inclbookmarked=0]") !== false ? " selected" : "").">".$lang_usercp['select_all']."</option><option value=\"1\" ".(strpos($CURUSER['notifs'], "[inclbookmarked=1]") !== false ? " selected" : "")." >".$lang_usercp['select_bookmarked']."</option><option value=\"2\" ".(strpos($CURUSER['notifs'], "[inclbookmarked=2]") !== false ? " selected" : "").">".$lang_usercp['select_bookmarked_exclude']."</option></select></td></tr>";
             $categories .= "</table>";
             tr_small($lang_usercp['row_browse_default_categories'], $categories, 1);
-            $ss_r = sql_query("SELECT * FROM stylesheets") or die;
+            $ss_r = \NexusPHP\Components\Database::query("SELECT * FROM stylesheets") or die;
             $ss_sa = array();
-            while ($ss_a = mysql_fetch_array($ss_r)) {
+            while ($ss_a = mysqli_fetch_array($ss_r)) {
                 $ss_id = $ss_a["id"];
                 $ss_name = $ss_a["name"];
                 $ss_sa[$ss_name] = $ss_id;
@@ -605,8 +605,8 @@ if ($showsubcat) {
                 }
                 $stylesheets .= "<option value=$ss_id$ss>$ss_name</option>\n";
             }
-            $cires = sql_query("SELECT * FROM caticons ORDER BY name") or die;
-            while ($caticon = mysql_fetch_array($cires)) {
+            $cires = \NexusPHP\Components\Database::query("SELECT * FROM caticons ORDER BY name") or die;
+            while ($caticon = mysqli_fetch_array($cires)) {
                 if ($caticon['id'] == $CURUSER['caticon']) {
                     $sl = " selected";
                 } else {
@@ -681,17 +681,17 @@ if ($showfunbox_main == 'yes') { //siteside setting for funbox
 
                 $updateset[] = "topicsperpage = " . min(100, 0 + $_POST["topicsperpage"]);
                 $updateset[] = "postsperpage = " . min(100, 0 + $_POST["postsperpage"]);
-                $updateset[] = "avatars = " . sqlesc($avatars);
+                $updateset[] = "avatars = " . \NexusPHP\Components\Database::escape($avatars);
                 if ($showtooltipsetting) {
-                    $updateset[] = "showlastpost = " . sqlesc($ttlastpost);
+                    $updateset[] = "showlastpost = " . \NexusPHP\Components\Database::escape($ttlastpost);
                 }
-                $updateset[] = "signatures = " . sqlesc($signatures);
+                $updateset[] = "signatures = " . \NexusPHP\Components\Database::escape($signatures);
                 $clicktopic = $_POST["clicktopic"];
-                $updateset[] = "clicktopic = ".sqlesc($clicktopic);
-                $updateset[] = "signature = " . sqlesc($signature);
+                $updateset[] = "clicktopic = ".\NexusPHP\Components\Database::escape($clicktopic);
+                $updateset[] = "signature = " . \NexusPHP\Components\Database::escape($signature);
 
-                $query = "UPDATE users SET " . implode(",", $updateset) . " WHERE id =".sqlesc($CURUSER["id"]);
-                $result = sql_query($query);
+                $query = "UPDATE users SET " . implode(",", $updateset) . " WHERE id =".\NexusPHP\Components\Database::escape($CURUSER["id"]);
+                $result = \NexusPHP\Components\Database::query($query);
                 if (!$result) {
                     sqlerr(__FILE__, __LINE__);
                 } else {
@@ -736,7 +736,7 @@ if ($showfunbox_main == 'yes') { //siteside setting for funbox
                 $passupdated = 0;
                 $privacyupdated = 0;
                 $resetpasskey = $_POST["resetpasskey"];
-                $email = mysql_real_escape_string(htmlspecialchars(trim($_POST["email"])));
+                $email = \NexusPHP\Components\Database::real_escape_string(htmlspecialchars(trim($_POST["email"])));
                 $chpassword = $_POST["chpassword"];
                 $passagain = $_POST["passagain"];
                 $privacy = $_POST["privacy"];
@@ -761,8 +761,8 @@ if ($showfunbox_main == 'yes') { //siteside setting for funbox
 
                     $sec = mksecret();
                     $passhash = md5($sec . $chpassword . $sec);
-                    $updateset[] = "secret = " . sqlesc($sec);
-                    $updateset[] = "passhash = " . sqlesc($passhash);
+                    $updateset[] = "secret = " . \NexusPHP\Components\Database::escape($sec);
+                    $updateset[] = "passhash = " . \NexusPHP\Components\Database::escape($passhash);
 
                     //die($securelogin . base64_decode($_COOKIE["c_secure_login"]));
                     if ($_COOKIE["c_secure_login"] == base64("yeah")) {
@@ -797,8 +797,8 @@ if ($showfunbox_main == 'yes') { //siteside setting for funbox
                         stderr($lang_usercp['std_error'], $lang_usercp['std_wrong_email_address_format'].goback("-2"), 0);
                         die;
                     }
-                    $r = sql_query("SELECT id FROM users WHERE email=" . sqlesc($email)) or sqlerr();
-                    if (mysql_num_rows($r) > 0) {
+                    $r = \NexusPHP\Components\Database::query("SELECT id FROM users WHERE email=" . \NexusPHP\Components\Database::escape($email)) or sqlerr();
+                    if (mysqli_num_rows($r) > 0) {
                         stderr($lang_usercp['std_error'], $lang_usercp['std_email_in_use'].goback("-2"), 0);
                         die;
                     }
@@ -806,13 +806,13 @@ if ($showfunbox_main == 'yes') { //siteside setting for funbox
                 }
                 if ($resetpasskey == 1) {
                     $passkey = md5($CURUSER['username'].date("Y-m-d H:i:s").$CURUSER['passhash']);
-                    $updateset[] = "passkey = " . sqlesc($passkey);
+                    $updateset[] = "passkey = " . \NexusPHP\Components\Database::escape($passkey);
                 }
                 if ($changedemail == 1) {
                     $sec = mksecret();
                     $hash = md5($sec . $email . $sec);
                     $obemail = rawurlencode($email);
-                    $updateset[] = "editsecret = " . sqlesc($sec);
+                    $updateset[] = "editsecret = " . \NexusPHP\Components\Database::escape($sec);
                     $subject = "$SITENAME".$lang_usercp['mail_profile_change_confirmation'];
                     $body = <<<EOD
 {$lang_usercp['mail_change_email_one']}{$CURUSER["username"]}{$lang_usercp['mail_change_email_two']}($email){$lang_usercp['mail_change_email_three']}
@@ -834,7 +834,7 @@ EOD;
                     die("whoops");
                 }
 
-                $updateset[] = "privacy = " . sqlesc($privacy);
+                $updateset[] = "privacy = " . \NexusPHP\Components\Database::escape($privacy);
                 if ($CURUSER['privacy'] != $privacy) {
                     $privacyupdated = 1;
                 }
@@ -842,9 +842,9 @@ EOD;
                 $user = $CURUSER["id"];
                 $query = sprintf(
                     "UPDATE users SET " . implode(",", $updateset) . " WHERE id ='%s'",
-                    mysql_real_escape_string($user)
+                    \NexusPHP\Components\Database::real_escape_string($user)
                 );
-                $result = sql_query($query);
+                $result = \NexusPHP\Components\Database::query($query);
                 if (!$result) {
                     sqlerr(__FILE__, __LINE__);
                 } else {
@@ -870,7 +870,7 @@ EOD;
             if ($type == 'save') {
                 print("<form method=post action=usercp.php><input type=hidden name=action value=security><input type=hidden name=type value=confirm>");
                 $resetpasskey = $_POST["resetpasskey"];
-                $email = mysql_real_escape_string(htmlspecialchars(trim($_POST["email"])));
+                $email = \NexusPHP\Components\Database::real_escape_string(htmlspecialchars(trim($_POST["email"])));
                 $chpassword = $_POST["chpassword"];
                 $passagain = $_POST["passagain"];
                 $privacy = $_POST["privacy"];
@@ -910,7 +910,7 @@ EOD;
 stdhead($lang_usercp['head_control_panel'].$lang_usercp['head_home']);
 usercpmenu();
 //Comment Results
-$commentcount = get_row_count("comments", "WHERE user=" . sqlesc($CURUSER["id"]));
+$commentcount = \NexusPHP\Components\Database::count("comments", "WHERE user=" . \NexusPHP\Components\Database::escape($CURUSER["id"]));
 
 //Join Date
 if ($CURUSER['added'] == "0000-00-00 00:00:00") {
@@ -921,7 +921,7 @@ if ($CURUSER['added'] == "0000-00-00 00:00:00") {
 
 //Forum Posts
 if (!$forumposts = $Cache->get_value('user_'.$CURUSER['id'].'_post_count')) {
-    $forumposts = get_row_count("posts", "WHERE userid=".$CURUSER['id']);
+    $forumposts = \NexusPHP\Components\Database::count("posts", "WHERE userid=".$CURUSER['id']);
     $Cache->cache_value('user_'.$CURUSER['id'].'_post_count', $forumposts, 3600);
 }
 if ($forumposts) {
@@ -931,7 +931,7 @@ if ($forumposts) {
         $dayposts  = round(($forumposts / $days), 1);
     }
     if (!$postcount = $Cache->get_value('total_posts_count')) {
-        $postcount = get_row_count("posts");
+        $postcount = \NexusPHP\Components\Database::count("posts");
         $Cache->cache_value('total_posts_count', $postcount, 96400);
     }
     $percentages = round($forumposts*100/$postcount, 3)."%";
@@ -952,7 +952,7 @@ if ($CURUSER["avatar"]) {
 }
 tr_small($lang_usercp['row_passkey'], $CURUSER["passkey"], 1);
 if ($prolinkpoint_bonus) {
-    $prolinkclick=get_row_count("prolinkclicks", "WHERE userid=".$CURUSER['id']);
+    $prolinkclick=\NexusPHP\Components\Database::count("prolinkclicks", "WHERE userid=".$CURUSER['id']);
     tr_small($lang_usercp['row_promotion_link'], $prolinkclick. " [<a href=\"promotionlink.php\">".$lang_usercp['text_read_more']."</a>]", 1);
     //tr_small($lang_usercp['row_promotion_link'], $prolinkclick. " [<a href=\"promotionlink.php?updatekey=1\">".$lang_usercp['text_update_promotion_link']."</a>] [<a href=\"promotionlink.php\">".$lang_usercp['text_read_more']."</a>]", 1);
 }
@@ -976,8 +976,8 @@ print("<table border=0 cellspacing=0 cellpadding=3 width=940><tr>".
 "<td class=colhead align=center>".$lang_usercp['col_topic_starter']."</td>".
 "<td class=colhead align=center width=20%>".$lang_usercp['col_last_post']."</td>".
 "</tr>");
-$res_topics = sql_query("SELECT * FROM readposts INNER JOIN topics ON topics.id = readposts.topicid WHERE readposts.userid = ".$CURUSER[id]." ORDER BY readposts.id DESC LIMIT 5") or sqlerr();
-while ($topicarr = mysql_fetch_assoc($res_topics)) {
+$res_topics = \NexusPHP\Components\Database::query("SELECT * FROM readposts INNER JOIN topics ON topics.id = readposts.topicid WHERE readposts.userid = ".$CURUSER[id]." ORDER BY readposts.id DESC LIMIT 5") or sqlerr();
+while ($topicarr = mysqli_fetch_assoc($res_topics)) {
     $topicid = $topicarr["id"];
     $topic_title = $topicarr["subject"];
     $topic_userid = $topicarr["userid"];
@@ -986,7 +986,7 @@ while ($topicarr = mysql_fetch_assoc($res_topics)) {
 
     /// GETTING TOTAL NUMBER OF POSTS ///
     if (!$posts = $Cache->get_value('topic_'.$topicid.'_post_count')) {
-        $posts = get_row_count("posts", "WHERE topicid=".sqlesc($topicid));
+        $posts = \NexusPHP\Components\Database::count("posts", "WHERE topicid=".\NexusPHP\Components\Database::escape($topicid));
         $Cache->cache_value('topic_'.$topicid.'_post_count', $posts, 3600);
     }
     $replies = max(0, $posts - 1);

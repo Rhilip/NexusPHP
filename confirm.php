@@ -10,8 +10,8 @@ if (!$id) {
 
 dbconn();
 
-$res = sql_query("SELECT passhash, secret, editsecret, status FROM users WHERE id = ".sqlesc($id)) or sqlerr(__FILE__, __LINE__);
-$row = mysql_fetch_assoc($res);
+$res = \NexusPHP\Components\Database::query("SELECT passhash, secret, editsecret, status FROM users WHERE id = ".\NexusPHP\Components\Database::escape($id)) or sqlerr(__FILE__, __LINE__);
+$row = mysqli_fetch_assoc($res);
 
 if (!$row) {
     httperr();
@@ -27,9 +27,9 @@ if ($confirm_md5 != md5($confirm_sec)) {
     httperr();
 }
 
-sql_query("UPDATE users SET status='confirmed', editsecret='' WHERE id=".sqlesc($id)." AND status='pending'") or sqlerr(__FILE__, __LINE__);
+\NexusPHP\Components\Database::query("UPDATE users SET status='confirmed', editsecret='' WHERE id=".\NexusPHP\Components\Database::escape($id)." AND status='pending'") or sqlerr(__FILE__, __LINE__);
 
-if (!mysql_affected_rows()) {
+if (!\NexusPHP\Components\Database::affected_rows()) {
     httperr();
 }
 

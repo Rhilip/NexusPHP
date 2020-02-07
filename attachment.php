@@ -210,7 +210,7 @@ if ($Attach->enable_attachment()) {
             }
             if (!$warning) { //insert into database and add code to editor
                 $dlkey = md5($db_file_location.".".$ext);
-                sql_query("INSERT INTO attachments (userid, width, added, filename, filetype, filesize, location, dlkey, isimage, thumb) VALUES (".$CURUSER['id'].", ".$width.", ".sqlesc(date("Y-m-d H:i:s")).", ".sqlesc($origfilename).", ".sqlesc($filetype).", ".$filesize.", ".sqlesc($db_file_location.".".$ext).", ".sqlesc($dlkey).", ".($isimage ? 1 : 0).", ".($hasthumb ? 1 : 0).")") or sqlerr(__FILE__, __LINE__);
+                \NexusPHP\Components\Database::query("INSERT INTO attachments (userid, width, added, filename, filetype, filesize, location, dlkey, isimage, thumb) VALUES (".$CURUSER['id'].", ".$width.", ".\NexusPHP\Components\Database::escape(date("Y-m-d H:i:s")).", ".\NexusPHP\Components\Database::escape($origfilename).", ".\NexusPHP\Components\Database::escape($filetype).", ".$filesize.", ".\NexusPHP\Components\Database::escape($db_file_location.".".$ext).", ".\NexusPHP\Components\Database::escape($dlkey).", ".($isimage ? 1 : 0).", ".($hasthumb ? 1 : 0).")") or sqlerr(__FILE__, __LINE__);
                 $count_left--;
                 echo("<script type=\"text/javascript\">parent.tag_extimage('". "[attach]" . $dlkey . "[/attach]" . "');</script>");
             }

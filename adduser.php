@@ -23,26 +23,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!validusername($username)) {
         stderr("Error", "Invalid username.");
     }
-    $username = sqlesc($username);
-    $res = sql_query("SELECT id FROM users WHERE username=$username");
-    $arr = mysql_fetch_row($res);
+    $username = \NexusPHP\Components\Database::escape($username);
+    $res = \NexusPHP\Components\Database::query("SELECT id FROM users WHERE username=$username");
+    $arr = mysqli_fetch_row($res);
     if ($arr) {
         stderr("Error", "Username already exists!");
     }
     $password = $_POST["password"];
-    $email = sqlesc($_POST["email"]);
-    $res = sql_query("SELECT id FROM users WHERE email=$email");
-    $arr = mysql_fetch_row($res);
+    $email = \NexusPHP\Components\Database::escape($_POST["email"]);
+    $res = \NexusPHP\Components\Database::query("SELECT id FROM users WHERE email=$email");
+    $arr = mysqli_fetch_row($res);
     if ($arr) {
         stderr("Error", "The e-mail address is already in use.");
     }
     $secret = mksecret();
-    $passhash = sqlesc(md5($secret . $password . $secret));
-    $secret = sqlesc($secret);
+    $passhash = \NexusPHP\Components\Database::escape(md5($secret . $password . $secret));
+    $secret = \NexusPHP\Components\Database::escape($secret);
 
-    sql_query("INSERT INTO users (added, last_access, secret, username, passhash, status, stylesheet, class,email) VALUES(NOW(), NOW(), $secret, $username, $passhash, 'confirmed', ".$defcss.",".$defaultclass_class.",$email)") or sqlerr(__FILE__, __LINE__);
-    $res = sql_query("SELECT id FROM users WHERE username=$username");
-    $arr = mysql_fetch_row($res);
+    \NexusPHP\Components\Database::query("INSERT INTO users (added, last_access, secret, username, passhash, status, stylesheet, class,email) VALUES(NOW(), NOW(), $secret, $username, $passhash, 'confirmed', ".$defcss.",".$defaultclass_class.",$email)") or sqlerr(__FILE__, __LINE__);
+    $res = \NexusPHP\Components\Database::query("SELECT id FROM users WHERE username=$username");
+    $arr = mysqli_fetch_row($res);
     if (!$arr) {
         stderr("Error", "Unable to create the account. The user name is possibly already taken.");
     }

@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
     if ($_POST["itemuploader"]) {
         $query[] = "iuplder=1";
     }
-    $searchstr = mysql_real_escape_string(trim($_POST["search"]));
+    $searchstr = \NexusPHP\Components\Database::real_escape_string(trim($_POST["search"]));
     if (empty($searchstr)) {
         unset($searchstr);
     }

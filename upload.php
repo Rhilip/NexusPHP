@@ -10,7 +10,7 @@ if ($CURUSER["uploadpos"] == 'no') {
 }
 
 if ($enableoffer == 'yes') {
-    $has_allowed_offer = get_row_count("offers", "WHERE allowed='allowed' AND userid = ". sqlesc($CURUSER["id"]));
+    $has_allowed_offer = \NexusPHP\Components\Database::count("offers", "WHERE allowed='allowed' AND userid = ". \NexusPHP\Components\Database::escape($CURUSER["id"]));
 } else {
     $has_allowed_offer = 0;
 }
@@ -148,10 +148,10 @@ stdhead($lang_upload['head_upload']);
                 }
 
                 //==== offer dropdown for offer mod  from code by S4NE
-                $offerres = sql_query("SELECT id, name FROM offers WHERE userid = ".sqlesc($CURUSER[id])." AND allowed = 'allowed' ORDER BY name ASC") or sqlerr(__FILE__, __LINE__);
-                if (mysql_num_rows($offerres) > 0) {
+                $offerres = \NexusPHP\Components\Database::query("SELECT id, name FROM offers WHERE userid = ".\NexusPHP\Components\Database::escape($CURUSER[id])." AND allowed = 'allowed' ORDER BY name ASC") or sqlerr(__FILE__, __LINE__);
+                if (mysqli_num_rows($offerres) > 0) {
                     $offer = "<select name=\"offer\"><option value=\"0\">".$lang_upload['select_choose_one']."</option>";
-                    while ($offerrow = mysql_fetch_array($offerres)) {
+                    while ($offerrow = mysqli_fetch_array($offerres)) {
                         $offer .= "<option value=\"" . $offerrow["id"] . "\">" . htmlspecialchars($offerrow["name"]) . "</option>";
                     }
                     $offer .= "</select>";

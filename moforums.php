@@ -26,7 +26,7 @@ if ($act == "del") {
         die();
     }
 
-    sql_query("DELETE FROM overforums WHERE id = ".sqlesc($id)) or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("DELETE FROM overforums WHERE id = ".\NexusPHP\Components\Database::escape($id)) or sqlerr(__FILE__, __LINE__);
     $Cache->delete_value('overforums_list');
     header("Location: $PHP_SELF?action=forum");
     die();
@@ -46,7 +46,7 @@ if ($_POST['action'] == "editforum") {
         die();
     }
 
-    sql_query("UPDATE overforums SET sort = " . sqlesc($_POST['sort']) . ", name = " . sqlesc($_POST['name']). ", description = " . sqlesc($_POST['desc']). ", minclassview = " . sqlesc($_POST['viewclass']) . " WHERE id = ".sqlesc($_POST['id'])) or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("UPDATE overforums SET sort = " . \NexusPHP\Components\Database::escape($_POST['sort']) . ", name = " . \NexusPHP\Components\Database::escape($_POST['name']). ", description = " . \NexusPHP\Components\Database::escape($_POST['desc']). ", minclassview = " . \NexusPHP\Components\Database::escape($_POST['viewclass']) . " WHERE id = ".\NexusPHP\Components\Database::escape($_POST['id'])) or sqlerr(__FILE__, __LINE__);
     $Cache->delete_value('overforums_list');
     header("Location: $PHP_SELF?action=forum");
     die();
@@ -66,7 +66,7 @@ if ($_POST['action'] == "addforum") {
         die();
     }
 
-    sql_query("INSERT INTO overforums (sort, name,  description,  minclassview) VALUES(" . sqlesc($_POST['sort']) . ", " . sqlesc($_POST['name']). ", " . sqlesc($_POST['desc']). ", " . sqlesc($_POST['viewclass']) . ")") or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("INSERT INTO overforums (sort, name,  description,  minclassview) VALUES(" . \NexusPHP\Components\Database::escape($_POST['sort']) . ", " . \NexusPHP\Components\Database::escape($_POST['name']). ", " . \NexusPHP\Components\Database::escape($_POST['desc']). ", " . \NexusPHP\Components\Database::escape($_POST['viewclass']) . ")") or sqlerr(__FILE__, __LINE__);
     $Cache->delete_value('overforums_list');
 
     header("Location: $PHP_SELF?action=forum");
@@ -86,12 +86,12 @@ if ($act == "forum") {
 <?php
 echo '<table width="100%"  border="0" align="center" cellpadding="2" cellspacing="0">';
     echo "<tr><td class=colhead align=left>".$lang_moforums['col_name']."</td><td class=colhead>".$lang_moforums['col_viewed_by']."</td><td class=colhead>".$lang_moforums['col_modify']."</td></tr>";
-    $result = sql_query("SELECT  * FROM overforums ORDER BY sort ASC");
-    if ($row = mysql_fetch_array($result)) {
+    $result = \NexusPHP\Components\Database::query("SELECT  * FROM overforums ORDER BY sort ASC");
+    if ($row = mysqli_fetch_array($result)) {
         do {
             echo "<tr><td><a href=forums.php?action=forumview&forid=".$row["id"]."><b>".htmlspecialchars($row["name"])."</b></a><br />".$row["description"]."</td>";
             echo "<td>" . get_user_class_name($row["minclassview"], false, true, true) . "</td><td><b><a href=\"".$PHP_SELF."?action=editforum&id=".$row["id"]."\">".$lang_moforums['text_edit']."</a>&nbsp;|&nbsp;<a href=\"javascript:confirm_delete('".$row["id"]."', '".$lang_moforums['js_sure_to_delete_overforum']."', '');\"><font color=red>".$lang_moforums['text_delete']."</font></a></b></td></tr>";
-        } while ($row = mysql_fetch_array($result));
+        } while ($row = mysqli_fetch_array($result));
     } else {
         print "<tr><td colspan=3>".$lang_moforums['text_no_records_found']."</td></tr>";
     }
@@ -129,8 +129,8 @@ echo '<table width="100%"  border="0" align="center" cellpadding="2" cellspacing
     <td>
     <select name=sort>
 <?php
-$res = sql_query("SELECT sort FROM overforums");
-    $nr = mysql_num_rows($res);
+$res = \NexusPHP\Components\Database::query("SELECT sort FROM overforums");
+    $nr = mysqli_num_rows($res);
     $maxclass = $nr + 1;
     for ($i = 0; $i <= $maxclass; ++$i) {
         print("<option value=$i>$i \n");
@@ -153,8 +153,8 @@ $res = sql_query("SELECT sort FROM overforums");
 //EDIT PAGE FOR THE FORUMS
     $id = 0+$_GET["id"];
 
-    $result = sql_query("SELECT * FROM overforums where id = '$id'");
-    if ($row = mysql_fetch_array($result)) {
+    $result = \NexusPHP\Components\Database::query("SELECT * FROM overforums where id = '$id'");
+    if ($row = mysqli_fetch_array($result)) {
 
 // Get OverForum Name - To Be Written
 
@@ -195,8 +195,8 @@ $res = sql_query("SELECT sort FROM overforums");
     <td>
     <select name=sort>
 <?php
-$res = sql_query("SELECT sort FROM overforums");
-            $nr = mysql_num_rows($res);
+$res = \NexusPHP\Components\Database::query("SELECT sort FROM overforums");
+            $nr = mysqli_num_rows($res);
             $maxclass = $nr + 1;
             for ($i = 0; $i <= $maxclass; ++$i) {
                 print("<option value=$i" . ($row["sort"] == $i ? " selected" : "") . ">$i \n");
@@ -212,7 +212,7 @@ $res = sql_query("SELECT sort FROM overforums");
 </table>
 
 <?php
-        } while ($row = mysql_fetch_array($result));
+        } while ($row = mysqli_fetch_array($result));
     } else {
         print $lang_moforums['text_no_records_found'];
     }

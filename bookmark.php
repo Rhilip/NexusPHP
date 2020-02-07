@@ -11,13 +11,13 @@ header("Content-Type: text/xml; charset=utf-8");
 
 $torrentid = 0 + $_GET['torrentid'];
 if (isset($CURUSER)) {
-    $res_bookmark = sql_query("SELECT * FROM bookmarks WHERE torrentid=" . sqlesc($torrentid) . " AND userid=" . sqlesc($CURUSER[id]));
-    if (mysql_num_rows($res_bookmark) == 1) {
-        sql_query("DELETE FROM bookmarks WHERE torrentid=" . sqlesc($torrentid) . " AND userid=" . sqlesc($CURUSER['id'])) or sqlerr(__FILE__, __LINE__);
+    $res_bookmark = \NexusPHP\Components\Database::query("SELECT * FROM bookmarks WHERE torrentid=" . \NexusPHP\Components\Database::escape($torrentid) . " AND userid=" . \NexusPHP\Components\Database::escape($CURUSER[id]));
+    if (mysqli_num_rows($res_bookmark) == 1) {
+        \NexusPHP\Components\Database::query("DELETE FROM bookmarks WHERE torrentid=" . \NexusPHP\Components\Database::escape($torrentid) . " AND userid=" . \NexusPHP\Components\Database::escape($CURUSER['id'])) or sqlerr(__FILE__, __LINE__);
         $Cache->delete_value('user_'.$CURUSER['id'].'_bookmark_array');
         echo "deleted";
     } else {
-        sql_query("INSERT INTO bookmarks (torrentid, userid) VALUES (" . sqlesc($torrentid) . "," . sqlesc($CURUSER['id']) . ")") or sqlerr(__FILE__, __LINE__);
+        \NexusPHP\Components\Database::query("INSERT INTO bookmarks (torrentid, userid) VALUES (" . \NexusPHP\Components\Database::escape($torrentid) . "," . \NexusPHP\Components\Database::escape($CURUSER['id']) . ")") or sqlerr(__FILE__, __LINE__);
         $Cache->delete_value('user_'.$CURUSER['id'].'_bookmark_array');
         echo "added";
     }

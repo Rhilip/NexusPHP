@@ -238,8 +238,8 @@ print("<h1>".$lang_mybonus['text_get_by_seeding']."</h1>");
     $sectoweek = 7*24*60*60;
     $A = 0;
     $count = 0;
-    $torrentres = sql_query("select torrents.id, torrents.added, torrents.size, torrents.seeders from torrents LEFT JOIN peers ON peers.torrent = torrents.id WHERE peers.userid = $CURUSER[id] AND peers.seeder ='yes' GROUP BY torrents.id")  or sqlerr(__FILE__, __LINE__);
-    while ($torrent = mysql_fetch_array($torrentres)) {
+    $torrentres = \NexusPHP\Components\Database::query("select torrents.id, torrents.added, torrents.size, torrents.seeders from torrents LEFT JOIN peers ON peers.torrent = torrents.id WHERE peers.userid = $CURUSER[id] AND peers.seeder ='yes' GROUP BY torrents.id")  or sqlerr(__FILE__, __LINE__);
+    while ($torrent = mysqli_fetch_array($torrentres)) {
         $weeks_alive = ($timenow - strtotime($torrent[added])) / $sectoweek;
         $gb_size = $torrent[size] / 1073741824;
         $temp = (1 - exp($valueone * $weeks_alive)) * $gb_size * (1 + $sqrtof2 * exp($valuethree * ($torrent[seeders] - 1)));
@@ -347,7 +347,7 @@ if ($action == "exchange") {
                 $upload = $CURUSER['uploaded'];
                 $up = $upload + $bonusarray['menge'];
                 $bonuscomment = date("Y-m-d") . " - " .$points. " Points for upload bonus.\n " .$bonuscomment;
-                sql_query("UPDATE users SET uploaded = ".sqlesc($up).", seedbonus = seedbonus - $points, bonuscomment = ".sqlesc($bonuscomment)." WHERE id = ".sqlesc($userid)) or sqlerr(__FILE__, __LINE__);
+                \NexusPHP\Components\Database::query("UPDATE users SET uploaded = ".\NexusPHP\Components\Database::escape($up).", seedbonus = seedbonus - $points, bonuscomment = ".\NexusPHP\Components\Database::escape($bonuscomment)." WHERE id = ".\NexusPHP\Components\Database::escape($userid)) or sqlerr(__FILE__, __LINE__);
                 redirect("" . get_protocol_prefix() . "$BASEURL/mybonus.php?do=upload");
             }
         }
@@ -360,7 +360,7 @@ if ($action == "exchange") {
             }
             $vip_until = date("Y-m-d H:i:s", (strtotime(date("Y-m-d H:i:s")) + 28*86400));
             $bonuscomment = date("Y-m-d") . " - " .$points. " Points for 1 month VIP Status.\n " .htmlspecialchars($bonuscomment);
-            sql_query("UPDATE users SET class = '".UC_VIP."', vip_added = 'yes', vip_until = ".sqlesc($vip_until).", seedbonus = seedbonus - $points WHERE id = ".sqlesc($userid)) or sqlerr(__FILE__, __LINE__);
+            \NexusPHP\Components\Database::query("UPDATE users SET class = '".UC_VIP."', vip_added = 'yes', vip_until = ".\NexusPHP\Components\Database::escape($vip_until).", seedbonus = seedbonus - $points WHERE id = ".\NexusPHP\Components\Database::escape($userid)) or sqlerr(__FILE__, __LINE__);
             redirect("" . get_protocol_prefix() . "$BASEURL/mybonus.php?do=vip");
         }
         //=== trade for invites
@@ -371,7 +371,7 @@ if ($action == "exchange") {
             $invites = $CURUSER['invites'];
             $inv = $invites+$bonusarray['menge'];
             $bonuscomment = date("Y-m-d") . " - " .$points. " Points for invites.\n " .htmlspecialchars($bonuscomment);
-            sql_query("UPDATE users SET invites = ".sqlesc($inv).", seedbonus = seedbonus - $points WHERE id = ".sqlesc($userid)) or sqlerr(__FILE__, __LINE__);
+            \NexusPHP\Components\Database::query("UPDATE users SET invites = ".\NexusPHP\Components\Database::escape($inv).", seedbonus = seedbonus - $points WHERE id = ".\NexusPHP\Components\Database::escape($userid)) or sqlerr(__FILE__, __LINE__);
             redirect("" . get_protocol_prefix() . "$BASEURL/mybonus.php?do=invite");
         }
         //=== trade for special title
@@ -381,11 +381,11 @@ if ($action == "exchange") {
         elseif ($art == "title") {
             //===custom title
             $title = $_POST["title"];
-            $title = sqlesc($title);
+            $title = \NexusPHP\Components\Database::escape($title);
             $words = array("fuck", "shit", "pussy", "cunt", "nigger", "Staff Leader","SysOp", "Administrator","Moderator","Uploader","Retiree","VIP","Nexus Master","Ultimate User","Extreme User","Veteran User","Insane User","Crazy User","Elite User","Power User","User","Peasant","Champion");
             $title = str_replace($words, $lang_mybonus['text_wasted_karma'], $title);
             $bonuscomment = date("Y-m-d") . " - " .$points. " Points for custom title. Old title is ".htmlspecialchars(trim($CURUSER["title"]))." and new title is $title\n " .htmlspecialchars($bonuscomment);
-            sql_query("UPDATE users SET title = $title, seedbonus = seedbonus - $points, bonuscomment = ".sqlesc($bonuscomment)." WHERE id = ".sqlesc($userid)) or sqlerr(__FILE__, __LINE__);
+            \NexusPHP\Components\Database::query("UPDATE users SET title = $title, seedbonus = seedbonus - $points, bonuscomment = ".\NexusPHP\Components\Database::escape($bonuscomment)." WHERE id = ".\NexusPHP\Components\Database::escape($userid)) or sqlerr(__FILE__, __LINE__);
             redirect("" . get_protocol_prefix() . "$BASEURL/mybonus.php?do=title");
         } elseif ($art == "noad" && $enablead_advertisement == 'yes' && $enablebonusnoad_advertisement == 'yes') {
             if (($enablenoad_advertisement == 'yes' && get_user_class() >= $noad_advertisement) || strtotime($CURUSER['noaduntil']) >= TIMENOW || get_user_class() < $bonusnoad_advertisement) {
@@ -393,7 +393,7 @@ if ($action == "exchange") {
             } else {
                 $noaduntil = date("Y-m-d H:i:s", (TIMENOW + $bonusarray['menge']));
                 $bonuscomment = date("Y-m-d") . " - " .$points. " Points for ".$bonusnoadtime_advertisement." days without ads.\n " .htmlspecialchars($bonuscomment);
-                sql_query("UPDATE users SET noad='yes', noaduntil='".$noaduntil."', seedbonus = seedbonus - $points, bonuscomment = ".sqlesc($bonuscomment)." WHERE id=".sqlesc($userid));
+                \NexusPHP\Components\Database::query("UPDATE users SET noad='yes', noaduntil='".$noaduntil."', seedbonus = seedbonus - $points, bonuscomment = ".\NexusPHP\Components\Database::escape($bonuscomment)." WHERE id=".\NexusPHP\Components\Database::escape($userid));
                 redirect("" . get_protocol_prefix() . "$BASEURL/mybonus.php?do=noad");
             }
         } elseif ($art == 'gift_2') { // charity giving
@@ -412,11 +412,11 @@ if ($action == "exchange") {
             if ($CURUSER['seedbonus'] >= $points) {
                 $points2= number_format($points, 1);
                 $bonuscomment = date("Y-m-d") . " - " .$points2. " Points as charity to users with ratio below ".htmlspecialchars(trim($ratiocharity)).".\n " .htmlspecialchars($bonuscomment);
-                $charityReceiverCount = get_row_count("users", "WHERE enabled='yes' AND 10737418240 < downloaded AND $ratiocharity > uploaded/downloaded");
+                $charityReceiverCount = \NexusPHP\Components\Database::count("users", "WHERE enabled='yes' AND 10737418240 < downloaded AND $ratiocharity > uploaded/downloaded");
                 if ($charityReceiverCount) {
-                    sql_query("UPDATE users SET seedbonus = seedbonus - $points, charity = charity + $points, bonuscomment = ".sqlesc($bonuscomment)." WHERE id = ".sqlesc($userid)) or sqlerr(__FILE__, __LINE__);
+                    \NexusPHP\Components\Database::query("UPDATE users SET seedbonus = seedbonus - $points, charity = charity + $points, bonuscomment = ".\NexusPHP\Components\Database::escape($bonuscomment)." WHERE id = ".\NexusPHP\Components\Database::escape($userid)) or sqlerr(__FILE__, __LINE__);
                     $charityPerUser = $points/$charityReceiverCount;
-                    sql_query("UPDATE users SET seedbonus = seedbonus + $charityPerUser WHERE enabled='yes' AND 10737418240 < downloaded AND $ratiocharity > uploaded/downloaded") or sqlerr(__FILE__, __LINE__);
+                    \NexusPHP\Components\Database::query("UPDATE users SET seedbonus = seedbonus + $charityPerUser WHERE enabled='yes' AND 10737418240 < downloaded AND $ratiocharity > uploaded/downloaded") or sqlerr(__FILE__, __LINE__);
                     redirect("" . get_protocol_prefix() . "$BASEURL/mybonus.php?do=charity");
                 } else {
                     stdmsg($lang_mybonus['std_sorry'], $lang_mybonus['std_no_users_need_charity']);
@@ -429,9 +429,9 @@ if ($action == "exchange") {
             $points = 0+$_POST["bonusgift"];
             $message = $_POST["message"];
             //==gift for peeps with no more options
-            $usernamegift = sqlesc(trim($_POST["username"]));
-            $res = sql_query("SELECT id, bonuscomment FROM users WHERE username=" . $usernamegift);
-            $arr = mysql_fetch_assoc($res);
+            $usernamegift = \NexusPHP\Components\Database::escape(trim($_POST["username"]));
+            $res = \NexusPHP\Components\Database::query("SELECT id, bonuscomment FROM users WHERE username=" . $usernamegift);
+            $arr = mysqli_fetch_assoc($res);
             $useridgift = $arr['id'];
             $userseedbonus = $arr['seedbonus'];
             $receiverbonuscomment = $arr['bonuscomment'];
@@ -466,18 +466,18 @@ if ($action == "exchange") {
                     die;
                 }
 
-                sql_query("UPDATE users SET seedbonus = seedbonus - $points, bonuscomment = ".sqlesc($bonuscomment)." WHERE id = ".sqlesc($userid)) or sqlerr(__FILE__, __LINE__);
-                sql_query("UPDATE users SET seedbonus = seedbonus + $aftertaxpoint, bonuscomment = ".sqlesc($newreceiverbonuscomment)." WHERE id = ".sqlesc($useridgift));
+                \NexusPHP\Components\Database::query("UPDATE users SET seedbonus = seedbonus - $points, bonuscomment = ".\NexusPHP\Components\Database::escape($bonuscomment)." WHERE id = ".\NexusPHP\Components\Database::escape($userid)) or sqlerr(__FILE__, __LINE__);
+                \NexusPHP\Components\Database::query("UPDATE users SET seedbonus = seedbonus + $aftertaxpoint, bonuscomment = ".\NexusPHP\Components\Database::escape($newreceiverbonuscomment)." WHERE id = ".\NexusPHP\Components\Database::escape($useridgift));
 
                 //===send message
-                $subject = sqlesc($lang_mybonus_target[get_user_lang($useridgift)]['msg_someone_loves_you']);
-                $added = sqlesc(date("Y-m-d H:i:s"));
+                $subject = \NexusPHP\Components\Database::escape($lang_mybonus_target[get_user_lang($useridgift)]['msg_someone_loves_you']);
+                $added = \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s"));
                 $msg = $lang_mybonus_target[get_user_lang($useridgift)]['msg_you_have_been_given'].$points2.$lang_mybonus_target[get_user_lang($useridgift)]['msg_after_tax'].$points2receiver.$lang_mybonus_target[get_user_lang($useridgift)]['msg_karma_points_by'].$CURUSER['username'];
                 if ($message) {
                     $msg .= "\n".$lang_mybonus_target[get_user_lang($useridgift)]['msg_personal_message_from'].$CURUSER['username'].$lang_mybonus_target[get_user_lang($useridgift)]['msg_colon'].$message;
                 }
-                $msg = sqlesc($msg);
-                sql_query("INSERT INTO messages (sender, subject, receiver, msg, added) VALUES(0, $subject, $useridgift, $msg, $added)") or sqlerr(__FILE__, __LINE__);
+                $msg = \NexusPHP\Components\Database::escape($msg);
+                \NexusPHP\Components\Database::query("INSERT INTO messages (sender, subject, receiver, msg, added) VALUES(0, $subject, $useridgift, $msg, $added)") or sqlerr(__FILE__, __LINE__);
                 $usernamegift = unesc($_POST["username"]);
                 redirect("" . get_protocol_prefix() . "$BASEURL/mybonus.php?do=transfer");
             } else {

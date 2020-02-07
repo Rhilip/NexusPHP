@@ -16,7 +16,7 @@ $action = $_GET["action"];
 if (!$action) {
     stdhead($lang_staffbox['head_staff_pm']);
     $url = $_SERVER[PHP_SELF]."?";
-    $count = get_row_count("staffmessages");
+    $count = \NexusPHP\Components\Database::count("staffmessages");
     $perpage = 20;
     list($pagertop, $pagerbottom, $limit) = pager($perpage, $count, $url);
     print("<h1 align=center>".$lang_staffbox['text_staff_pm']."</h1>");
@@ -34,9 +34,9 @@ if (!$action) {
 			<td class=colhead align=center><nobr>".$lang_staffbox['col_action']."</nobr></td>
 		</tr>");
 
-        $res = sql_query("SELECT staffmessages.id, staffmessages.added, staffmessages.subject, staffmessages.answered, staffmessages.answeredby, staffmessages.sender, staffmessages.answer FROM staffmessages ORDER BY id desc $limit");
+        $res = \NexusPHP\Components\Database::query("SELECT staffmessages.id, staffmessages.added, staffmessages.subject, staffmessages.answered, staffmessages.answeredby, staffmessages.sender, staffmessages.answer FROM staffmessages ORDER BY id desc $limit");
 
-        while ($arr = mysql_fetch_assoc($res)) {
+        while ($arr = mysqli_fetch_assoc($res)) {
             if ($arr[answered]) {
                 $answered = "<nobr><font color=green>".$lang_staffbox['text_yes']."</font> - " . get_username($arr['answeredby']) . "</nobr>";
             } else {
@@ -66,8 +66,8 @@ if ($action == "viewpm") {
 
     $pmid = 0 + $_GET["pmid"];
 
-    $ress4 = sql_query("SELECT * FROM staffmessages WHERE id=".sqlesc($pmid));
-    $arr4 = mysql_fetch_assoc($ress4);
+    $ress4 = \NexusPHP\Components\Database::query("SELECT * FROM staffmessages WHERE id=".\NexusPHP\Components\Database::escape($pmid));
+    $arr4 = mysqli_fetch_assoc($ress4);
 
     $answeredby = get_username($arr4["answeredby"]);
 
@@ -127,15 +127,15 @@ if ($action == "answermessage") {
 
     int_check($receiver, true);
 
-    $res = sql_query("SELECT * FROM users WHERE id=$receiver") or die(mysql_error());
-    $user = mysql_fetch_assoc($res);
+    $res = \NexusPHP\Components\Database::query("SELECT * FROM users WHERE id=$receiver") or die(\NexusPHP\Components\Database::error());
+    $user = mysqli_fetch_assoc($res);
 
     if (!$user) {
         stderr($lang_staffbox['std_error'], $lang_staffbox['std_no_user_id']);
     }
 
-    $res2 = sql_query("SELECT * FROM staffmessages WHERE id=$answeringto") or die(mysql_error());
-    $staffmsg = mysql_fetch_assoc($res2);
+    $res2 = \NexusPHP\Components\Database::query("SELECT * FROM staffmessages WHERE id=$answeringto") or die(\NexusPHP\Components\Database::error());
+    $staffmsg = mysqli_fetch_assoc($res2);
     stdhead($lang_staffbox['head_answer_to_staff_pm']);
     begin_main_frame(); ?>
 	<form method="post" id="compose" name="message" action="?action=takeanswer">
@@ -174,7 +174,7 @@ if ($action == "takeanswer") {
 
     $msg = trim($_POST["body"]);
 
-    $message = sqlesc($msg);
+    $message = \NexusPHP\Components\Database::escape($msg);
 
     $added = "'" . date("Y-m-d H:i:s") . "'";
 
@@ -182,9 +182,9 @@ if ($action == "takeanswer") {
         stderr($lang_staffbox['std_error'], $lang_staffbox['std_body_is_empty']);
     }
 
-    sql_query("INSERT INTO messages (sender, receiver, added, msg) VALUES($userid, $receiver, $added, $message)") or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("INSERT INTO messages (sender, receiver, added, msg) VALUES($userid, $receiver, $added, $message)") or sqlerr(__FILE__, __LINE__);
 
-    sql_query("UPDATE staffmessages SET answer=$message, answered='1', answeredby='$userid' WHERE id=$answeringto") or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("UPDATE staffmessages SET answer=$message, answered='1', answeredby='$userid' WHERE id=$answeringto") or sqlerr(__FILE__, __LINE__);
     $Cache->delete_value('staff_new_message_count');
     header("Location: staffbox.php?action=viewpm&pmid=$answeringto");
     die;
@@ -204,7 +204,7 @@ if ($action == "deletestaffmessage") {
         permissiondenied();
     }
 
-    sql_query("DELETE FROM staffmessages WHERE id=" . sqlesc($id)) or die();
+    \NexusPHP\Components\Database::query("DELETE FROM staffmessages WHERE id=" . \NexusPHP\Components\Database::escape($id)) or die();
     $Cache->delete_value('staff_message_count');
     $Cache->delete_value('staff_new_message_count');
     header("Location: " . get_protocol_prefix() . "$BASEURL/staffbox.php");
@@ -221,7 +221,7 @@ if ($action == "setanswered") {
 
     $id = 0 + $_GET["id"];
 
-    sql_query("UPDATE staffmessages SET answered=1, answeredby = $CURUSER[id] WHERE id = $id") or sqlerr();
+    \NexusPHP\Components\Database::query("UPDATE staffmessages SET answered=1, answeredby = $CURUSER[id] WHERE id = $id") or sqlerr();
     $Cache->delete_value('staff_new_message_count');
     header("Refresh: 0; url=staffbox.php?action=viewpm&pmid=$id");
 }
@@ -236,14 +236,14 @@ if ($action == "takecontactanswered") {
     }
 
     if ($_POST['setdealt']) {
-        $res = sql_query("SELECT id FROM staffmessages WHERE answered=0 AND id IN (" . implode(", ", $_POST[setanswered]) . ")");
-        while ($arr = mysql_fetch_assoc($res)) {
-            sql_query("UPDATE staffmessages SET answered=1, answeredby = $CURUSER[id] WHERE id = $arr[id]") or sqlerr();
+        $res = \NexusPHP\Components\Database::query("SELECT id FROM staffmessages WHERE answered=0 AND id IN (" . implode(", ", $_POST[setanswered]) . ")");
+        while ($arr = mysqli_fetch_assoc($res)) {
+            \NexusPHP\Components\Database::query("UPDATE staffmessages SET answered=1, answeredby = $CURUSER[id] WHERE id = $arr[id]") or sqlerr();
         }
     } elseif ($_POST['delete']) {
-        $res = sql_query("SELECT id FROM staffmessages WHERE id IN (" . implode(", ", $_POST[setanswered]) . ")");
-        while ($arr = mysql_fetch_assoc($res)) {
-            sql_query("DELETE FROM staffmessages WHERE id = $arr[id]") or sqlerr();
+        $res = \NexusPHP\Components\Database::query("SELECT id FROM staffmessages WHERE id IN (" . implode(", ", $_POST[setanswered]) . ")");
+        while ($arr = mysqli_fetch_assoc($res)) {
+            \NexusPHP\Components\Database::query("DELETE FROM staffmessages WHERE id = $arr[id]") or sqlerr();
         }
     }
     $Cache->delete_value('staff_new_message_count');

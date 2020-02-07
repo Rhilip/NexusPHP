@@ -60,9 +60,9 @@ class Advertisement
             $now = date("Y-m-d H:i:s");
             $validpos = $this->get_validpos();
             foreach ($validpos as $pos) {
-                $res = 	sql_query("SELECT code FROM advertisements WHERE enabled=1 AND position=".sqlesc($pos)." AND (starttime IS NULL OR starttime < ".sqlesc($now).") AND (endtime IS NULL OR endtime > ".sqlesc($now).") ORDER BY displayorder ASC, id DESC LIMIT 10") or sqlerr(__FILE__, __LINE__);
+                $res = 	\NexusPHP\Components\Database::query("SELECT code FROM advertisements WHERE enabled=1 AND position=".\NexusPHP\Components\Database::escape($pos)." AND (starttime IS NULL OR starttime < ".\NexusPHP\Components\Database::escape($now).") AND (endtime IS NULL OR endtime > ".\NexusPHP\Components\Database::escape($now).") ORDER BY displayorder ASC, id DESC LIMIT 10") or sqlerr(__FILE__, __LINE__);
                 $adarray = array();
-                while ($row = mysql_fetch_array($res)) {
+                while ($row = mysqli_fetch_array($res)) {
                     $adarray[]=$row['code'];
                 }
                 $arr[$pos]=$adarray;

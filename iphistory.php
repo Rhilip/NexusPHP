@@ -13,18 +13,18 @@ if (!is_valid_id($userid)) {
     stderr($lang_iphistory['std_error'], $lang_iphistory['std_invalid_id']);
 }
 
-$res = sql_query("SELECT username FROM users WHERE id = $userid") or sqlerr(__FILE__, __LINE__);
-if (mysql_num_rows($res) == 0) {
+$res = \NexusPHP\Components\Database::query("SELECT username FROM users WHERE id = $userid") or sqlerr(__FILE__, __LINE__);
+if (mysqli_num_rows($res) == 0) {
     stderr($lang_iphistory['error'], $lang_iphistory['text_user_not_found']);
 }
 
-$arr = mysql_fetch_array($res);
+$arr = mysqli_fetch_array($res);
 $username = $arr["username"];
 
 $perpage = 20;
 
-$ipcountres = sql_query("SELECT COUNT(DISTINCT(access)) FROM iplog WHERE userid = $userid");
-$ipcountres = mysql_fetch_row($ipcountres);
+$ipcountres = \NexusPHP\Components\Database::query("SELECT COUNT(DISTINCT(access)) FROM iplog WHERE userid = $userid");
+$ipcountres = mysqli_fetch_row($ipcountres);
 $countrows = $ipcountres[0]+1;
 $order = $_GET['order'];
 
@@ -34,7 +34,7 @@ $query = "SELECT u.id, u.ip AS ip, last_access AS access FROM users as u WHERE u
 UNION DISTINCT SELECT u.id, iplog.ip as ip, iplog.access as access FROM users AS u
 RIGHT JOIN iplog on u.id = iplog.userid WHERE u.id = $userid ORDER BY access DESC $limit";
 
-$res = sql_query($query) or sqlerr(__FILE__, __LINE__);
+$res = \NexusPHP\Components\Database::query($query) or sqlerr(__FILE__, __LINE__);
 
 stdhead($lang_iphistory['head_ip_history_log_for'].$username);
 begin_main_frame();
@@ -51,7 +51,7 @@ print("<tr>\n
 <td class=colhead>".$lang_iphistory['col_ip']."</td>\n
 <td class=colhead>".$lang_iphistory['col_hostname']."</td>\n
 </tr>\n");
-while ($arr = mysql_fetch_array($res)) {
+while ($arr = mysqli_fetch_array($res)) {
     $addr = "";
     $ipshow = "";
     if ($arr["ip"]) {
@@ -65,12 +65,12 @@ while ($arr = mysql_fetch_array($res)) {
 
         $queryc = "SELECT COUNT(*) FROM
 (
-SELECT u.id FROM users AS u WHERE u.ip = " . sqlesc($ip) . "
-UNION SELECT u.id FROM users AS u RIGHT JOIN iplog ON u.id = iplog.userid WHERE iplog.ip = " . sqlesc($ip) . "
+SELECT u.id FROM users AS u WHERE u.ip = " . \NexusPHP\Components\Database::escape($ip) . "
+UNION SELECT u.id FROM users AS u RIGHT JOIN iplog ON u.id = iplog.userid WHERE iplog.ip = " . \NexusPHP\Components\Database::escape($ip) . "
 GROUP BY u.id
 ) AS ipsearch";
-        $resip = sql_query($queryc) or sqlerr(__FILE__, __LINE__);
-        $arrip = mysql_fetch_row($resip);
+        $resip = \NexusPHP\Components\Database::query($queryc) or sqlerr(__FILE__, __LINE__);
+        $arrip = mysqli_fetch_row($resip);
         $ipcount = $arrip[0];
 
         if ($ipcount > 1) {

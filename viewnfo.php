@@ -9,8 +9,8 @@ if (get_user_class() < $viewnfo_class || !is_valid_id($id) || $enablenfo_main !=
     permissiondenied();
 }
 
-$r = sql_query("SELECT name,nfo FROM torrents WHERE id=$id") or sqlerr();
-$a = mysql_fetch_assoc($r) or die($lang_viewnfo['std_puke']);
+$r = \NexusPHP\Components\Database::query("SELECT name,nfo FROM torrents WHERE id=$id") or sqlerr();
+$a = mysqli_fetch_assoc($r) or die($lang_viewnfo['std_puke']);
 
 //error_reporting(E_ERROR | E_WARNING | E_PARSE | E_NOTICE);
 

@@ -22,7 +22,7 @@ if ($action == 'delete') {
         stderr($lang_news['std_delete_news_item'], $lang_news['std_are_you_sure'] . "<a class=altlink href=?action=delete&newsid=$newsid&returnto=$returnto&sure=1>".$lang_news['std_here']."</a>".$lang_news['std_if_sure'], false);
     }
 
-    sql_query("DELETE FROM news WHERE id=".sqlesc($newsid)) or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("DELETE FROM news WHERE id=".\NexusPHP\Components\Database::escape($newsid)) or sqlerr(__FILE__, __LINE__);
     $Cache->delete_value('recent_news', 'true');
     if ($returnto != "") {
         header("Location: $returnto");
@@ -46,15 +46,15 @@ if ($action == 'add') {
 
     $added = $_POST["added"];
     if (!$added) {
-        $added = sqlesc(date("Y-m-d H:i:s"));
+        $added = \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s"));
     }
     $notify = $_POST['notify'];
     if ($notify != 'yes') {
         $notify = 'no';
     }
-    sql_query("INSERT INTO news (userid, added, body, title, notify) VALUES (".sqlesc($CURUSER['id']) . ", $added, " . sqlesc($body) . ", " . sqlesc($title) . ", " . sqlesc($notify).")") or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("INSERT INTO news (userid, added, body, title, notify) VALUES (".\NexusPHP\Components\Database::escape($CURUSER['id']) . ", $added, " . \NexusPHP\Components\Database::escape($body) . ", " . \NexusPHP\Components\Database::escape($title) . ", " . \NexusPHP\Components\Database::escape($notify).")") or sqlerr(__FILE__, __LINE__);
     $Cache->delete_value('recent_news', true);
-    if (mysql_affected_rows() != 1) {
+    if (\NexusPHP\Components\Database::affected_rows() != 1) {
         stderr($lang_news['std_error'], $lang_news['std_something_weird_happened']);
     }
     header("Location: " . get_protocol_prefix() . "$BASEURL/index.php");
@@ -66,13 +66,13 @@ if ($action == 'edit') {
     $newsid = 0+$_GET["newsid"];
     int_check($newsid, true);
 
-    $res = sql_query("SELECT * FROM news WHERE id=".sqlesc($newsid)) or sqlerr(__FILE__, __LINE__);
+    $res = \NexusPHP\Components\Database::query("SELECT * FROM news WHERE id=".\NexusPHP\Components\Database::escape($newsid)) or sqlerr(__FILE__, __LINE__);
 
-    if (mysql_num_rows($res) != 1) {
+    if (mysqli_num_rows($res) != 1) {
         stderr($lang_news['std_error'], $lang_news['std_invalid_news_id'].$newsid);
     }
 
-    $arr = mysql_fetch_array($res);
+    $arr = mysqli_fetch_array($res);
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $body = htmlspecialchars($_POST['body'], ENT_QUOTES);
@@ -87,16 +87,16 @@ if ($action == 'edit') {
             stderr($lang_news['std_error'], $lang_news['std_news_title_empty']);
         }
 
-        $body = sqlesc($body);
+        $body = \NexusPHP\Components\Database::escape($body);
 
-        $editdate = sqlesc(date("Y-m-d H:i:s"));
+        $editdate = \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s"));
         $notify = $_POST['notify'];
         if ($notify != 'yes') {
             $notify = 'no';
         }
-        $notify = sqlesc($notify);
-        $title = sqlesc($title);
-        sql_query("UPDATE news SET body=$body, title=$title, notify=$notify WHERE id=".sqlesc($newsid)) or sqlerr(__FILE__, __LINE__);
+        $notify = \NexusPHP\Components\Database::escape($notify);
+        $title = \NexusPHP\Components\Database::escape($title);
+        \NexusPHP\Components\Database::query("UPDATE news SET body=$body, title=$title, notify=$notify WHERE id=".\NexusPHP\Components\Database::escape($newsid)) or sqlerr(__FILE__, __LINE__);
         $Cache->delete_value('recent_news', true);
         header("Location: " . get_protocol_prefix() . "$BASEURL/index.php");
     } else {

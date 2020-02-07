@@ -65,8 +65,8 @@ function additem($title, $action)
 function edititem($title, $action, $id)
 {
     global $lang_log;
-    $result = sql_query("SELECT * FROM ".$action." where id = ".sqlesc($id)) or sqlerr(__FILE__, __LINE__);
-    if ($row = mysql_fetch_array($result)) {
+    $result = \NexusPHP\Components\Database::query("SELECT * FROM ".$action." where id = ".\NexusPHP\Components\Database::escape($id)) or sqlerr(__FILE__, __LINE__);
+    if ($row = mysqli_fetch_array($result)) {
         print("<table border=1 cellspacing=0 width=940 cellpadding=5>\n");
         print("<tr><td class=colhead align=left>".$title."</td></tr>\n");
         print("<tr><td class=toolbox align=left><form method=\"post\" action='" . $_SERVER['PHP_SELF'] . "'>\n");
@@ -91,7 +91,7 @@ if (!in_array($action, $allowed_actions)) {
     case "dailylog":
         stdhead($lang_log['head_site_log']);
 
-        $query = mysql_real_escape_string(trim($_GET["query"]));
+        $query = \NexusPHP\Components\Database::real_escape_string(trim($_GET["query"]));
         $search = $_GET["search"];
 
         $addparam = "";
@@ -116,16 +116,16 @@ if (!in_array($action, $allowed_actions)) {
         $opt = array(all => $lang_log['text_all'], normal => $lang_log['text_normal'], mod => $lang_log['text_mod']);
         searchtable($lang_log['text_search_log'], 'dailylog', $opt);
 
-        $res = sql_query("SELECT COUNT(*) FROM sitelog".$wherea);
-        $row = mysql_fetch_array($res);
+        $res = \NexusPHP\Components\Database::query("SELECT COUNT(*) FROM sitelog".$wherea);
+        $row = mysqli_fetch_array($res);
         $count = $row[0];
 
         $perpage = 50;
 
         list($pagertop, $pagerbottom, $limit) = pager($perpage, $count, "log.php?action=dailylog&".$addparam);
 
-        $res = sql_query("SELECT added, txt FROM sitelog $wherea ORDER BY added DESC $limit") or sqlerr(__FILE__, __LINE__);
-        if (mysql_num_rows($res) == 0) {
+        $res = \NexusPHP\Components\Database::query("SELECT added, txt FROM sitelog $wherea ORDER BY added DESC $limit") or sqlerr(__FILE__, __LINE__);
+        if (mysqli_num_rows($res) == 0) {
             print($lang_log['text_log_empty']);
         } else {
 
@@ -133,7 +133,7 @@ if (!in_array($action, $allowed_actions)) {
 
             print("<table width=940 border=1 cellspacing=0 cellpadding=5>\n");
             print("<tr><td class=colhead align=center><img class=\"time\" src=\"pic/trans.gif\" alt=\"time\" title=\"".$lang_log['title_time_added']."\" /></td><td class=colhead align=left>".$lang_log['col_event']."</td></tr>\n");
-            while ($arr = mysql_fetch_assoc($res)) {
+            while ($arr = mysqli_fetch_assoc($res)) {
                 $color = "";
                 if (strpos($arr['txt'], 'was uploaded by')) {
                     $color = "green";
@@ -164,7 +164,7 @@ if (!in_array($action, $allowed_actions)) {
         break;
     case "chronicle":
         stdhead($lang_log['head_chronicle']);
-        $query = mysql_real_escape_string(trim($_GET["query"]));
+        $query = \NexusPHP\Components\Database::real_escape_string(trim($_GET["query"]));
         if ($query) {
             $wherea=" WHERE txt LIKE '%$query%' ";
             $addparam = "query=".rawurlencode($query)."&";
@@ -182,14 +182,14 @@ if (!in_array($action, $allowed_actions)) {
             if (get_user_class() < $chrmanage_class) {
                 permissiondeny();
             } elseif ($_POST['do'] == "add") {
-                sql_query("INSERT INTO chronicle (userid,added, txt) VALUES ('".$CURUSER["id"]."', now(), ".sqlesc($txt).")") or sqlerr(__FILE__, __LINE__);
+                \NexusPHP\Components\Database::query("INSERT INTO chronicle (userid,added, txt) VALUES ('".$CURUSER["id"]."', now(), ".\NexusPHP\Components\Database::escape($txt).")") or sqlerr(__FILE__, __LINE__);
             } elseif ($_POST['do'] == "update") {
                 $id = 0 + $_POST['id'];
                 if (!$id) {
                     header("Location: log.php?action=chronicle");
                     die();
                 } else {
-                    sql_query("UPDATE chronicle SET txt=".sqlesc($txt)." WHERE id=".$id) or sqlerr(__FILE__, __LINE__);
+                    \NexusPHP\Components\Database::query("UPDATE chronicle SET txt=".\NexusPHP\Components\Database::escape($txt)." WHERE id=".$id) or sqlerr(__FILE__, __LINE__);
                 }
             } else {
                 $id = 0 + $_GET['id'];
@@ -197,22 +197,22 @@ if (!in_array($action, $allowed_actions)) {
                     header("Location: log.php?action=chronicle");
                     die();
                 } elseif ($_GET['do'] == "del") {
-                    sql_query("DELETE FROM chronicle where id = '".$id."'") or sqlerr(__FILE__, __LINE__);
+                    \NexusPHP\Components\Database::query("DELETE FROM chronicle where id = '".$id."'") or sqlerr(__FILE__, __LINE__);
                 } elseif ($_GET['do'] == "edit") {
                     edititem($lang_log['text_edit_chronicle'], 'chronicle', $id);
                 }
             }
         }
 
-        $res = sql_query("SELECT COUNT(*) FROM chronicle".$wherea);
-        $row = mysql_fetch_array($res);
+        $res = \NexusPHP\Components\Database::query("SELECT COUNT(*) FROM chronicle".$wherea);
+        $row = mysqli_fetch_array($res);
         $count = $row[0];
 
         $perpage = 50;
 
         list($pagertop, $pagerbottom, $limit) = pager($perpage, $count, "log.php?action=chronicle&".$addparam);
-        $res = sql_query("SELECT id, added, txt FROM chronicle $wherea ORDER BY added DESC $limit") or sqlerr(__FILE__, __LINE__);
-        if (mysql_num_rows($res) == 0) {
+        $res = \NexusPHP\Components\Database::query("SELECT id, added, txt FROM chronicle $wherea ORDER BY added DESC $limit") or sqlerr(__FILE__, __LINE__);
+        if (mysqli_num_rows($res) == 0) {
             print($lang_log['text_chronicle_empty']);
         } else {
 
@@ -220,7 +220,7 @@ if (!in_array($action, $allowed_actions)) {
 
             print("<table width=940 border=1 cellspacing=0 cellpadding=5>\n");
             print("<tr><td class=colhead align=center>".$lang_log['col_date']."</td><td class=colhead align=left>".$lang_log['col_event']."</td>".(get_user_class() >= $chrmanage_class ? "<td class=colhead align=center>".$lang_log['col_modify']."</td>" : "")."</tr>\n");
-            while ($arr = mysql_fetch_assoc($res)) {
+            while ($arr = mysqli_fetch_assoc($res)) {
                 $date = gettime($arr['added'], true, false);
                 print("<tr><td class=rowfollow align=center><nobr>$date</nobr></td><td class=rowfollow align=left>".format_comment($arr["txt"], true, false, true)."</td>".(get_user_class() >= $chrmanage_class ? "<td align=center nowrap><b><a href=\"".$PHP_SELF."?action=chronicle&do=edit&id=".$arr["id"]."\">".$lang_log['text_edit']."</a>&nbsp;|&nbsp;<a href=\"".$PHP_SELF."?action=chronicle&do=del&id=".$arr["id"]."\"><font color=red>".$lang_log['text_delete']."</font></a></b></td>" : "")."</tr>\n");
             }
@@ -235,7 +235,7 @@ if (!in_array($action, $allowed_actions)) {
         break;
     case "funbox":
         stdhead($lang_log['head_funbox']);
-        $query = mysql_real_escape_string(trim($_GET["query"]));
+        $query = \NexusPHP\Components\Database::real_escape_string(trim($_GET["query"]));
         $search = $_GET["search"];
         if ($query) {
             switch ($search) {
@@ -251,19 +251,19 @@ if (!in_array($action, $allowed_actions)) {
         logmenu("funbox");
         $opt = array(title => $lang_log['text_title'], body => $lang_log['text_body'], both => $lang_log['text_both']);
         searchtable($lang_log['text_search_funbox'], 'funbox', $opt);
-        $res = sql_query("SELECT COUNT(*) FROM fun ".$wherea);
-        $row = mysql_fetch_array($res);
+        $res = \NexusPHP\Components\Database::query("SELECT COUNT(*) FROM fun ".$wherea);
+        $row = mysqli_fetch_array($res);
         $count = $row[0];
 
         $perpage = 10;
         list($pagertop, $pagerbottom, $limit) = pager($perpage, $count, "log.php?action=funbox&".$addparam);
-        $res = sql_query("SELECT added, body, title, status FROM fun $wherea ORDER BY added DESC $limit") or sqlerr(__FILE__, __LINE__);
-        if (mysql_num_rows($res) == 0) {
+        $res = \NexusPHP\Components\Database::query("SELECT added, body, title, status FROM fun $wherea ORDER BY added DESC $limit") or sqlerr(__FILE__, __LINE__);
+        if (mysqli_num_rows($res) == 0) {
             print($lang_log['text_funbox_empty']);
         } else {
 
         //echo $pagertop;
-            while ($arr = mysql_fetch_assoc($res)) {
+            while ($arr = mysqli_fetch_assoc($res)) {
                 $date = gettime($arr['added'], true, false);
                 print("<table width=940 border=1 cellspacing=0 cellpadding=5>\n");
                 print("<tr><td class=rowhead width='10%'>".$lang_log['col_title']."</td><td class=rowfollow align=left>".$arr["title"]." - <b>".$arr["status"]."</b></td></tr><tr><td class=rowhead width='10%'>".$lang_log['col_date']."</td><td class=rowfollow align=left>".$date."</td></tr><tr><td class=rowhead width='10%'>".$lang_log['col_body']."</td><td class=rowfollow align=left>".format_comment($arr["body"], false, false, true)."</td></tr>\n");
@@ -278,7 +278,7 @@ if (!in_array($action, $allowed_actions)) {
         break;
     case "news":
         stdhead($lang_log['head_news']);
-        $query = mysql_real_escape_string(trim($_GET["query"]));
+        $query = \NexusPHP\Components\Database::real_escape_string(trim($_GET["query"]));
         $search = $_GET["search"];
         if ($query) {
             switch ($search) {
@@ -295,20 +295,20 @@ if (!in_array($action, $allowed_actions)) {
         $opt = array(title => $lang_log['text_title'], body => $lang_log['text_body'], both => $lang_log['text_both']);
         searchtable($lang_log['text_search_news'], 'news', $opt);
 
-        $res = sql_query("SELECT COUNT(*) FROM news".$wherea);
-        $row = mysql_fetch_array($res);
+        $res = \NexusPHP\Components\Database::query("SELECT COUNT(*) FROM news".$wherea);
+        $row = mysqli_fetch_array($res);
         $count = $row[0];
 
         $perpage = 20;
 
         list($pagertop, $pagerbottom, $limit) = pager($perpage, $count, "log.php?action=news&".$addparam);
-        $res = sql_query("SELECT id, added, body, title FROM news $wherea ORDER BY added DESC $limit") or sqlerr(__FILE__, __LINE__);
-        if (mysql_num_rows($res) == 0) {
+        $res = \NexusPHP\Components\Database::query("SELECT id, added, body, title FROM news $wherea ORDER BY added DESC $limit") or sqlerr(__FILE__, __LINE__);
+        if (mysqli_num_rows($res) == 0) {
             print($lang_log['text_news_empty']);
         } else {
 
         //echo $pagertop;
-            while ($arr = mysql_fetch_assoc($res)) {
+            while ($arr = mysqli_fetch_assoc($res)) {
                 $date = gettime($arr['added'], true, false);
                 print("<table width=940 border=1 cellspacing=0 cellpadding=5>\n");
                 print("<tr><td class=rowhead width='10%'>".$lang_log['col_title']."</td><td class=rowfollow align=left>".$arr["title"]."</td></tr><tr><td class=rowhead width='10%'>".$lang_log['col_date']."</td><td class=rowfollow align=left>".$date."</td></tr><tr><td class=rowhead width='10%'>".$lang_log['col_body']."</td><td class=rowfollow align=left>".format_comment($arr["body"], false, false, true)."</td></tr>\n");
@@ -339,8 +339,8 @@ if (!in_array($action, $allowed_actions)) {
             "<a href=?action=poll&do=delete&pollid=$pollid&returnto=$returnto&sure=1>".$lang_log['std_here_if_sure'], false);
             }
 
-            sql_query("DELETE FROM pollanswers WHERE pollid = $pollid") or sqlerr();
-            sql_query("DELETE FROM polls WHERE id = $pollid") or sqlerr();
+            \NexusPHP\Components\Database::query("DELETE FROM pollanswers WHERE pollid = $pollid") or sqlerr();
+            \NexusPHP\Components\Database::query("DELETE FROM polls WHERE id = $pollid") or sqlerr();
             $Cache->delete_value('current_poll_content');
             $Cache->delete_value('current_poll_result', true);
             if ($returnto == "main") {
@@ -351,13 +351,13 @@ if (!in_array($action, $allowed_actions)) {
             die;
         }
 
-  $rows = sql_query("SELECT COUNT(*) FROM polls") or sqlerr();
-  $row = mysql_fetch_row($rows);
+  $rows = \NexusPHP\Components\Database::query("SELECT COUNT(*) FROM polls") or sqlerr();
+  $row = mysqli_fetch_row($rows);
   $pollcount = $row[0];
   if ($pollcount == 0) {
       stderr($lang_log['std_sorry'], $lang_log['std_no_polls']);
   }
-  $polls = sql_query("SELECT * FROM polls ORDER BY id DESC LIMIT 1," . ($pollcount - 1)) or sqlerr();
+  $polls = \NexusPHP\Components\Database::query("SELECT * FROM polls ORDER BY id DESC LIMIT 1," . ($pollcount - 1)) or sqlerr();
   stdhead($lang_log['head_previous_polls']);
         logmenu("poll");
         print("<table border=1 cellspacing=0 width=940 cellpadding=5>\n");
@@ -374,7 +374,7 @@ if (!in_array($action, $allowed_actions)) {
         return 0;
     }
 
-  while ($poll = mysql_fetch_assoc($polls)) {
+  while ($poll = mysqli_fetch_assoc($polls)) {
       $o = array($poll["option0"], $poll["option1"], $poll["option2"], $poll["option3"], $poll["option4"],
     $poll["option5"], $poll["option6"], $poll["option7"], $poll["option8"], $poll["option9"],
     $poll["option10"], $poll["option11"], $poll["option12"], $poll["option13"], $poll["option14"],
@@ -400,15 +400,15 @@ if (!in_array($action, $allowed_actions)) {
 
       print("<p align=center><b>" . $poll["question"] . "</b></p>");
 
-      $pollanswers = sql_query("SELECT selection FROM pollanswers WHERE pollid=" . $poll["id"] . " AND  selection < 20") or sqlerr();
+      $pollanswers = \NexusPHP\Components\Database::query("SELECT selection FROM pollanswers WHERE pollid=" . $poll["id"] . " AND  selection < 20") or sqlerr();
 
-      $tvotes = mysql_num_rows($pollanswers);
+      $tvotes = mysqli_num_rows($pollanswers);
 
       $vs = array(); // count for each option ([0]..[19])
     $os = array(); // votes and options: array(array(123, "Option 1"), array(45, "Option 2"))
 
     // Count votes
-      while ($pollanswer = mysql_fetch_row($pollanswers)) {
+      while ($pollanswer = mysqli_fetch_row($pollanswers)) {
           $vs[$pollanswer[0]] += 1;
       }
 

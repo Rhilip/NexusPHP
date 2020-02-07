@@ -9,8 +9,8 @@ function get_global_sp_state()
     static $global_promotion_state;
     if (!$global_promotion_state) {
         if (!$global_promotion_state = $Cache->get_value('global_promotion_state')) {
-            $res = mysql_query("SELECT * FROM torrents_state");
-            $row = mysql_fetch_assoc($res);
+            $res = \NexusPHP\Components\Database::query("SELECT * FROM torrents_state");
+            $row = mysqli_fetch_assoc($res);
             $global_promotion_state = $row["global_sp_state"];
             $Cache->cache_value('global_promotion_state', $global_promotion_state, 57226);
         }
@@ -69,19 +69,6 @@ function getip()
     return $ip;
 }
 
-function sql_query($query)
-{
-    global $query_name;
-    $query_name[] = $query;
-    return mysql_query($query);
-}
-
-function sqlesc($value)
-{
-    $value = "'" . mysql_real_escape_string($value) . "'";
-    return $value;
-}
-
 function hash_pad($hash)
 {
     return str_pad($hash, 20);
@@ -90,5 +77,5 @@ function hash_pad($hash)
 function hash_where($name, $hash)
 {
     $shhash = preg_replace('/ *$/s', "", $hash);
-    return "($name = " . sqlesc($hash) . " OR $name = " . sqlesc($shhash) . ")";
+    return "($name = " . \NexusPHP\Components\Database::escape($hash) . " OR $name = " . \NexusPHP\Components\Database::escape($shhash) . ")";
 }

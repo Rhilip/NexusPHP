@@ -12,7 +12,7 @@ $class = 0 + $_POST["class"];
 $or = $_POST["or"];
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $res = sql_query("SELECT id, username, email FROM users WHERE class $or ".mysql_real_escape_string($class)) or sqlerr(__FILE__, __LINE__);
+    $res = \NexusPHP\Components\Database::query("SELECT id, username, email FROM users WHERE class $or ".\NexusPHP\Components\Database::real_escape_string($class)) or sqlerr(__FILE__, __LINE__);
 
     $subject = substr(htmlspecialchars(trim($_POST["subject"])), 0, 80);
     if ($subject == "") {
@@ -25,7 +25,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         stderr("Error", "Empty message!");
     }
 
-    while ($arr=mysql_fetch_array($res)) {
+    while ($arr=mysqli_fetch_array($res)) {
         $to = $arr["email"];
 
 

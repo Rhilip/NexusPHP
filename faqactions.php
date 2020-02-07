@@ -33,7 +33,7 @@ if (get_user_class() < UC_ADMINISTRATOR) {
 // ACTION: reorder - reorder sections and items
 if ($_GET[action] == "reorder") {
     foreach ($_POST[order] as $id => $position) {
-        sql_query("UPDATE `faq` SET `order`=".sqlesc($position)." WHERE id=".sqlesc($id)) or sqlerr();
+        \NexusPHP\Components\Database::query("UPDATE `faq` SET `order`=".\NexusPHP\Components\Database::escape($position)." WHERE id=".\NexusPHP\Components\Database::escape($id)) or sqlerr();
     }
     header("Location: " . get_protocol_prefix() . "$BASEURL/faqmanage.php");
     die;
@@ -45,8 +45,8 @@ elseif ($_GET[action] == "edit" && isset($_GET[id])) {
     begin_main_frame();
     print("<h1 align=\"center\">Edit Section or Item</h1>");
 
-    $res = sql_query("SELECT * FROM faq WHERE id=".sqlesc($_GET[id])." LIMIT 1");
-    while ($arr = mysql_fetch_array($res, MYSQL_BOTH)) {
+    $res = \NexusPHP\Components\Database::query("SELECT * FROM faq WHERE id=".\NexusPHP\Components\Database::escape($_GET[id])." LIMIT 1");
+    while ($arr = mysqli_fetch_array($res, MYSQL_BOTH)) {
         $arr[question] = htmlspecialchars($arr[question]);
         $arr[answer] = htmlspecialchars($arr[answer]);
         if ($arr[type] == "item") {
@@ -66,8 +66,8 @@ elseif ($_GET[action] == "edit" && isset($_GET[id])) {
                 print("<tr><td>Status:</td><td><select name=\"flag\" style=\"width: 110px;\"><option value=\"0\" style=\"color: #FF0000;\">Hidden</option><option value=\"1\" style=\"color: #000000;\" selected=\"selected\">Normal</option><option value=\"2\" style=\"color: #0000FF;\">Updated</option><option value=\"3\" style=\"color: #008000;\">New</option></select></td></tr>");
             }
             print("<tr><td>Category:</td><td><select style=\"width: 400px;\" name=\"categ\" />");
-            $res2 = sql_query("SELECT `id`, `question`, `link_id` FROM `faq` WHERE `type`='categ' AND `lang_id` = ".sqlesc($lang_id)." ORDER BY `order` ASC");
-            while ($arr2 = mysql_fetch_array($res2, MYSQL_BOTH)) {
+            $res2 = \NexusPHP\Components\Database::query("SELECT `id`, `question`, `link_id` FROM `faq` WHERE `type`='categ' AND `lang_id` = ".\NexusPHP\Components\Database::escape($lang_id)." ORDER BY `order` ASC");
+            while ($arr2 = mysqli_fetch_array($res2, MYSQL_BOTH)) {
                 $selected = ($arr2[link_id] == $arr[categ]) ? " selected=\"selected\"" : "";
                 print("<option value=\"$arr2[link_id]\"". $selected .">$arr2[question]</option>");
             }
@@ -75,8 +75,8 @@ elseif ($_GET[action] == "edit" && isset($_GET[id])) {
             print("<tr><td colspan=\"2\" align=\"center\"><input type=\"submit\" name=\"edit\" value=\"Edit\" style=\"width: 60px;\"></td></tr>\n");
             print("</table>");
         } elseif ($arr[type] == "categ") {
-            $lang_res = sql_query("SELECT lang_name FROM language WHERE id=".sqlesc($arr[lang_id])." LIMIT 1");
-            if ($lang_arr = mysql_fetch_array($lang_res)) {
+            $lang_res = \NexusPHP\Components\Database::query("SELECT lang_name FROM language WHERE id=".\NexusPHP\Components\Database::escape($arr[lang_id])." LIMIT 1");
+            if ($lang_arr = mysqli_fetch_array($lang_res)) {
                 $lang_name = $lang_arr['lang_name'];
             }
             print("<form method=\"post\" action=\"faqactions.php?action=editsect\">");
@@ -102,7 +102,7 @@ elseif ($_GET[action] == "edit" && isset($_GET[id])) {
 elseif ($_GET[action] == "edititem" && $_POST[id] != null && $_POST[question] != null && $_POST[answer] != null && $_POST[flag] != null && $_POST[categ] != null) {
     $question = $_POST[question];
     $answer = $_POST[answer];
-    sql_query("UPDATE `faq` SET `question`=".sqlesc($question).", `answer`=".sqlesc($answer).", `flag`=".sqlesc($_POST[flag]).", `categ`=".sqlesc($_POST[categ])." WHERE id=".sqlesc($_POST[id])) or sqlerr();
+    \NexusPHP\Components\Database::query("UPDATE `faq` SET `question`=".\NexusPHP\Components\Database::escape($question).", `answer`=".\NexusPHP\Components\Database::escape($answer).", `flag`=".\NexusPHP\Components\Database::escape($_POST[flag]).", `categ`=".\NexusPHP\Components\Database::escape($_POST[categ])." WHERE id=".\NexusPHP\Components\Database::escape($_POST[id])) or sqlerr();
     header("Location: " . get_protocol_prefix() . "$BASEURL/faqmanage.php");
     die;
 }
@@ -110,7 +110,7 @@ elseif ($_GET[action] == "edititem" && $_POST[id] != null && $_POST[question] !=
 // subACTION: editsect - edit a section
 elseif ($_GET[action] == "editsect" && $_POST[id] != null && $_POST[title] != null && $_POST[flag] != null) {
     $title = $_POST[title];
-    sql_query("UPDATE `faq` SET `question`=".sqlesc($title).", `answer`='', `flag`=".sqlesc($_POST[flag]).", `categ`='0' WHERE id=".sqlesc($_POST[id])) or sqlerr();
+    \NexusPHP\Components\Database::query("UPDATE `faq` SET `question`=".\NexusPHP\Components\Database::escape($title).", `answer`='', `flag`=".\NexusPHP\Components\Database::escape($_POST[flag]).", `categ`='0' WHERE id=".\NexusPHP\Components\Database::escape($_POST[id])) or sqlerr();
     header("Location: " . get_protocol_prefix() . "$BASEURL/faqmanage.php");
     die;
 }
@@ -118,7 +118,7 @@ elseif ($_GET[action] == "editsect" && $_POST[id] != null && $_POST[title] != nu
 // ACTION: delete - delete a section or item
 elseif ($_GET[action] == "delete" && isset($_GET[id])) {
     if ($_GET[confirm] == "yes") {
-        sql_query("DELETE FROM `faq` WHERE `id`=".sqlesc(0+$_GET[id])." LIMIT 1") or sqlerr();
+        \NexusPHP\Components\Database::query("DELETE FROM `faq` WHERE `id`=".\NexusPHP\Components\Database::escape(0+$_GET[id])." LIMIT 1") or sqlerr();
         header("Location: " . get_protocol_prefix() . "$BASEURL/faqmanage.php");
         die;
     } else {
@@ -182,12 +182,12 @@ elseif ($_GET[action] == "addnewitem" && $_POST[question] != null && $_POST[answ
     $answer = $_POST[answer];
     $categ = 0+$_POST[categ];
     $langid = 0+$_POST[langid];
-    $res = sql_query("SELECT MAX(`order`) AS maxorder, MAX(`link_id`) AS maxlinkid FROM `faq` WHERE `type`='item' AND `categ`=".sqlesc($categ)." AND lang_id=".sqlesc($langid));
-    while ($arr = mysql_fetch_array($res, MYSQL_BOTH)) {
+    $res = \NexusPHP\Components\Database::query("SELECT MAX(`order`) AS maxorder, MAX(`link_id`) AS maxlinkid FROM `faq` WHERE `type`='item' AND `categ`=".\NexusPHP\Components\Database::escape($categ)." AND lang_id=".\NexusPHP\Components\Database::escape($langid));
+    while ($arr = mysqli_fetch_array($res, MYSQL_BOTH)) {
         $order = $arr['maxorder'] + 1;
         $link_id = $arr['maxlinkid']+1;
     }
-    sql_query("INSERT INTO `faq` (`link_id`, `type`, `lang_id`, `question`, `answer`, `flag`, `categ`, `order`) VALUES ('$link_id', 'item', ".sqlesc($langid).", ".sqlesc($question).", ".sqlesc($answer).", " . sqlesc(0+$_POST[flag]) . ", ".sqlesc($categ).", ".sqlesc($order).")") or sqlerr();
+    \NexusPHP\Components\Database::query("INSERT INTO `faq` (`link_id`, `type`, `lang_id`, `question`, `answer`, `flag`, `categ`, `order`) VALUES ('$link_id', 'item', ".\NexusPHP\Components\Database::escape($langid).", ".\NexusPHP\Components\Database::escape($question).", ".\NexusPHP\Components\Database::escape($answer).", " . \NexusPHP\Components\Database::escape(0+$_POST[flag]) . ", ".\NexusPHP\Components\Database::escape($categ).", ".\NexusPHP\Components\Database::escape($order).")") or sqlerr();
     header("Location: " . get_protocol_prefix() . "$BASEURL/faqmanage.php");
     die;
 }
@@ -196,12 +196,12 @@ elseif ($_GET[action] == "addnewitem" && $_POST[question] != null && $_POST[answ
 elseif ($_GET[action] == "addnewsect" && $_POST[title] != null && $_POST[flag] != null) {
     $title = $_POST[title];
     $language = 0+$_POST['language'];
-    $res = sql_query("SELECT MAX(`order`) AS maxorder, MAX(`link_id`) AS maxlinkid FROM `faq` WHERE `type`='categ' AND `lang_id` = ".sqlesc($language));
-    while ($arr = mysql_fetch_array($res, MYSQL_BOTH)) {
+    $res = \NexusPHP\Components\Database::query("SELECT MAX(`order`) AS maxorder, MAX(`link_id`) AS maxlinkid FROM `faq` WHERE `type`='categ' AND `lang_id` = ".\NexusPHP\Components\Database::escape($language));
+    while ($arr = mysqli_fetch_array($res, MYSQL_BOTH)) {
         $order = $arr['maxorder'] + 1;
         $link_id = $arr['maxlinkid']+1;
     }
-    sql_query("INSERT INTO `faq` (`link_id`,`type`,`lang_id`, `question`, `answer`, `flag`, `categ`, `order`) VALUES (".sqlesc($link_id).",'categ', ".sqlesc($language).", ".sqlesc($title).", '', ".sqlesc($_POST[flag]).", '0', ".sqlesc($order).")") or sqlerr();
+    \NexusPHP\Components\Database::query("INSERT INTO `faq` (`link_id`,`type`,`lang_id`, `question`, `answer`, `flag`, `categ`, `order`) VALUES (".\NexusPHP\Components\Database::escape($link_id).",'categ', ".\NexusPHP\Components\Database::escape($language).", ".\NexusPHP\Components\Database::escape($title).", '', ".\NexusPHP\Components\Database::escape($_POST[flag]).", '0', ".\NexusPHP\Components\Database::escape($order).")") or sqlerr();
     header("Location: " . get_protocol_prefix() . "$BASEURL/faqmanage.php");
     die;
 } else {

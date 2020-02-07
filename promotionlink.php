@@ -7,16 +7,16 @@ $updatekey=$_GET['updatekey'];
 if ($key) {
     if (!$CURUSER) {
         if ($prolinkpoint_bonus) {
-            $res=sql_query("SELECT id FROM users WHERE promotion_link=".sqlesc($key)." LIMIT 1");
-            $row=mysql_fetch_array($res);
+            $res=\NexusPHP\Components\Database::query("SELECT id FROM users WHERE promotion_link=".\NexusPHP\Components\Database::escape($key)." LIMIT 1");
+            $row=mysqli_fetch_array($res);
             if ($row) {
                 $ip = getip();
-                $dt=sqlesc(date("Y-m-d H:i:s", (TIMENOW-$prolinktime_bonus)));
-                $res2=sql_query("SELECT COUNT(id) FROM prolinkclicks WHERE userid=".sqlesc($row['id'])." AND (added > ".$dt." OR ip=".sqlesc($ip).")");
-                $row2=mysql_fetch_array($res2);
+                $dt=\NexusPHP\Components\Database::escape(date("Y-m-d H:i:s", (TIMENOW-$prolinktime_bonus)));
+                $res2=\NexusPHP\Components\Database::query("SELECT COUNT(id) FROM prolinkclicks WHERE userid=".\NexusPHP\Components\Database::escape($row['id'])." AND (added > ".$dt." OR ip=".\NexusPHP\Components\Database::escape($ip).")");
+                $row2=mysqli_fetch_array($res2);
                 if ($row2[0]==0) {
                     KPS("+", $prolinkpoint_bonus, $row['id']);
-                    sql_query("INSERT INTO prolinkclicks (userid, ip, added) VALUES (".$row['id'].", ".sqlesc($ip).", NOW())");
+                    \NexusPHP\Components\Database::query("INSERT INTO prolinkclicks (userid, ip, added) VALUES (".$row['id'].", ".\NexusPHP\Components\Database::escape($ip).", NOW())");
                 }
             }
         }
@@ -24,7 +24,7 @@ if ($key) {
     header("Location: " . get_protocol_prefix() . $BASEURL);
 } elseif (($updatekey || !$CURUSER['promotion_link']) && $CURUSER) {
     $promotionkey=md5($CURUSER['email'].date("Y-m-d H:i:s").$CURUSER['passhash']);
-    sql_query("UPDATE users SET promotion_link=".sqlesc($promotionkey)." WHERE id=".sqlesc($CURUSER['id']));
+    \NexusPHP\Components\Database::query("UPDATE users SET promotion_link=".\NexusPHP\Components\Database::escape($promotionkey)." WHERE id=".\NexusPHP\Components\Database::escape($CURUSER['id']));
     header("Location: " . get_protocol_prefix() . $BASEURL."/promotionlink.php");
 } else {
     stdhead($lang_promotionlink['head_promotion_link']);

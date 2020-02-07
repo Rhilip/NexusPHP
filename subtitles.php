@@ -40,18 +40,18 @@ if (!is_valid_id($lang_id)) {
 
 $query = "";
 if ($search != '') {
-    $query = "subs.title LIKE " . sqlesc("%$search%") . "";
+    $query = "subs.title LIKE " . \NexusPHP\Components\Database::escape("%$search%") . "";
     if ($search) {
         $q = "search=" . rawurlencode($search);
     }
 } elseif ($letter != '') {
-    $query = "subs.title LIKE ".sqlesc("$letter%");
+    $query = "subs.title LIKE ".\NexusPHP\Components\Database::escape("$letter%");
     $q = "letter=$letter";
 }
 
 if ($lang_id) {
-    $query .= ($query ? " AND " : "")."subs.lang_id=".sqlesc($lang_id);
-    $q = ($q ? $q."&amp;" : "") . "lang_id=".sqlesc($lang_id);
+    $query .= ($query ? " AND " : "")."subs.lang_id=".\NexusPHP\Components\Database::escape($lang_id);
+    $q = ($q ? $q."&amp;" : "") . "lang_id=".\NexusPHP\Components\Database::escape($lang_id);
 }
 
 
@@ -99,12 +99,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $_POST["action"] == "upload" && ($in
             exit;
         }
 
-        $r = sql_query("SELECT * from torrents where id = ". sqlesc($torrent_id)) or sqlerr(__FILE__, __LINE__);
-        if (!mysql_num_rows($r)) {
+        $r = \NexusPHP\Components\Database::query("SELECT * from torrents where id = ". \NexusPHP\Components\Database::escape($torrent_id)) or sqlerr(__FILE__, __LINE__);
+        if (!mysqli_num_rows($r)) {
             echo($lang_subtitles['std_invalid_torrent_id']);
             exit;
         } else {
-            $r_a = mysql_fetch_assoc($r);
+            $r_a = mysqli_fetch_assoc($r);
             if ($r_a["owner"] != $CURUSER["id"] && get_user_class() < $uploadsub_class) {
                 echo($lang_subtitles['std_no_permission_uploading_others']);
                 exit;
@@ -125,8 +125,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $_POST["action"] == "upload" && ($in
     }
 
     /*
-    $r = sql_query("SELECT id FROM subs WHERE title=" . sqlesc($title)) or sqlerr(__FILE__, __LINE__);
-    if (mysql_num_rows($r) > 0)
+    $r = \NexusPHP\Components\Database::query("SELECT id FROM subs WHERE title=" . \NexusPHP\Components\Database::escape($title)) or sqlerr(__FILE__, __LINE__);
+    if (mysqli_num_rows($r) > 0)
     {
         echo($lang_subtitles['std_file_same_name_exists']."<font color=red><b>" . htmlspecialchars($title) . "</b></font> ");
         exit;
@@ -157,17 +157,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $_POST["action"] == "upload" && ($in
     //make_folder($SUBSPATH."/",$detail_torrent_id);
     //stderr("",$file["name"]);
     
-    $r = sql_query("SELECT lang_name from language WHERE sub_lang=1 AND id = " . sqlesc($lang_id)) or sqlerr(__FILE__, __LINE__);
-    $arr = mysql_fetch_assoc($r);
+    $r = \NexusPHP\Components\Database::query("SELECT lang_name from language WHERE sub_lang=1 AND id = " . \NexusPHP\Components\Database::escape($lang_id)) or sqlerr(__FILE__, __LINE__);
+    $arr = mysqli_fetch_assoc($r);
 
     $filename = $file["name"];
     $added = date("Y-m-d H:i:s");
     $uppedby = $CURUSER["id"];
     $size = $file["size"];
 
-    sql_query("INSERT INTO subs (torrent_id, lang_id, title, filename, added, uppedby, anonymous, size, ext) VALUES (" . implode(",", array_map("sqlesc", array($torrent_id, $lang_id, $title, $filename, $added, $uppedby, $anonymous, $size, $ext))). ")") or sqlerr();
+    \NexusPHP\Components\Database::query("INSERT INTO subs (torrent_id, lang_id, title, filename, added, uppedby, anonymous, size, ext) VALUES (" . implode(",", \NexusPHP\Components\Database::escape(array($torrent_id, $lang_id, $title, $filename, $added, $uppedby, $anonymous, $size, $ext))). ")") or sqlerr();
     
-    $id = mysql_insert_id();
+    $id = \NexusPHP\Components\Database::insert_id();
     
     //stderr("",make_folder($SUBSPATH."/",$torrent_id). "/" . $id . "." .$ext);
     if (!move_uploaded_file($file["tmp_name"], make_folder($SUBSPATH."/", $torrent_id). "/" . $id . "." .$ext)) {
@@ -183,14 +183,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $_POST["action"] == "upload" && ($in
 if (get_user_class() >= $delownsub_class) {
     $delete = $_GET["delete"];
     if (is_valid_id($delete)) {
-        $r = sql_query("SELECT id,torrent_id,ext,lang_id,title,filename,uppedby,anonymous FROM subs WHERE id=".sqlesc($delete)) or sqlerr(__FILE__, __LINE__);
-        if (mysql_num_rows($r) == 1) {
-            $a = mysql_fetch_assoc($r);
+        $r = \NexusPHP\Components\Database::query("SELECT id,torrent_id,ext,lang_id,title,filename,uppedby,anonymous FROM subs WHERE id=".\NexusPHP\Components\Database::escape($delete)) or sqlerr(__FILE__, __LINE__);
+        if (mysqli_num_rows($r) == 1) {
+            $a = mysqli_fetch_assoc($r);
             if (get_user_class() >= $submanage_class || $a["uppedby"] == $CURUSER["id"]) {
                 $sure = $_GET["sure"];
                 if ($sure == 1) {
                     $reason = $_POST["reason"];
-                    sql_query("DELETE FROM subs WHERE id=$delete") or sqlerr(__FILE__, __LINE__);
+                    \NexusPHP\Components\Database::query("DELETE FROM subs WHERE id=$delete") or sqlerr(__FILE__, __LINE__);
                     if (!unlink("$SUBSPATH/$a[torrent_id]/$a[id].$a[ext]")) {
                         stdmsg($lang_subtitles['std_error'], $lang_subtitles['std_this_file']."$a[filename]".$lang_subtitles['std_is_invalid']);
                         stdfoot();
@@ -202,10 +202,10 @@ if (get_user_class() >= $delownsub_class) {
                         $msg = $CURUSER['username'].$lang_subtitles_target[get_user_lang($a['uppedby'])]['msg_deleted_your_sub']. $a['title'].($reason != "" ? $lang_subtitles_target[get_user_lang($a['uppedby'])]['msg_reason_is'].$reason : "");
                         $subject = $lang_subtitles_target[get_user_lang($a['uppedby'])]['msg_your_sub_deleted'];
                         $time = date("Y-m-d H:i:s");
-                        sql_query("INSERT INTO messages (sender, receiver, added, msg, subject) VALUES(0, $a[uppedby], '" . $time . "', " . sqlesc($msg) . ", ".sqlesc($subject).")") or sqlerr(__FILE__, __LINE__);
+                        \NexusPHP\Components\Database::query("INSERT INTO messages (sender, receiver, added, msg, subject) VALUES(0, $a[uppedby], '" . $time . "', " . \NexusPHP\Components\Database::escape($msg) . ", ".\NexusPHP\Components\Database::escape($subject).")") or sqlerr(__FILE__, __LINE__);
                     }
-                    $res = sql_query("SELECT lang_name from language WHERE sub_lang=1 AND id = " . sqlesc($a["lang_id"])) or sqlerr(__FILE__, __LINE__);
-                    $arr = mysql_fetch_assoc($res);
+                    $res = \NexusPHP\Components\Database::query("SELECT lang_name from language WHERE sub_lang=1 AND id = " . \NexusPHP\Components\Database::escape($a["lang_id"])) or sqlerr(__FILE__, __LINE__);
+                    $arr = mysqli_fetch_assoc($res);
                     write_log("$arr[lang_name] Subtitle $delete ($a[title]) was deleted by ". (($a["anonymous"] == 'yes' && $a["uppedby"] == $CURUSER["id"]) ? "Anonymous" : $CURUSER['username']). ($a["uppedby"] != $CURUSER["id"] ? ", Mod Delete":"").($reason != "" ? " (".$reason.")" : ""));
                 } else {
                     stdmsg($lang_subtitles['std_delete_subtitle'], $lang_subtitles['std_delete_subtitle_note']."<br /><form method=post action=subtitles.php?delete=$delete&sure=1>".$lang_subtitles['text_reason_is']."<input type=text style=\"width: 200px\" name=reason><input type=submit value=\"".$lang_subtitles['submit_confirm']."\"></form>");
@@ -225,8 +225,8 @@ if (get_user_class() >= UC_PEASANT) {
 <div align=center>
 <?php
     if (!$size = $Cache->get_value('subtitle_sum_size')) {
-        $res = sql_query("SELECT SUM(size) AS size FROM subs");
-        $row5 = mysql_fetch_array($res);
+        $res = \NexusPHP\Components\Database::query("SELECT SUM(size) AS size FROM subs");
+        $row5 = mysqli_fetch_array($res);
         $size = $row5['size'];
         $Cache->cache_value('subtitle_sum_size', $size, 3600);
     }
@@ -317,8 +317,8 @@ if (get_user_class() >= UC_PEASANT) {
 
     $perpage = 30;
     $query = ($query ? " WHERE ".$query : "");
-    $res = sql_query("SELECT COUNT(*) FROM subs $query") or sqlerr(__FILE__, __LINE__);
-    $arr = mysql_fetch_row($res);
+    $res = \NexusPHP\Components\Database::query("SELECT COUNT(*) FROM subs $query") or sqlerr(__FILE__, __LINE__);
+    $arr = mysqli_fetch_row($res);
     $num = $arr[0];
     if (!$num) {
         stdmsg($lang_subtitles['text_sorry'], $lang_subtitles['text_nothing_here']);
@@ -330,7 +330,7 @@ if (get_user_class() >= UC_PEASANT) {
     print($pagertop);
 
     $i = 0;
-    $res = sql_query("SELECT subs.*, language.flagpic, language.lang_name FROM subs LEFT JOIN language ON subs.lang_id=language.id $query ORDER BY id DESC $limit") or sqlerr();
+    $res = \NexusPHP\Components\Database::query("SELECT subs.*, language.flagpic, language.lang_name FROM subs LEFT JOIN language ON subs.lang_id=language.id $query ORDER BY id DESC $limit") or sqlerr();
 
     print("<table width=940 border=1 cellspacing=0 cellpadding=5>\n");
     print("<tr><td class=colhead>".$lang_subtitles['col_lang']."</td><td width=100% class=colhead align=center>".$lang_subtitles['col_title']."</td><td class=colhead align=center><img class=\"time\" src=\"pic/trans.gif\" alt=\"time\" title=\"".$lang_subtitles['title_date_added']."\" /></td>
@@ -339,7 +339,7 @@ if (get_user_class() >= UC_PEASANT) {
     $mod = get_user_class() >= $submanage_class;
     $pu = get_user_class() >= $delownsub_class;
 
-    while ($arr = mysql_fetch_assoc($res)) {
+    while ($arr = mysqli_fetch_assoc($res)) {
         // the number $start_subid is just for legacy support of prevoiusly uploaded subs, if the site is completely new, it should be 0 or just remove it
         $lang = "<td class=rowfollow align=center valign=middle>" . "<img border=\"0\" src=\"pic/flag/". $arr["flagpic"] . "\" alt=\"" . $arr["lang_name"] . "\" title=\"" . $arr["lang_name"] . "\"/>" . "</td>\n";
         $title = "<td class=rowfollow align=left><a href=\"" . ($arr['id'] <= $start_subid ?  "downloadsubs_legacy.php/" . $arr['filename'] : "downloadsubs.php?torrentid=" . $arr['torrent_id'] ."&subid=" .$arr['id']) . "\"<b>" . htmlspecialchars($arr["title"]) . "</b></a>" .

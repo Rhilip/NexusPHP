@@ -6,7 +6,7 @@ $id =  isset($_POST['id']) ? 0+$_POST['id'] : (isset($_GET['id']) ? 0+$_GET['id'
 int_check($id, true);
 $email = unesc(htmlspecialchars(trim($_POST["email"])));
 if (isset($_POST[conusr])) {
-    sql_query("UPDATE users SET status = 'confirmed', editsecret = '' WHERE id IN (" . implode(", ", $_POST[conusr]) . ") AND status='pending'");
+    \NexusPHP\Components\Database::query("UPDATE users SET status = 'confirmed', editsecret = '' WHERE id IN (" . implode(", ", $_POST[conusr]) . ") AND status='pending'");
 } else {
     stderr($lang_takeconfirm['std_sorry'], $lang_takeconfirm['std_no_buddy_to_confirm'].
  "<a class=altlink href=invite.php?id=$CURUSER[id]>".$lang_takeconfirm['std_here_to_go_back'], false);

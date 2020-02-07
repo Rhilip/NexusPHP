@@ -13,21 +13,21 @@ parked();
         stderr($lang_sendmessage['std_error'], $lang_sendmessage['std_permission_denied']);
     }
 
-    $res = sql_query("SELECT * FROM users WHERE id=$receiver") or die(mysql_error());
-    $user = mysql_fetch_assoc($res);
+    $res = \NexusPHP\Components\Database::query("SELECT * FROM users WHERE id=$receiver") or die(\NexusPHP\Components\Database::error());
+    $user = mysqli_fetch_assoc($res);
     if (!$user) {
         stderr($lang_sendmessage['std_error'], $lang_sendmessage['std_no_user_id']);
     }
     $subject = "";
     $body = "";
     if ($replyto) {
-        $res = sql_query("SELECT * FROM messages WHERE id=$replyto") or sqlerr();
-        $msga = mysql_fetch_assoc($res);
+        $res = \NexusPHP\Components\Database::query("SELECT * FROM messages WHERE id=$replyto") or sqlerr();
+        $msga = mysqli_fetch_assoc($res);
         if ($msga["receiver"] != $CURUSER["id"]) {
             stderr($lang_sendmessage['std_error'], $lang_sendmessage['std_permission_denied']);
         }
-        $res = sql_query("SELECT username FROM users WHERE id=" . $msga["sender"]) or sqlerr();
-        $usra = mysql_fetch_assoc($res);
+        $res = \NexusPHP\Components\Database::query("SELECT username FROM users WHERE id=" . $msga["sender"]) or sqlerr();
+        $usra = mysqli_fetch_assoc($res);
         $body .= $msga[msg]."\n\n-------- [url=userdetails.php?id=".$CURUSER["id"]."]".$CURUSER["username"]."[/url][i] Wrote at ".date("Y-m-d H:i:s").":[/i] --------\n";
         $subject = $msga['subject'];
         if (preg_match('/^Re:\s/', $subject)) {

@@ -61,12 +61,12 @@ if ($_GET['action'] == "apply") {
             stderr($lang_linksmanage['std_error'], $lang_linksmanage['std_reason_too_short']);
         } else {
             $message = "[b]Sitename[/b]: ".$sitename."\n[b]URL[/b]: ".$url."\n[b]Title[/b]: ".$title."\n[b]Administrator: [/b]".$admin."\n[b]EMail[/b]: ".$email."\n[b]Reason[/b]: \n".$reason."\n";
-            $message = sqlesc($message);
+            $message = \NexusPHP\Components\Database::escape($message);
             $subject = $sitename." applys for links";
-            $subject = sqlesc($subject);
+            $subject = \NexusPHP\Components\Database::escape($subject);
             $added = "'" . date("Y-m-d H:i:s") . "'";
             $userid = $CURUSER['id'];
-            sql_query("INSERT INTO staffmessages (sender, added, msg, subject) VALUES($userid, $added, $message, $subject)") or sqlerr(__FILE__, __LINE__);
+            \NexusPHP\Components\Database::query("INSERT INTO staffmessages (sender, added, msg, subject) VALUES($userid, $added, $message, $subject)") or sqlerr(__FILE__, __LINE__);
             stderr($lang_linksmanage['std_success'], $lang_linksmanage['std_success_note']);
         }
     } else {
@@ -84,11 +84,11 @@ elseif (get_user_class() < $linkmanage_class) {
             header("Location: linksmanage.php");
             die();
         }
-        $result = sql_query("SELECT * FROM links where id = '".$id."'");
-        if ($row = mysql_fetch_array($result)) {
+        $result = \NexusPHP\Components\Database::query("SELECT * FROM links where id = '".$id."'");
+        if ($row = mysqli_fetch_array($result)) {
             do {
-                sql_query("DELETE FROM links where id = '".$row["id"]."'") or sqlerr(__FILE__, __LINE__);
-            } while ($row = mysql_fetch_array($result));
+                \NexusPHP\Components\Database::query("DELETE FROM links where id = '".$row["id"]."'") or sqlerr(__FILE__, __LINE__);
+            } while ($row = mysqli_fetch_array($result));
         }
         $Cache->delete_value('links');
         header("Location: linksmanage.php");
@@ -103,7 +103,7 @@ elseif (get_user_class() < $linkmanage_class) {
             header("Location: linksmanage.php");
             die();
         }
-        sql_query("UPDATE links SET name = ".sqlesc($_POST['linkname']).", url = ".sqlesc($_POST['url']).", title = ".sqlesc($_POST['title'])." WHERE id = '".$_POST['id']."'") or sqlerr(__FILE__, __LINE__);
+        \NexusPHP\Components\Database::query("UPDATE links SET name = ".\NexusPHP\Components\Database::escape($_POST['linkname']).", url = ".\NexusPHP\Components\Database::escape($_POST['url']).", title = ".\NexusPHP\Components\Database::escape($_POST['title'])." WHERE id = '".$_POST['id']."'") or sqlerr(__FILE__, __LINE__);
         $Cache->delete_value('links');
         header("Location: linksmanage.php");
         die();
@@ -114,15 +114,15 @@ elseif (get_user_class() < $linkmanage_class) {
             stderr($lang_linksmanage['std_error'], $lang_linksmanage['std_missing_form_data']);
         }
 
-        $linkname = sqlesc($_POST["linkname"]);
-        $url = sqlesc($_POST["url"]);
-        $title = sqlesc($_POST["title"]);
+        $linkname = \NexusPHP\Components\Database::escape($_POST["linkname"]);
+        $url = \NexusPHP\Components\Database::escape($_POST["url"]);
+        $title = \NexusPHP\Components\Database::escape($_POST["title"]);
 
 
-        sql_query("INSERT INTO links (name, url, title) VALUES($linkname, $url, $title)") or sqlerr(__FILE__, __LINE__);
-        $res = sql_query("SELECT id FROM links WHERE name=$linkname");
+        \NexusPHP\Components\Database::query("INSERT INTO links (name, url, title) VALUES($linkname, $url, $title)") or sqlerr(__FILE__, __LINE__);
+        $res = \NexusPHP\Components\Database::query("SELECT id FROM links WHERE name=$linkname");
         $Cache->delete_value('links');
-        $arr = mysql_fetch_row($res);
+        $arr = mysqli_fetch_row($res);
         if (!$arr) {
             stderr($lang_linksmanage['std_error'], $lang_linksmanage['std_unable_creating_new_link']);
         }
@@ -143,19 +143,19 @@ elseif (get_user_class() < $linkmanage_class) {
 echo '<h1>'.$lang_linksmanage['text_manage_links'].'</h1>';
     echo '<table width="80%"  border="0" align="center" cellpadding="2" cellspacing="0">';
     echo "<tr><td class=colhead align=left>".$lang_linksmanage['text_site_name']."</td><td class=colhead>".$lang_linksmanage['text_url']."</td><td class=colhead>".$lang_linksmanage['text_title']."</td><td class=colhead align=center>".$lang_linksmanage['text_modify']."</td></tr>";
-    $result = sql_query("SELECT * FROM links ORDER BY id ASC");
-    if ($row = mysql_fetch_array($result)) {
+    $result = \NexusPHP\Components\Database::query("SELECT * FROM links ORDER BY id ASC");
+    if ($row = mysqli_fetch_array($result)) {
         do {
             echo "<tr><td>".$row["name"]."</td><td>".$row["url"]."</td><td>".$row["title"]. "</td><td align=center nowrap><b><a href=\"".$PHP_SELF."?action=edit&id=".$row["id"]."\">".$lang_linksmanage['text_edit']."</a>&nbsp;|&nbsp;<a href=\"javascript:confirm_delete('".$row["id"]."', '".$lang_linksmanage['js_sure_to_delete_link']."', '');\"><font color=red>".$lang_linksmanage['text_delete']."</font></a></b></td></tr>";
-        } while ($row = mysql_fetch_array($result));
+        } while ($row = mysqli_fetch_array($result));
     } else {
         print "<tr><td colspan=4>".$lang_linksmanage['text_no_links_found']."</td></tr>";
     }
     echo "</table>"; ?>
 <?php if ($_GET['action'] == "edit") {
         $id = 0 + ($_GET["id"]);
-        $result = sql_query("SELECT * FROM links where id = ".sqlesc($id));
-        if ($row = mysql_fetch_array($result)) {
+        $result = \NexusPHP\Components\Database::query("SELECT * FROM links where id = ".\NexusPHP\Components\Database::escape($id));
+        if ($row = mysqli_fetch_array($result)) {
             ?>
 <h1><?php echo $lang_linksmanage['text_edit_link']?></h1>
 <form method=post action="<?php echo $_SERVER['PHP_SELF']; ?>">

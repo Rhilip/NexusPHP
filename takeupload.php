@@ -198,7 +198,7 @@ $infohash = pack("H*", sha1(Bencode\Bencode::encode($dict['info'])));   // doubl
 $allowtorrents = user_can_upload("torrents");
 $allowspecial = user_can_upload("music");
 
-$catmod = get_single_value("categories", "mode", "WHERE id=".sqlesc($catid));
+$catmod = \NexusPHP\Components\Database::single("categories", "mode", "WHERE id=".\NexusPHP\Components\Database::escape($catid));
 $offerid = $_POST['offer'];
 $is_offer=false;
 if ($browsecatmode != $specialcatmode && $catmod == $specialcatmode) {//upload to special section
@@ -207,9 +207,9 @@ if ($browsecatmode != $specialcatmode && $catmod == $specialcatmode) {//upload t
     }
 } elseif ($catmod == $browsecatmode) {//upload to torrents section
     if ($offerid) {//it is a offer
-        $allowed_offer_count = get_row_count("offers", "WHERE allowed='allowed' AND userid=".sqlesc($CURUSER["id"]));
+        $allowed_offer_count = \NexusPHP\Components\Database::count("offers", "WHERE allowed='allowed' AND userid=".\NexusPHP\Components\Database::escape($CURUSER["id"]));
         if ($allowed_offer_count && $enableoffer == 'yes') {
-            $allowed_offer = get_row_count("offers", "WHERE id=".sqlesc($offerid)." AND allowed='allowed' AND userid=".sqlesc($CURUSER["id"]));
+            $allowed_offer = \NexusPHP\Components\Database::count("offers", "WHERE id=".\NexusPHP\Components\Database::escape($offerid)." AND allowed='allowed' AND userid=".\NexusPHP\Components\Database::escape($CURUSER["id"]));
             if ($allowed_offer != 1) {//user uploaded torrent that is not an allowed offer
                 bark($lang_takeupload['std_uploaded_not_offered']);
             } else {
@@ -291,7 +291,7 @@ if ($altname_main == 'yes') {
     $cnname_part = unesc(trim($_POST["cnname"]));
     $size_part = str_replace(" ", "", mksize($totallen));
     $date_part = date("m.d.y");
-    $category_part = get_single_value("categories", "name", "WHERE id = ".sqlesc($catid));
+    $category_part = \NexusPHP\Components\Database::single("categories", "name", "WHERE id = ".\NexusPHP\Components\Database::escape($catid));
     $torrent = "【".$date_part."】".($_POST["name"] ? "[".$_POST["name"]."]" : "").($cnname_part ? "[".$cnname_part."]" : "");
 }
 
@@ -323,20 +323,20 @@ if ($prorules_torrent == 'yes') {
     }
 }
 
-$ret = sql_query("INSERT INTO torrents (filename, owner, visible, anonymous, name, size, numfiles, type, url, small_descr, descr, ori_descr, category, source, medium, codec, audiocodec, standard, processing, team, save_as, sp_state, added, last_action, nfo, info_hash) VALUES (".sqlesc($fname).", ".sqlesc($CURUSER["id"]).", 'yes', ".sqlesc($anonymous).", ".sqlesc($torrent).", ".sqlesc($totallen).", ".count($filelist).", ".sqlesc($type).", ".sqlesc($url).", ".sqlesc($small_descr).", ".sqlesc($descr).", ".sqlesc($descr).", ".sqlesc($catid).", ".sqlesc($sourceid).", ".sqlesc($mediumid).", ".sqlesc($codecid).", ".sqlesc($audiocodecid).", ".sqlesc($standardid).", ".sqlesc($processingid).", ".sqlesc($teamid).", ".sqlesc($dname).", ".sqlesc($sp_state) .
-", " . sqlesc(date("Y-m-d H:i:s")) . ", " . sqlesc(date("Y-m-d H:i:s")) . ", ".sqlesc($nfo).", " . sqlesc($infohash). ")");
+$ret = \NexusPHP\Components\Database::query("INSERT INTO torrents (filename, owner, visible, anonymous, name, size, numfiles, type, url, small_descr, descr, ori_descr, category, source, medium, codec, audiocodec, standard, processing, team, save_as, sp_state, added, last_action, nfo, info_hash) VALUES (".\NexusPHP\Components\Database::escape($fname).", ".\NexusPHP\Components\Database::escape($CURUSER["id"]).", 'yes', ".\NexusPHP\Components\Database::escape($anonymous).", ".\NexusPHP\Components\Database::escape($torrent).", ".\NexusPHP\Components\Database::escape($totallen).", ".count($filelist).", ".\NexusPHP\Components\Database::escape($type).", ".\NexusPHP\Components\Database::escape($url).", ".\NexusPHP\Components\Database::escape($small_descr).", ".\NexusPHP\Components\Database::escape($descr).", ".\NexusPHP\Components\Database::escape($descr).", ".\NexusPHP\Components\Database::escape($catid).", ".\NexusPHP\Components\Database::escape($sourceid).", ".\NexusPHP\Components\Database::escape($mediumid).", ".\NexusPHP\Components\Database::escape($codecid).", ".\NexusPHP\Components\Database::escape($audiocodecid).", ".\NexusPHP\Components\Database::escape($standardid).", ".\NexusPHP\Components\Database::escape($processingid).", ".\NexusPHP\Components\Database::escape($teamid).", ".\NexusPHP\Components\Database::escape($dname).", ".\NexusPHP\Components\Database::escape($sp_state) .
+", " . \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s")) . ", " . \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s")) . ", ".\NexusPHP\Components\Database::escape($nfo).", " . \NexusPHP\Components\Database::escape($infohash). ")");
 if (!$ret) {
-    if (mysql_errno() == 1062) {
+    if (\NexusPHP\Components\Database::errno() == 1062) {
         bark($lang_takeupload['std_torrent_existed']);
     }
-    bark("mysql puked: ".mysql_error());
-    //bark("mysql puked: ".preg_replace_callback('/./s', "hex_esc2", mysql_error()));
+    bark("mysql puked: ".\NexusPHP\Components\Database::error());
+    //bark("mysql puked: ".preg_replace_callback('/./s', "hex_esc2", \NexusPHP\Components\Database::error()));
 }
-$id = mysql_insert_id();
+$id = \NexusPHP\Components\Database::insert_id();
 
-@sql_query("DELETE FROM files WHERE torrent = $id");
+@\NexusPHP\Components\Database::query("DELETE FROM files WHERE torrent = $id");
 foreach ($filelist as $file) {
-    @sql_query("INSERT INTO files (torrent, filename, size) VALUES ($id, ".sqlesc($file[0]).",".$file[1].")");
+    @\NexusPHP\Components\Database::query("INSERT INTO files (torrent, filename, size) VALUES ($id, ".\NexusPHP\Components\Database::escape($file[0]).",".$file[1].")");
 }
 
 Bencode\Bencode::dump("$torrent_dir/$id.torrent", $dict);
@@ -350,33 +350,33 @@ write_log("Torrent $id ($torrent) was uploaded by $anon");
 
 //===notify people who voted on offer thanks CoLdFuSiOn :)
 if ($is_offer) {
-    $res = sql_query("SELECT `userid` FROM `offervotes` WHERE `userid` != " . $CURUSER["id"] . " AND `offerid` = ". sqlesc($offerid)." AND `vote` = 'yeah'") or sqlerr(__FILE__, __LINE__);
+    $res = \NexusPHP\Components\Database::query("SELECT `userid` FROM `offervotes` WHERE `userid` != " . $CURUSER["id"] . " AND `offerid` = ". \NexusPHP\Components\Database::escape($offerid)." AND `vote` = 'yeah'") or sqlerr(__FILE__, __LINE__);
 
-    while ($row = mysql_fetch_assoc($res)) {
+    while ($row = mysqli_fetch_assoc($res)) {
         $pn_msg = $lang_takeupload_target[get_user_lang($row["userid"])]['msg_offer_you_voted'].$torrent.$lang_takeupload_target[get_user_lang($row["userid"])]['msg_was_uploaded_by']. $CURUSER["username"] .$lang_takeupload_target[get_user_lang($row["userid"])]['msg_you_can_download'] ."[url=" . get_protocol_prefix() . "$BASEURL/details.php?id=$id&hit=1]".$lang_takeupload_target[get_user_lang($row["userid"])]['msg_here']."[/url]";
         
         //=== use this if you DO have subject in your PMs
         $subject = $lang_takeupload_target[get_user_lang($row["userid"])]['msg_offer'].$torrent.$lang_takeupload_target[get_user_lang($row["userid"])]['msg_was_just_uploaded'];
         //=== use this if you DO NOT have subject in your PMs
-        //$some_variable .= "(0, $row[userid], '" . date("Y-m-d H:i:s") . "', " . sqlesc($pn_msg) . ")";
+        //$some_variable .= "(0, $row[userid], '" . date("Y-m-d H:i:s") . "', " . \NexusPHP\Components\Database::escape($pn_msg) . ")";
 
         //=== use this if you DO have subject in your PMs
-        sql_query("INSERT INTO messages (sender, subject, receiver, added, msg) VALUES (0, ".sqlesc($subject).", $row[userid], ".sqlesc(date("Y-m-d H:i:s")).", " . sqlesc($pn_msg) . ")") or sqlerr(__FILE__, __LINE__);
+        \NexusPHP\Components\Database::query("INSERT INTO messages (sender, subject, receiver, added, msg) VALUES (0, ".\NexusPHP\Components\Database::escape($subject).", $row[userid], ".\NexusPHP\Components\Database::escape(date("Y-m-d H:i:s")).", " . \NexusPHP\Components\Database::escape($pn_msg) . ")") or sqlerr(__FILE__, __LINE__);
         //=== use this if you do NOT have subject in your PMs
-        //sql_query("INSERT INTO messages (sender, receiver, added, msg) VALUES ".$some_variable."") or sqlerr(__FILE__, __LINE__);
+        //\NexusPHP\Components\Database::query("INSERT INTO messages (sender, receiver, added, msg) VALUES ".$some_variable."") or sqlerr(__FILE__, __LINE__);
         //===end
     }
     //=== delete all offer stuff
-    sql_query("DELETE FROM offers WHERE id = ". $offerid);
-    sql_query("DELETE FROM offervotes WHERE offerid = ". $offerid);
-    sql_query("DELETE FROM comments WHERE offer = ". $offerid);
+    \NexusPHP\Components\Database::query("DELETE FROM offers WHERE id = ". $offerid);
+    \NexusPHP\Components\Database::query("DELETE FROM offervotes WHERE offerid = ". $offerid);
+    \NexusPHP\Components\Database::query("DELETE FROM comments WHERE offer = ". $offerid);
 }
 //=== end notify people who voted on offer
 
 /* Email notifs */
 if ($emailnotify_smtp=='yes' && $smtptype != 'none') {
-    $cat = get_single_value("categories", "name", "WHERE id=".sqlesc($catid));
-    $res = sql_query("SELECT id, email, lang FROM users WHERE enabled='yes' AND parked='no' AND status='confirmed' AND notifs LIKE '%[cat$catid]%' AND notifs LIKE '%[email]%' ORDER BY lang ASC") or sqlerr(__FILE__, __LINE__);
+    $cat = \NexusPHP\Components\Database::single("categories", "name", "WHERE id=".\NexusPHP\Components\Database::escape($catid));
+    $res = \NexusPHP\Components\Database::query("SELECT id, email, lang FROM users WHERE enabled='yes' AND parked='no' AND status='confirmed' AND notifs LIKE '%[cat$catid]%' AND notifs LIKE '%[email]%' ORDER BY lang ASC") or sqlerr(__FILE__, __LINE__);
 
     $uploader = $anon;
 
@@ -416,7 +416,7 @@ EOD;
         $i++;
     }
 
-    while ($arr = mysql_fetch_array($res)) {
+    while ($arr = mysqli_fetch_array($res)) {
         $current_lang = $arr["lang"];
         $to = $arr["email"];
 

@@ -76,8 +76,8 @@ if ($ratio>1) {
     $query .= ' AND (uploaded / downloaded) > '.($ratio - 1);
 }
 
-$res = sql_query("SELECT COUNT(*),MIN(cheat),MAX(cheat) FROM users $query") or sqlerr();
-$arr = mysql_fetch_row($res);
+$res = \NexusPHP\Components\Database::query("SELECT COUNT(*),MIN(cheat),MAX(cheat) FROM users $query") or sqlerr();
+$arr = mysqli_fetch_row($res);
 $top = MIN($top, $arr[0]);
 $min = $arr[1];
 $max = $arr[2];
@@ -95,8 +95,8 @@ echo $pagertop;
 begin_table();
 print("<tr><th class=\"left\">User name</th><th>Registered</th><th>Uploaded</th><th>Downloaded</th><th>Ratio</th><th>Cheat Value</th><th>Cheat Spread</th></tr>\n");
 
-$res = sql_query("SELECT * FROM users $query ORDER BY cheat DESC $limit") or sqlerr();
-while ($arr = mysql_fetch_assoc($res)) {
+$res = \NexusPHP\Components\Database::query("SELECT * FROM users $query ORDER BY cheat DESC $limit") or sqlerr();
+while ($arr = mysqli_fetch_assoc($res)) {
     if ($arr['added'] == "0000-00-00 00:00:00") {
         $joindate = 'N/A';
     } else {

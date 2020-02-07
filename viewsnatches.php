@@ -10,9 +10,9 @@ int_check($id, true);
 stdhead($lang_viewsnatches['head_snatch_detail']);
 begin_main_frame();
 
-$torrent_name = get_single_value("torrents", "name", "WHERE id = ".sqlesc($id));
+$torrent_name = \NexusPHP\Components\Database::single("torrents", "name", "WHERE id = ".\NexusPHP\Components\Database::escape($id));
 print("<h1 align=center>".$lang_viewsnatches['text_snatch_detail_for'] . "<a href=details.php?id=" . htmlspecialchars($id) . "><b>".htmlspecialchars($torrent_name)."</b></a></h1>");
-$count = get_row_count("snatched", "WHERE finished = 'yes' AND torrentid = ".sqlesc($id));
+$count = \NexusPHP\Components\Database::count("snatched", "WHERE finished = 'yes' AND torrentid = ".\NexusPHP\Components\Database::escape($id));
 
 if ($count) {
     $perpage = 25;
@@ -21,9 +21,9 @@ if ($count) {
     print("<table border=1 cellspacing=0 cellpadding=5 align=center width=940>\n");
     print("<tr><td class=colhead align=center>".$lang_viewsnatches['col_username']."</td>".(get_user_class() >= $userprofile_class ? "<td class=colhead align=center>".$lang_viewsnatches['col_ip']."</td>" : "")."<td class=colhead align=center>".$lang_viewsnatches['col_uploaded']."/".$lang_viewsnatches['col_downloaded']."</td><td class=colhead align=center>".$lang_viewsnatches['col_ratio']."</td><td class=colhead align=center>".$lang_viewsnatches['col_se_time']."</td><td class=colhead align=center>".$lang_viewsnatches['col_le_time']."</td><td class=colhead align=center>".$lang_viewsnatches['col_when_completed']."</td><td class=colhead align=center>".$lang_viewsnatches['col_last_action']."</td><td class=colhead align=center>".$lang_viewsnatches['col_report_user']."</td></tr>");
 
-    $res = sql_query("SELECT * FROM snatched WHERE finished='yes' AND torrentid =" . sqlesc($id) . " ORDER BY completedat DESC $limit");
+    $res = \NexusPHP\Components\Database::query("SELECT * FROM snatched WHERE finished='yes' AND torrentid =" . \NexusPHP\Components\Database::escape($id) . " ORDER BY completedat DESC $limit");
 
-    while ($arr = mysql_fetch_assoc($res)) {
+    while ($arr = mysqli_fetch_assoc($res)) {
         //start torrent
         if ($arr["downloaded"] > 0) {
             $ratio = number_format($arr["uploaded"] / $arr["downloaded"], 3);

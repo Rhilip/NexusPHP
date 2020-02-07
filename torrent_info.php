@@ -51,8 +51,8 @@ if (!$id) {
     httperr();
 }
 
-$res = sql_query("SELECT name FROM torrents WHERE id = ".sqlesc($id)) or sqlerr(__FILE__, __LINE__);
-$row = mysql_fetch_assoc($res);
+$res = \NexusPHP\Components\Database::query("SELECT name FROM torrents WHERE id = ".\NexusPHP\Components\Database::escape($id)) or sqlerr(__FILE__, __LINE__);
+$row = mysqli_fetch_assoc($res);
 
 $fn = "$torrent_dir/$id.torrent";
 

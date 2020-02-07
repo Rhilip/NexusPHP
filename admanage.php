@@ -181,9 +181,9 @@ if ($action == 'del') {
     if (!$id) {
         stderr($lang_admanage['std_error'], $lang_admanage['std_invalid_id']);
     }
-    $res = sql_query("SELECT * FROM advertisements WHERE id = ".sqlesc($id)." LIMIT 1");
-    if ($row = mysql_fetch_array($res)) {
-        sql_query("DELETE FROM advertisements WHERE id = ".sqlesc($row['id'])) or sqlerr(__FILE__, __LINE__);
+    $res = \NexusPHP\Components\Database::query("SELECT * FROM advertisements WHERE id = ".\NexusPHP\Components\Database::escape($id)." LIMIT 1");
+    if ($row = mysqli_fetch_array($res)) {
+        \NexusPHP\Components\Database::query("DELETE FROM advertisements WHERE id = ".\NexusPHP\Components\Database::escape($row['id'])) or sqlerr(__FILE__, __LINE__);
     }
     $Cache->delete_value('current_ad_array', false);
     header("Location: ".get_protocol_prefix() . $BASEURL."/admanage.php");
@@ -193,8 +193,8 @@ if ($action == 'del') {
     if (!$id) {
         stderr($lang_admanage['std_error'], $lang_admanage['std_invalid_id']);
     } else {
-        $res = sql_query("SELECT * FROM advertisements WHERE id = ".sqlesc($id)." LIMIT 1");
-        if (!$row = mysql_fetch_array($res)) {
+        $res = \NexusPHP\Components\Database::query("SELECT * FROM advertisements WHERE id = ".\NexusPHP\Components\Database::escape($id)." LIMIT 1");
+        if (!$row = mysqli_fetch_array($res)) {
             stderr($lang_admanage['std_error'], $lang_admanage['std_invalid_id']);
         } else {
             $position = $row['position'];
@@ -232,14 +232,14 @@ if ($action == 'del') {
                 stderr($lang_admanage['std_error'], $lang_admanage['std_invalid_id']);
             } else {
                 $adid = $id;
-                $res = sql_query("SELECT * FROM advertisements WHERE id = ".sqlesc($id)." LIMIT 1");
-                if (!$row = mysql_fetch_array($res)) {
+                $res = \NexusPHP\Components\Database::query("SELECT * FROM advertisements WHERE id = ".\NexusPHP\Components\Database::escape($id)." LIMIT 1");
+                if (!$row = mysqli_fetch_array($res)) {
                     stderr($lang_admanage['std_error'], $lang_admanage['std_invalid_id']);
                 }
             }
         } else {
-            $res = sql_query("SELECT id FROM advertisements ORDER BY id DESC LIMIT 1");
-            $row = mysql_fetch_array($res);
+            $res = \NexusPHP\Components\Database::query("SELECT id FROM advertisements ORDER BY id DESC LIMIT 1");
+            $row = mysqli_fetch_array($res);
             if (!$row) {
                 $adid = 1;
             } else {
@@ -321,11 +321,11 @@ if ($action == 'del') {
                 break;
         }
         if ($_POST['isedit']) {
-            sql_query("UPDATE advertisements SET enabled=".sqlesc($enabled).", type=".sqlesc($type).", displayorder=".sqlesc($displayorder).", name=".sqlesc($name).", parameters=".sqlesc($parameters).", code=".sqlesc($code).", starttime=".($starttime ? sqlesc($starttime) : "NULL").", endtime=".($endtime ? sqlesc($endtime) : "NULL")." WHERE id=".sqlesc($id)) or sqlerr(__FILE__, __LINE__);
+            \NexusPHP\Components\Database::query("UPDATE advertisements SET enabled=".\NexusPHP\Components\Database::escape($enabled).", type=".\NexusPHP\Components\Database::escape($type).", displayorder=".\NexusPHP\Components\Database::escape($displayorder).", name=".\NexusPHP\Components\Database::escape($name).", parameters=".\NexusPHP\Components\Database::escape($parameters).", code=".\NexusPHP\Components\Database::escape($code).", starttime=".($starttime ? \NexusPHP\Components\Database::escape($starttime) : "NULL").", endtime=".($endtime ? \NexusPHP\Components\Database::escape($endtime) : "NULL")." WHERE id=".\NexusPHP\Components\Database::escape($id)) or sqlerr(__FILE__, __LINE__);
             $Cache->delete_value('current_ad_array', false);
             stderr($lang_admanage['std_success'], $lang_admanage['std_edit_success']."<a href=\"?\"><b>".$lang_admanage['std_go_back']."</b></a>", false);
         } else {
-            sql_query("INSERT INTO advertisements (`enabled`, `type`, `position`, `displayorder`, `name`, `parameters`, `code`, `starttime`, `endtime`) VALUES (".sqlesc($enabled).", ".sqlesc($type).", ".sqlesc($position).", ".sqlesc($displayorder).", ".sqlesc($name).", ".sqlesc($parameters).", ".sqlesc($code).", ".($starttime ? sqlesc($starttime) : "NULL").", ".($endtime ? sqlesc($endtime) : "NULL").")") or sqlerr(__FILE__, __LINE__);
+            \NexusPHP\Components\Database::query("INSERT INTO advertisements (`enabled`, `type`, `position`, `displayorder`, `name`, `parameters`, `code`, `starttime`, `endtime`) VALUES (".\NexusPHP\Components\Database::escape($enabled).", ".\NexusPHP\Components\Database::escape($type).", ".\NexusPHP\Components\Database::escape($position).", ".\NexusPHP\Components\Database::escape($displayorder).", ".\NexusPHP\Components\Database::escape($name).", ".\NexusPHP\Components\Database::escape($parameters).", ".\NexusPHP\Components\Database::escape($code).", ".($starttime ? \NexusPHP\Components\Database::escape($starttime) : "NULL").", ".($endtime ? \NexusPHP\Components\Database::escape($endtime) : "NULL").")") or sqlerr(__FILE__, __LINE__);
             $Cache->delete_value('current_ad_array', false);
             stderr($lang_admanage['std_success'], $lang_admanage['std_add_success']."<a href=\"?\"><b>".$lang_admanage['std_go_back']."</b></a>", false);
         }
@@ -352,12 +352,12 @@ if ($action == 'del') {
 <div style="margin-top: 8px">
 <?php
     $perpage = 20;
-    $num = get_row_count("advertisements");
+    $num = \NexusPHP\Components\Database::count("advertisements");
     if (!$num) {
         print("<p align=\"center\">".$lang_admanage['text_no_ads_yet']."</p>");
     } else {
         list($pagertop, $pagerbottom, $limit) = pager($perpage, $num, "?");
-        $res = sql_query("SELECT * FROM advertisements ORDER BY id DESC ".(int)$limit) or sqlerr(__FILE__, __LINE__); ?>
+        $res = \NexusPHP\Components\Database::query("SELECT * FROM advertisements ORDER BY id DESC ".(int)$limit) or sqlerr(__FILE__, __LINE__); ?>
 <table border="1" cellspacing="0" cellpadding="5" width="940">
 <tr>
 <td class="colhead"><?php echo $lang_admanage['col_enabled']?></td>
@@ -371,8 +371,8 @@ if ($action == 'del') {
 <td class="colhead"><?php echo $lang_admanage['col_action']?></td>
 </tr>
 <?php
-while ($row = mysql_fetch_array($res)) {
-            $clickcount=get_row_count("adclicks", "WHERE adid=".sqlesc($row['id'])); ?>
+while ($row = mysqli_fetch_array($res)) {
+            $clickcount=\NexusPHP\Components\Database::count("adclicks", "WHERE adid=".\NexusPHP\Components\Database::escape($row['id'])); ?>
 <tr>
 <td class="colfollow"><?php echo $row['enabled'] ? "<font color=\"green\">".$lang_admanage['text_yes']."</font>" : "<font color=\"red\">".$lang_admanage['text_no']."</font>" ?></td>
 <td class="colfollow"><?php echo htmlspecialchars($row['name'])?></td>

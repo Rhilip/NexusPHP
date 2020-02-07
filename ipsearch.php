@@ -59,8 +59,8 @@ UNION SELECT u.id FROM users AS u RIGHT JOIN iplog ON u.id = iplog.userid WHERE 
 GROUP BY u.id
 ) AS ipsearch";
 
-        $res = sql_query($queryc) or sqlerr(__FILE__, __LINE__);
-        $row = mysql_fetch_array($res);
+        $res = \NexusPHP\Components\Database::query($queryc) or sqlerr(__FILE__, __LINE__);
+        $row = mysqli_fetch_array($res);
         $count = $row[0];
 
         if ($count == 0) {
@@ -103,7 +103,7 @@ GROUP BY id
 ORDER BY $orderby
 $limit";
 
-        $res = sql_query($query) or sqlerr(__FILE__, __LINE__);
+        $res = \NexusPHP\Components\Database::query($query) or sqlerr(__FILE__, __LINE__);
 
         print("<h1 align=\"center\">".$count.$lang_ipsearch['text_users_used_the_ip'].$ip."</h1>");
 
@@ -116,7 +116,7 @@ $limit";
 "<td class=colhead align=center><a class=colhead href=\"?ip=$ip&mask=$mask&order=added\">".$lang_ipsearch['col_added']."</a></td>".
 "<td class=colhead align=center>".$lang_ipsearch['col_invited_by']."</td>");
 
-        while ($user = mysql_fetch_array($res)) {
+        while ($user = mysqli_fetch_array($res)) {
             if ($user['added'] == '0000-00-00 00:00:00') {
                 $added = $lang_ipsearch['text_not_available'];
             } else {
@@ -134,8 +134,8 @@ $limit";
                 $ipstr = $lang_ipsearch['text_not_available'];
             }
 
-            $resip = sql_query("SELECT ip FROM iplog WHERE userid=" . sqlesc($user['id']) . " GROUP BY iplog.ip") or sqlerr(__FILE__, __LINE__);
-            $iphistory = mysql_num_rows($resip);
+            $resip = \NexusPHP\Components\Database::query("SELECT ip FROM iplog WHERE userid=" . \NexusPHP\Components\Database::escape($user['id']) . " GROUP BY iplog.ip") or sqlerr(__FILE__, __LINE__);
+            $iphistory = mysqli_num_rows($resip);
 
             if ($user["invited_by"] > 0) {
                 $invited_by = get_username($user['invited_by']);

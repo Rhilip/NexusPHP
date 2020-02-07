@@ -10,8 +10,8 @@ if (get_user_class() < UC_SYSOP) {
 $shownotice=false;
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($_POST['sure']) {
-        $res=sql_query("DELETE FROM users WHERE enabled='no'");
-        $deletecount=mysql_affected_rows();
+        $res=\NexusPHP\Components\Database::query("DELETE FROM users WHERE enabled='no'");
+        $deletecount=\NexusPHP\Components\Database::affected_rows();
         $shownotice=true;
     }
 }

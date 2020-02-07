@@ -12,11 +12,11 @@ $pollid = $_GET["pollid"];
 
 if ($action == "edit") {
     int_check($pollid, true);
-    $res = sql_query("SELECT * FROM polls WHERE id = $pollid") or sqlerr(__FILE__, __LINE__);
-    if (mysql_num_rows($res) == 0) {
+    $res = \NexusPHP\Components\Database::query("SELECT * FROM polls WHERE id = $pollid") or sqlerr(__FILE__, __LINE__);
+    if (mysqli_num_rows($res) == 0) {
         stderr($lang_makepoll['std_error'], $lang_makepoll['std_no_poll_id']);
     }
-    $poll = mysql_fetch_array($res);
+    $poll = mysqli_fetch_array($res);
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -49,52 +49,52 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     if ($pollid) {
-        sql_query("UPDATE polls SET " .
-        "question = " . sqlesc($question) . ", " .
-        "option0 = " . sqlesc($option0) . ", " .
-        "option1 = " . sqlesc($option1) . ", " .
-        "option2 = " . sqlesc($option2) . ", " .
-        "option3 = " . sqlesc($option3) . ", " .
-        "option4 = " . sqlesc($option4) . ", " .
-        "option5 = " . sqlesc($option5) . ", " .
-        "option6 = " . sqlesc($option6) . ", " .
-        "option7 = " . sqlesc($option7) . ", " .
-        "option8 = " . sqlesc($option8) . ", " .
-        "option9 = " . sqlesc($option9) . ", " .
-        "option10 = " . sqlesc($option10) . ", " .
-        "option11 = " . sqlesc($option11) . ", " .
-        "option12 = " . sqlesc($option12) . ", " .
-        "option13 = " . sqlesc($option13) . ", " .
-        "option14 = " . sqlesc($option14) . ", " .
-        "option15 = " . sqlesc($option15) . ", " .
-        "option16 = " . sqlesc($option16) . ", " .
-        "option17 = " . sqlesc($option17) . ", " .
-        "option18 = " . sqlesc($option18) . ", " .
-        "option19 = " . sqlesc($option19) . " " .
+        \NexusPHP\Components\Database::query("UPDATE polls SET " .
+        "question = " . \NexusPHP\Components\Database::escape($question) . ", " .
+        "option0 = " . \NexusPHP\Components\Database::escape($option0) . ", " .
+        "option1 = " . \NexusPHP\Components\Database::escape($option1) . ", " .
+        "option2 = " . \NexusPHP\Components\Database::escape($option2) . ", " .
+        "option3 = " . \NexusPHP\Components\Database::escape($option3) . ", " .
+        "option4 = " . \NexusPHP\Components\Database::escape($option4) . ", " .
+        "option5 = " . \NexusPHP\Components\Database::escape($option5) . ", " .
+        "option6 = " . \NexusPHP\Components\Database::escape($option6) . ", " .
+        "option7 = " . \NexusPHP\Components\Database::escape($option7) . ", " .
+        "option8 = " . \NexusPHP\Components\Database::escape($option8) . ", " .
+        "option9 = " . \NexusPHP\Components\Database::escape($option9) . ", " .
+        "option10 = " . \NexusPHP\Components\Database::escape($option10) . ", " .
+        "option11 = " . \NexusPHP\Components\Database::escape($option11) . ", " .
+        "option12 = " . \NexusPHP\Components\Database::escape($option12) . ", " .
+        "option13 = " . \NexusPHP\Components\Database::escape($option13) . ", " .
+        "option14 = " . \NexusPHP\Components\Database::escape($option14) . ", " .
+        "option15 = " . \NexusPHP\Components\Database::escape($option15) . ", " .
+        "option16 = " . \NexusPHP\Components\Database::escape($option16) . ", " .
+        "option17 = " . \NexusPHP\Components\Database::escape($option17) . ", " .
+        "option18 = " . \NexusPHP\Components\Database::escape($option18) . ", " .
+        "option19 = " . \NexusPHP\Components\Database::escape($option19) . " " .
         " WHERE id = $pollid") or sqlerr(__FILE__, __LINE__);
     } else {
-        sql_query("INSERT INTO polls VALUES(0, " . sqlesc(date("Y-m-d H:i:s")) .", " .
-        sqlesc($question) . ", " .
-        sqlesc($option0) . ", " .
-        sqlesc($option1) . ", " .
-        sqlesc($option2) . ", " .
-        sqlesc($option3) . ", " .
-        sqlesc($option4) . ", " .
-        sqlesc($option5) . ", " .
-        sqlesc($option6) . ", " .
-        sqlesc($option7) . ", " .
-        sqlesc($option8) . ", " .
-        sqlesc($option9) . ", " .
-        sqlesc($option10) . ", " .
-        sqlesc($option11) . ", " .
-        sqlesc($option12) . ", " .
-        sqlesc($option13) . ", " .
-        sqlesc($option14) . ", " .
-        sqlesc($option15) . ", " .
-        sqlesc($option16) . ", " .
-        sqlesc($option17) . ", " .
-        sqlesc($option18) . ", " .
-        sqlesc($option19).")") or sqlerr(__FILE__, __LINE__);
+        \NexusPHP\Components\Database::query("INSERT INTO polls VALUES(0, " . \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s")) .", " .
+        \NexusPHP\Components\Database::escape($question) . ", " .
+        \NexusPHP\Components\Database::escape($option0) . ", " .
+        \NexusPHP\Components\Database::escape($option1) . ", " .
+        \NexusPHP\Components\Database::escape($option2) . ", " .
+        \NexusPHP\Components\Database::escape($option3) . ", " .
+        \NexusPHP\Components\Database::escape($option4) . ", " .
+        \NexusPHP\Components\Database::escape($option5) . ", " .
+        \NexusPHP\Components\Database::escape($option6) . ", " .
+        \NexusPHP\Components\Database::escape($option7) . ", " .
+        \NexusPHP\Components\Database::escape($option8) . ", " .
+        \NexusPHP\Components\Database::escape($option9) . ", " .
+        \NexusPHP\Components\Database::escape($option10) . ", " .
+        \NexusPHP\Components\Database::escape($option11) . ", " .
+        \NexusPHP\Components\Database::escape($option12) . ", " .
+        \NexusPHP\Components\Database::escape($option13) . ", " .
+        \NexusPHP\Components\Database::escape($option14) . ", " .
+        \NexusPHP\Components\Database::escape($option15) . ", " .
+        \NexusPHP\Components\Database::escape($option16) . ", " .
+        \NexusPHP\Components\Database::escape($option17) . ", " .
+        \NexusPHP\Components\Database::escape($option18) . ", " .
+        \NexusPHP\Components\Database::escape($option19).")") or sqlerr(__FILE__, __LINE__);
     }
 
     $Cache->delete_value('current_poll_content');
@@ -115,8 +115,8 @@ if ($pollid) {
 } else {
     stdhead($lang_makepoll['head_new_poll']);
     // Warn if current poll is less than 3 days old
-    $res = sql_query("SELECT question, added FROM polls ORDER BY added DESC LIMIT 1") or sqlerr();
-    $arr = mysql_fetch_assoc($res);
+    $res = \NexusPHP\Components\Database::query("SELECT question, added FROM polls ORDER BY added DESC LIMIT 1") or sqlerr();
+    $arr = mysqli_fetch_assoc($res);
     if ($arr) {
         $hours = floor((strtotime(date("Y-m-d H:i:s")) - strtotime($arr["added"])) / 3600);
         $days = floor($hours / 24);

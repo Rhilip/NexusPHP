@@ -7,7 +7,7 @@ if (get_user_class() < UC_MODERATOR) {
 }
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($_POST['doit'] == 'yes') {
-        sql_query("UPDATE users SET seedbonus = seedbonus + 25.0 WHERE status='confirmed'");
+        \NexusPHP\Components\Database::query("UPDATE users SET seedbonus = seedbonus + 25.0 WHERE status='confirmed'");
         stderr("Bonus", "25.0 bonus point is sent to everyone...");
         die;
     }
@@ -15,12 +15,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($_POST["username"] == "" || $_POST["seedbonus"] == "" || $_POST["seedbonus"] == "") {
         stderr("Error", "Missing form data.");
     }
-    $username = sqlesc($_POST["username"]);
-    $seedbonus = sqlesc($_POST["seedbonus"]);
+    $username = \NexusPHP\Components\Database::escape($_POST["username"]);
+    $seedbonus = \NexusPHP\Components\Database::escape($_POST["seedbonus"]);
 
-    sql_query("UPDATE users SET seedbonus=seedbonus + $seedbonus WHERE username=$username") or sqlerr(__FILE__, __LINE__);
-    $res = sql_query("SELECT id FROM users WHERE username=$username");
-    $arr = mysql_fetch_row($res);
+    \NexusPHP\Components\Database::query("UPDATE users SET seedbonus=seedbonus + $seedbonus WHERE username=$username") or sqlerr(__FILE__, __LINE__);
+    $res = \NexusPHP\Components\Database::query("SELECT id FROM users WHERE username=$username");
+    $arr = mysqli_fetch_row($res);
     if (!$arr) {
         stderr("Error", "Unable to update account.");
     }

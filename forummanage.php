@@ -15,15 +15,15 @@ if ($_GET['action'] == "del") {
         header("Location: forummanage.php");
         die();
     }
-    $result = sql_query("SELECT * FROM topics where forumid = ".sqlesc($id));
-    if ($row = mysql_fetch_array($result)) {
+    $result = \NexusPHP\Components\Database::query("SELECT * FROM topics where forumid = ".\NexusPHP\Components\Database::escape($id));
+    if ($row = mysqli_fetch_array($result)) {
         do {
-            sql_query("DELETE FROM posts where topicid = ".$row["id"]) or sqlerr(__FILE__, __LINE__);
-        } while ($row = mysql_fetch_array($result));
+            \NexusPHP\Components\Database::query("DELETE FROM posts where topicid = ".$row["id"]) or sqlerr(__FILE__, __LINE__);
+        } while ($row = mysqli_fetch_array($result));
     }
-    sql_query("DELETE FROM topics where forumid = ".sqlesc($id)) or sqlerr(__FILE__, __LINE__);
-    sql_query("DELETE FROM forums where id = ".sqlesc($id)) or sqlerr(__FILE__, __LINE__);
-    sql_query("DELETE FROM forummods where forumid = ".sqlesc($id)) or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("DELETE FROM topics where forumid = ".\NexusPHP\Components\Database::escape($id)) or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("DELETE FROM forums where id = ".\NexusPHP\Components\Database::escape($id)) or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("DELETE FROM forummods where forumid = ".\NexusPHP\Components\Database::escape($id)) or sqlerr(__FILE__, __LINE__);
     $Cache->delete_value('forums_list');
     $Cache->delete_value('forum_moderator_array');
     header("Location: forummanage.php");
@@ -43,9 +43,9 @@ elseif ($_POST['action'] == "editforum") {
         $moderator = $_POST["moderator"];
         set_forum_moderators($moderator, $id);
     } else {
-        sql_query("DELETE FROM forummods WHERE forumid=".sqlesc($id)) or sqlerr(__FILE__, __LINE__);
+        \NexusPHP\Components\Database::query("DELETE FROM forummods WHERE forumid=".\NexusPHP\Components\Database::escape($id)) or sqlerr(__FILE__, __LINE__);
     }
-    sql_query("UPDATE forums SET sort = '" . $_POST['sort'] . "', name = " . sqlesc($_POST['name']). ", description = " . sqlesc($_POST['desc']). ", forid = ".sqlesc(($_POST['overforums'])).", minclassread = '" . $_POST['readclass'] . "', minclasswrite = '" . $_POST['writeclass'] . "', minclasscreate = '" . $_POST['createclass'] . "' where id = ".sqlesc($id)) or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("UPDATE forums SET sort = '" . $_POST['sort'] . "', name = " . \NexusPHP\Components\Database::escape($_POST['name']). ", description = " . \NexusPHP\Components\Database::escape($_POST['desc']). ", forid = ".\NexusPHP\Components\Database::escape(($_POST['overforums'])).", minclassread = '" . $_POST['readclass'] . "', minclasswrite = '" . $_POST['writeclass'] . "', minclasscreate = '" . $_POST['createclass'] . "' where id = ".\NexusPHP\Components\Database::escape($id)) or sqlerr(__FILE__, __LINE__);
     $Cache->delete_value('forums_list');
     $Cache->delete_value('forum_moderator_array');
     header("Location: forummanage.php");
@@ -60,10 +60,10 @@ elseif ($_POST['action'] == "addforum") {
         header("Location: " . get_protocol_prefix() . "$BASEURL/forummanage.php");
         die();
     }
-    sql_query("INSERT INTO forums (sort, name,  description, minclassread,  minclasswrite, minclasscreate, forid) VALUES(" . $_POST['sort'] . ", " . sqlesc($_POST['name']). ", " . sqlesc($_POST['desc']). ", " . $_POST['readclass'] . ", " . $_POST['writeclass'] . ", " . $_POST['createclass'] . ", ".sqlesc(($_POST['overforums'])).")") or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("INSERT INTO forums (sort, name,  description, minclassread,  minclasswrite, minclasscreate, forid) VALUES(" . $_POST['sort'] . ", " . \NexusPHP\Components\Database::escape($_POST['name']). ", " . \NexusPHP\Components\Database::escape($_POST['desc']). ", " . $_POST['readclass'] . ", " . $_POST['writeclass'] . ", " . $_POST['createclass'] . ", ".\NexusPHP\Components\Database::escape(($_POST['overforums'])).")") or sqlerr(__FILE__, __LINE__);
     $Cache->delete_value('forums_list');
     if ($_POST["moderator"]) {
-        $id = mysql_insert_id();
+        $id = \NexusPHP\Components\Database::insert_id();
         $moderator = $_POST["moderator"];
         set_forum_moderators($moderator, $id);
     }
@@ -77,8 +77,8 @@ begin_main_frame();
 if ($_GET['action'] == "editforum") {
     //EDIT PAGE FOR THE FORUMS
     $id = 0 + ($_GET["id"]);
-    $result = sql_query("SELECT * FROM forums where id = ".sqlesc($id));
-    if ($row = mysql_fetch_array($result)) {
+    $result = \NexusPHP\Components\Database::query("SELECT * FROM forums where id = ".\NexusPHP\Components\Database::escape($id));
+    if ($row = mysqli_fetch_array($result)) {
         do {
             ?>
 <h1 align=center><a class=faqlink href=forummanage.php><?php echo $lang_forummanage['text_forum_management']?></a><b>--></b><?php echo $lang_forummanage['text_edit_forum']?></h2>
@@ -104,8 +104,8 @@ if ($_GET['action'] == "editforum") {
     <select name=overforums>
     <?php
             $forid = $row["forid"];
-            $res = sql_query("SELECT * FROM overforums");
-            while ($arr = mysql_fetch_array($res)) {
+            $res = \NexusPHP\Components\Database::query("SELECT * FROM overforums");
+            while ($arr = mysqli_fetch_array($res)) {
                 $name = $arr["name"];
                 $i = $arr["id"];
 
@@ -154,8 +154,8 @@ if ($_GET['action'] == "editforum") {
     <td>
     <select name=sort>
 <?php
-$res = sql_query("SELECT sort FROM forums");
-            $nr = mysql_num_rows($res);
+$res = \NexusPHP\Components\Database::query("SELECT sort FROM forums");
+            $nr = mysqli_num_rows($res);
             $maxclass = $nr + 1;
             for ($i = 0; $i <= $maxclass; ++$i) {
                 print("<option value=$i" . ($row["sort"] == $i ? " selected" : "") . ">$i \n");
@@ -170,7 +170,7 @@ $res = sql_query("SELECT sort FROM forums");
 </table>
 
 <?php
-        } while ($row = mysql_fetch_array($result));
+        } while ($row = mysqli_fetch_array($result));
     } else {
         print($lang_forummanage['text_no_records_found']);
     }
@@ -199,8 +199,8 @@ elseif ($_GET['action'] == "newforum") {
     <select name=overforums>
 <?php
             $forid = $row["forid"];
-    $res = sql_query("SELECT * FROM overforums");
-    while ($arr = mysql_fetch_array($res)) {
+    $res = \NexusPHP\Components\Database::query("SELECT * FROM overforums");
+    while ($arr = mysqli_fetch_array($res)) {
         $name = $arr["name"];
         $i = $arr["id"];
 
@@ -247,8 +247,8 @@ elseif ($_GET['action'] == "newforum") {
     <td>
     <select name=sort>
 <?php
-$res = sql_query("SELECT sort FROM forums");
-    $nr = mysql_num_rows($res);
+$res = \NexusPHP\Components\Database::query("SELECT sort FROM forums");
+    $nr = mysqli_num_rows($res);
     $maxclass = $nr + 1;
     for ($i = 0; $i <= $maxclass; ++$i) {
         print("<option value=$i>$i \n");
@@ -271,8 +271,8 @@ $res = sql_query("SELECT sort FROM forums");
 <?php
 echo '<table width="100%"  border="0" align="center" cellpadding="2" cellspacing="0">';
     echo "<tr><td class=colhead align=left>".$lang_forummanage['col_name']."</td><td class=colhead>".$lang_forummanage['col_overforum']."</td><td class=colhead>".$lang_forummanage['col_read']."</td><td class=colhead>".$lang_forummanage['col_write']."</td><td class=colhead>".$lang_forummanage['col_create_topic']."</td><td class=colhead>".$lang_forummanage['col_moderator']."</td><td class=colhead>".$lang_forummanage['col_modify']."</td></tr>";
-    $result = sql_query("SELECT forums.*, overforums.name AS of_name FROM forums LEFT JOIN overforums ON forums.forid=overforums.id ORDER BY forums.sort ASC");
-    if ($row = mysql_fetch_array($result)) {
+    $result = \NexusPHP\Components\Database::query("SELECT forums.*, overforums.name AS of_name FROM forums LEFT JOIN overforums ON forums.forid=overforums.id ORDER BY forums.sort ASC");
+    if ($row = mysqli_fetch_array($result)) {
         do {
             $name = $row['of_name'];
             $moderators = get_forum_moderators($row['id'], false);
@@ -281,7 +281,7 @@ echo '<table width="100%"  border="0" align="center" cellpadding="2" cellspacing
             }
             echo "<tr><td><a href=forums.php?action=viewforum&forumid=".$row["id"]."><b>".htmlspecialchars($row["name"])."</b></a><br />".htmlspecialchars($row["description"])."</td>";
             echo "<td>".htmlspecialchars($name)."</td><td>" . get_user_class_name($row["minclassread"], false, true, true) . "</td><td>" . get_user_class_name($row["minclasswrite"], false, true, true) . "</td><td>" . get_user_class_name($row["minclasscreate"], false, true, true) . "</td><td>".$moderators."</td><td><b><a href=\"".$PHP_SELF."?action=editforum&id=".$row["id"]."\">".$lang_forummanage['text_edit']."</a>&nbsp;|&nbsp;<a href=\"javascript:confirm_delete('".$row["id"]."', '".$lang_forummanage['js_sure_to_delete_forum']."', '');\"><font color=red>".$lang_forummanage['text_delete']."</font></a></b></td></tr>";
-        } while ($row = mysql_fetch_array($result));
+        } while ($row = mysqli_fetch_array($result));
     } else {
         print "<tr><td colspan=6>".$lang_forummanage['text_no_records_found']."</td></tr>";
     }

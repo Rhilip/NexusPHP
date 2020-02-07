@@ -13,8 +13,8 @@ begin_main_frame();
 print("<h1 align=\"center\">FAQ Management</h1>");
 
 // make the array that has all the faq in a nice structured
-$res = sql_query("SELECT faq.id, faq.link_id, faq.lang_id, lang_name, faq.question, faq.flag, faq.order FROM faq LEFT JOIN language on faq.lang_id = language.id WHERE type='categ' ORDER BY lang_name, `order` ASC");
-while ($arr = mysql_fetch_array($res, MYSQL_BOTH)) {
+$res = \NexusPHP\Components\Database::query("SELECT faq.id, faq.link_id, faq.lang_id, lang_name, faq.question, faq.flag, faq.order FROM faq LEFT JOIN language on faq.lang_id = language.id WHERE type='categ' ORDER BY lang_name, `order` ASC");
+while ($arr = mysqli_fetch_array($res, MYSQL_BOTH)) {
     $faq_categ[$arr[lang_id]][$arr[link_id]][title] = $arr[question];
     $faq_categ[$arr[lang_id]][$arr[link_id]][flag] = $arr[flag];
     $faq_categ[$arr[lang_id]][$arr[link_id]][order] = $arr[order];
@@ -22,8 +22,8 @@ while ($arr = mysql_fetch_array($res, MYSQL_BOTH)) {
     $faq_categ[$arr[lang_id]][$arr[link_id]][lang_name] = $arr[lang_name];
 }
 
-$res = sql_query("SELECT faq.id, faq.question, faq.lang_id, faq.flag, faq.categ, faq.order FROM faq WHERE type='item' ORDER BY `order` ASC");
-while ($arr = mysql_fetch_array($res)) {
+$res = \NexusPHP\Components\Database::query("SELECT faq.id, faq.question, faq.lang_id, faq.flag, faq.categ, faq.order FROM faq WHERE type='item' ORDER BY `order` ASC");
+while ($arr = mysqli_fetch_array($res)) {
     $faq_categ[$arr[lang_id]][$arr[categ]][items][$arr[id]][question] = $arr[question];
     $faq_categ[$arr[lang_id]][$arr[categ]][items][$arr[id]][flag] = $arr[flag];
     $faq_categ[$arr[lang_id]][$arr[categ]][items][$arr[id]][order] = $arr[order];

@@ -21,8 +21,8 @@ if (!$id) {
 }
 
 
-$res = sql_query("SELECT category, owner, filename, save_as, anonymous, picktype, picktime, added FROM torrents WHERE id = ".mysql_real_escape_string($id));
-$row = mysql_fetch_array($res);
+$res = \NexusPHP\Components\Database::query("SELECT category, owner, filename, save_as, anonymous, picktype, picktime, added FROM torrents WHERE id = ".\NexusPHP\Components\Database::real_escape_string($id));
+$row = mysqli_fetch_array($res);
 $torrentAddedTimeString = $row['added'];
 if (!$row) {
     die();
@@ -31,7 +31,7 @@ if (!$row) {
 if ($CURUSER["id"] != $row["owner"] && get_user_class() < $torrentmanage_class) {
     bark($lang_takeedit['std_not_owner']);
 }
-$oldcatmode = get_single_value("categories", "mode", "WHERE id=".sqlesc($row['category']));
+$oldcatmode = \NexusPHP\Components\Database::single("categories", "mode", "WHERE id=".\NexusPHP\Components\Database::escape($row['category']));
 
 $updateset = array();
 
@@ -54,7 +54,7 @@ if ($enablenfo_main=='yes') {
         }
         $nfofilename = $nfofile['tmp_name'];
         if (@is_uploaded_file($nfofilename) && @filesize($nfofilename) > 0) {
-            $updateset[] = "nfo = " . sqlesc(str_replace("\x0d\x0d\x0a", "\x0d\x0a", file_get_contents($nfofilename)));
+            $updateset[] = "nfo = " . \NexusPHP\Components\Database::escape(str_replace("\x0d\x0d\x0a", "\x0d\x0a", file_get_contents($nfofilename)));
         }
         $Cache->delete_value('nfo_block_torrent_id_'.$id);
     } elseif ($nfoaction == "remove") {
@@ -70,7 +70,7 @@ if (!is_valid_id($catid)) {
 if (!$name || !$descr) {
     bark($lang_takeedit['std_missing_form_data']);
 }
-$newcatmode = get_single_value("categories", "mode", "WHERE id=".sqlesc($catid));
+$newcatmode = \NexusPHP\Components\Database::single("categories", "mode", "WHERE id=".\NexusPHP\Components\Database::escape($catid));
 if ($enablespecial == 'yes' && get_user_class() >= $movetorrent_class) {
     $allowmove = true;
 } //enable moving torrent to other section
@@ -81,19 +81,19 @@ if ($oldcatmode != $newcatmode && !$allowmove) {
     bark($lang_takeedit['std_cannot_move_torrent']);
 }
 $updateset[] = "anonymous = '" . ($_POST["anonymous"] ? "yes" : "no") . "'";
-$updateset[] = "name = " . sqlesc($name);
-$updateset[] = "descr = " . sqlesc($descr);
-$updateset[] = "url = " . sqlesc($url);
-$updateset[] = "small_descr = " . sqlesc($_POST["small_descr"]);
-//$updateset[] = "ori_descr = " . sqlesc($descr);
-$updateset[] = "category = " . sqlesc($catid);
-$updateset[] = "source = " . sqlesc(0 + $_POST["source_sel"]);
-$updateset[] = "medium = " . sqlesc(0 + $_POST["medium_sel"]);
-$updateset[] = "codec = " . sqlesc(0 + $_POST["codec_sel"]);
-$updateset[] = "standard = " . sqlesc(0 + $_POST["standard_sel"]);
-$updateset[] = "processing = " . sqlesc(0 + $_POST["processing_sel"]);
-$updateset[] = "team = " . sqlesc(0 + $_POST["team_sel"]);
-$updateset[] = "audiocodec = " . sqlesc(0 + $_POST["audiocodec_sel"]);
+$updateset[] = "name = " . \NexusPHP\Components\Database::escape($name);
+$updateset[] = "descr = " . \NexusPHP\Components\Database::escape($descr);
+$updateset[] = "url = " . \NexusPHP\Components\Database::escape($url);
+$updateset[] = "small_descr = " . \NexusPHP\Components\Database::escape($_POST["small_descr"]);
+//$updateset[] = "ori_descr = " . \NexusPHP\Components\Database::escape($descr);
+$updateset[] = "category = " . \NexusPHP\Components\Database::escape($catid);
+$updateset[] = "source = " . \NexusPHP\Components\Database::escape(0 + $_POST["source_sel"]);
+$updateset[] = "medium = " . \NexusPHP\Components\Database::escape(0 + $_POST["medium_sel"]);
+$updateset[] = "codec = " . \NexusPHP\Components\Database::escape(0 + $_POST["codec_sel"]);
+$updateset[] = "standard = " . \NexusPHP\Components\Database::escape(0 + $_POST["standard_sel"]);
+$updateset[] = "processing = " . \NexusPHP\Components\Database::escape(0 + $_POST["processing_sel"]);
+$updateset[] = "team = " . \NexusPHP\Components\Database::escape(0 + $_POST["team_sel"]);
+$updateset[] = "audiocodec = " . \NexusPHP\Components\Database::escape(0 + $_POST["audiocodec_sel"]);
 
 if (get_user_class() >= $torrentmanage_class) {
     if ($_POST["banned"]) {
@@ -131,7 +131,7 @@ if (get_user_class()>=$torrentonpromotion_class) {
     } elseif ($_POST["promotion_time_type"] == 2) {
         if ($_POST["promotionuntil"] && strtotime($torrentAddedTimeString) <= strtotime($_POST["promotionuntil"])) {
             $updateset[] = "promotion_time_type = 2";
-            $updateset[] = "promotion_until = ".sqlesc($_POST["promotionuntil"]);
+            $updateset[] = "promotion_until = ".\NexusPHP\Components\Database::escape($_POST["promotionuntil"]);
         } else {
             $updateset[] = "promotion_time_type = 0";
             $updateset[] = "promotion_until = '0000-00-00 00:00:00'";
@@ -159,22 +159,22 @@ if (get_user_class()>=$torrentmanage_class && $CURUSER['picker'] == 'yes') {
             $pick_info = ", recommend as hot movie";
         }
         $updateset[] = "picktype = 'hot'";
-        $updateset[] = "picktime = ". sqlesc(date("Y-m-d H:i:s"));
+        $updateset[] = "picktime = ". \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s"));
     } elseif ((0 + $_POST["sel_recmovie"]) == 2) {
         if ($row["picktype"] != 'classic') {
             $pick_info = ", recommend as classic movie";
         }
         $updateset[] = "picktype = 'classic'";
-        $updateset[] = "picktime = ". sqlesc(date("Y-m-d H:i:s"));
+        $updateset[] = "picktime = ". \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s"));
     } elseif ((0 + $_POST["sel_recmovie"]) == 3) {
         if ($row["picktype"] != 'recommended') {
             $pick_info = ", recommend as recommended movie";
         }
         $updateset[] = "picktype = 'recommended'";
-        $updateset[] = "picktime = ". sqlesc(date("Y-m-d H:i:s"));
+        $updateset[] = "picktime = ". \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s"));
     }
 }
-sql_query("UPDATE torrents SET " . join(",", $updateset) . " WHERE id = $id") or sqlerr(__FILE__, __LINE__);
+\NexusPHP\Components\Database::query("UPDATE torrents SET " . join(",", $updateset) . " WHERE id = $id") or sqlerr(__FILE__, __LINE__);
 
 if ($CURUSER["id"] == $row["owner"]) {
     if ($row["anonymous"]=='yes') {

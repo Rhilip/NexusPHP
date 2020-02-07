@@ -21,8 +21,8 @@ $id = 0 + $id;
 int_check($id);
 $sure = $_GET["sure"];
 
-$res = sql_query("SELECT name,owner,seeders,anonymous FROM torrents WHERE id = $id");
-$row = mysql_fetch_array($res);
+$res = \NexusPHP\Components\Database::query("SELECT name,owner,seeders,anonymous FROM torrents WHERE id = $id");
+$row = mysqli_fetch_array($res);
 if (!$row) {
     die();
 }
@@ -44,9 +44,9 @@ if ($row['anonymous'] == 'yes' && $CURUSER["id"] == $row["owner"]) {
 }
 //Send pm to torrent uploader
 if ($CURUSER["id"] != $row["owner"]) {
-    $dt = sqlesc(date("Y-m-d H:i:s"));
-    $subject = sqlesc($lang_fastdelete_target[get_user_lang($row["owner"])]['msg_torrent_deleted']);
-    $msg = sqlesc($lang_fastdelete_target[get_user_lang($row["owner"])]['msg_the_torrent_you_uploaded'].$row['name'].$lang_fastdelete_target[get_user_lang($row["owner"])]['msg_was_deleted_by']."[url=userdetails.php?id=".$CURUSER['id']."]".$CURUSER['username']."[/url]".$lang_fastdelete_target[get_user_lang($row["owner"])]['msg_blank']);
-    sql_query("INSERT INTO messages (sender, receiver, subject, added, msg) VALUES(0, $row[owner], $subject, $dt, $msg)") or sqlerr(__FILE__, __LINE__);
+    $dt = \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s"));
+    $subject = \NexusPHP\Components\Database::escape($lang_fastdelete_target[get_user_lang($row["owner"])]['msg_torrent_deleted']);
+    $msg = \NexusPHP\Components\Database::escape($lang_fastdelete_target[get_user_lang($row["owner"])]['msg_the_torrent_you_uploaded'].$row['name'].$lang_fastdelete_target[get_user_lang($row["owner"])]['msg_was_deleted_by']."[url=userdetails.php?id=".$CURUSER['id']."]".$CURUSER['username']."[/url]".$lang_fastdelete_target[get_user_lang($row["owner"])]['msg_blank']);
+    \NexusPHP\Components\Database::query("INSERT INTO messages (sender, receiver, subject, added, msg) VALUES(0, $row[owner], $subject, $dt, $msg)") or sqlerr(__FILE__, __LINE__);
 }
 header("Refresh: 0; url=torrents.php");

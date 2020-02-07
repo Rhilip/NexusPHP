@@ -31,9 +31,9 @@ if ($action == "viewposts") {
 
     $query = "SELECT $select_is FROM $from_is WHERE $where_is";
 
-    $res = sql_query($query) or sqlerr(__FILE__, __LINE__);
+    $res = \NexusPHP\Components\Database::query($query) or sqlerr(__FILE__, __LINE__);
 
-    $arr = mysql_fetch_row($res) or stderr($lang_userhistory['std_error'], $lang_userhistory['std_no_posts_found']);
+    $arr = mysqli_fetch_row($res) or stderr($lang_userhistory['std_error'], $lang_userhistory['std_no_posts_found']);
 
     $postcount = $arr[0];
 
@@ -43,10 +43,10 @@ if ($action == "viewposts") {
 
     //------ Get user data
 
-    $res = sql_query("SELECT username, donor, warned, enabled FROM users WHERE id=$userid") or sqlerr(__FILE__, __LINE__);
+    $res = \NexusPHP\Components\Database::query("SELECT username, donor, warned, enabled FROM users WHERE id=$userid") or sqlerr(__FILE__, __LINE__);
 
-    if (mysql_num_rows($res) == 1) {
-        $arr = mysql_fetch_assoc($res);
+    if (mysqli_num_rows($res) == 1) {
+        $arr = mysqli_fetch_assoc($res);
 
         $subject = get_username($userid);
     } else {
@@ -61,9 +61,9 @@ if ($action == "viewposts") {
 
     $query = "SELECT $select_is FROM $from_is WHERE $where_is ORDER BY $order_is $limit";
 
-    $res = sql_query($query) or sqlerr(__FILE__, __LINE__);
+    $res = \NexusPHP\Components\Database::query($query) or sqlerr(__FILE__, __LINE__);
 
-    if (mysql_num_rows($res) == 0) {
+    if (mysqli_num_rows($res) == 0) {
         stderr($lang_userhistory['std_error'], $lang_userhistory['std_no_posts_found']);
     }
 
@@ -81,7 +81,7 @@ if ($action == "viewposts") {
 
     begin_frame();
 
-    while ($arr = mysql_fetch_assoc($res)) {
+    while ($arr = mysqli_fetch_assoc($res)) {
         $postid = $arr["id"];
 
         $posterid = $arr["userid"];
@@ -115,9 +115,9 @@ if ($action == "viewposts") {
         $body = format_comment($arr["body"]);
 
         if (is_valid_id($arr['editedby'])) {
-            $subres = sql_query("SELECT username FROM users WHERE id=$arr[editedby]");
-            if (mysql_num_rows($subres) == 1) {
-                $subrow = mysql_fetch_assoc($subres);
+            $subres = \NexusPHP\Components\Database::query("SELECT username FROM users WHERE id=$arr[editedby]");
+            if (mysqli_num_rows($subres) == 1) {
+                $subrow = mysqli_fetch_assoc($subres);
                 $body .= "<p><font size=1 class=small>".$lang_userhistory['text_last_edited'].get_username($arr['editedby']).$lang_userhistory['text_at']."$arr[editdate]</font></p>\n";
             }
         }
@@ -155,9 +155,9 @@ if ($action == "viewcomments") {
 
     $query = "SELECT $select_is FROM $from_is WHERE $where_is ORDER BY $order_is";
 
-    $res = sql_query($query) or sqlerr(__FILE__, __LINE__);
+    $res = \NexusPHP\Components\Database::query($query) or sqlerr(__FILE__, __LINE__);
 
-    $arr = mysql_fetch_row($res) or stderr($lang_userhistory['std_error'], $lang_userhistory['std_no_comments_found']);
+    $arr = mysqli_fetch_row($res) or stderr($lang_userhistory['std_error'], $lang_userhistory['std_no_comments_found']);
 
     $commentcount = $arr[0];
 
@@ -167,10 +167,10 @@ if ($action == "viewcomments") {
 
     //------ Get user data
 
-    $res = sql_query("SELECT username, donor, warned, enabled FROM users WHERE id=$userid") or sqlerr(__FILE__, __LINE__);
+    $res = \NexusPHP\Components\Database::query("SELECT username, donor, warned, enabled FROM users WHERE id=$userid") or sqlerr(__FILE__, __LINE__);
 
-    if (mysql_num_rows($res) == 1) {
-        $arr = mysql_fetch_assoc($res);
+    if (mysqli_num_rows($res) == 1) {
+        $arr = mysqli_fetch_assoc($res);
 
         $subject = get_username($userid);
     } else {
@@ -183,9 +183,9 @@ if ($action == "viewcomments") {
 
     $query = "SELECT $select_is FROM $from_is WHERE $where_is ORDER BY $order_is $limit";
 
-    $res = sql_query($query) or sqlerr(__FILE__, __LINE__);
+    $res = \NexusPHP\Components\Database::query($query) or sqlerr(__FILE__, __LINE__);
 
-    if (mysql_num_rows($res) == 0) {
+    if (mysqli_num_rows($res) == 0) {
         stderr($lang_userhistory['std_error'], $lang_userhistory['std_no_comments_found']);
     }
 
@@ -203,7 +203,7 @@ if ($action == "viewcomments") {
 
     begin_frame();
 
-    while ($arr = mysql_fetch_assoc($res)) {
+    while ($arr = mysqli_fetch_assoc($res)) {
         $commentid = $arr["id"];
 
         $torrent = $arr["name"];
@@ -217,9 +217,9 @@ if ($action == "viewcomments") {
 
         //find the page; this code should probably be in details.php instead
 
-        $subres = sql_query("SELECT COUNT(*) FROM comments WHERE torrent = $torrentid AND id < $commentid")
+        $subres = \NexusPHP\Components\Database::query("SELECT COUNT(*) FROM comments WHERE torrent = $torrentid AND id < $commentid")
         or sqlerr(__FILE__, __LINE__);
-        $subrow = mysql_fetch_row($subres);
+        $subrow = mysqli_fetch_row($subres);
         $count = $subrow[0];
         $comm_page = floor($count/20);
         $page_url = $comm_page?"&page=$comm_page":"";

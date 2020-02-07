@@ -11,8 +11,8 @@ $status = $_GET['status'];
         int_check($status, true);
     }
         
-$res = sql_query("SELECT * FROM users WHERE status='pending' ORDER BY username") or sqlerr();
-if (mysql_num_rows($res) != 0) {
+$res = \NexusPHP\Components\Database::query("SELECT * FROM users WHERE status='pending' ORDER BY username") or sqlerr();
+if (mysqli_num_rows($res) != 0) {
     stdhead("Unconfirmed Users");
     begin_main_frame();
     begin_frame("");
@@ -27,7 +27,7 @@ if (mysql_num_rows($res) != 0) {
     print'<td class=rowhead><center>Set Status</center></td>';
     print'<td class=rowhead><center>Confirm</center></td>';
     print'</tr>';
-    while ($row = mysql_fetch_assoc($res)) {
+    while ($row = mysqli_fetch_assoc($res)) {
         $id = $row['id'];
         print'<tr><form method=post action=modtask.php>';
         print'<input type=hidden name=\'action\' value=\'confirmuser\'>';

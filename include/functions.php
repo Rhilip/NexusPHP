@@ -633,13 +633,8 @@ function get_slr_color($ratio)
 
 function write_log($text, $security = "normal")
 {
-    $text = \NexusPHP\Components\Database::escape($text);
-    $added = \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s"));
-    $security = \NexusPHP\Components\Database::escape($security);
-    \NexusPHP\Components\Database::query("INSERT INTO sitelog (added, txt, security_level) VALUES($added, $text, $security)") or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("INSERT INTO sitelog (added, txt, security_level) VALUES(NOW(), ?, ?)", [$text, $security]) or sqlerr(__FILE__, __LINE__);
 }
-
-
 
 function get_elapsed_time($ts, $shortunit = false)
 {

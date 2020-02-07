@@ -1,5 +1,6 @@
 {
   "require": {
+    "ext-redis": "*",
     "rhilip/bencode": "^1.0"
   },
   "autoload": {

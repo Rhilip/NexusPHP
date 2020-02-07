@@ -6,8 +6,7 @@ loggedinorreturn();
 if (get_user_class() < UC_SYSOP) {
     die("access denied.");
 }
-mysql_connect($mysql_host, $mysql_user, $mysql_pass);
-mysql_select_db($mysql_db);
+
 stdhead("Manage Locations");
 begin_main_frame("", false, 100);
 begin_frame("Manage Locations", true, 10, "100%", "center");
@@ -15,8 +14,8 @@ begin_frame("Manage Locations", true, 10, "100%", "center");
 $sure = $_GET['sure'];
 if ($sure == "yes") {
     $delid = $_GET['delid'];
-    $query = "DELETE FROM locations WHERE id=" .sqlesc($delid) . " LIMIT 1";
-    $sql = sql_query($query);
+    $query = "DELETE FROM locations WHERE id=" .\NexusPHP\Components\Database::escape($delid) . " LIMIT 1";
+    $sql = \NexusPHP\Components\Database::query($query);
     echo("Location successfuly removed, click <a class=altlink href=" . $_SERVER['PHP_SELF'] .">here</a> to go back.");
     end_frame();
     stdfoot();
@@ -46,8 +45,8 @@ if ($edited == 1) {
     
     if (validip_format($start_ip) && validip_format($end_ip)) {
         if (ip2long($end_ip) > ip2long($start_ip)) {
-            $query = "UPDATE locations SET name = " . sqlesc($name) .",flagpic = " . sqlesc($flagpic) . ",location_main = " . sqlesc($location_main). ",location_sub= " . sqlesc($location_sub) . ",start_ip = " . sqlesc($start_ip) .  ",end_ip = " . sqlesc($end_ip) . ",theory_upspeed = " . sqlesc($theory_upspeed) .  ",practical_upspeed = " . sqlesc($practical_upspeed) .  ",theory_downspeed = " . sqlesc($theory_downspeed) .  ",practical_downspeed = " . sqlesc($practical_downspeed). " WHERE id=".sqlesc($id);
-            $sql = sql_query($query) or sqlerr(__FILE__, __LINE__);
+            $query = "UPDATE locations SET name = " . \NexusPHP\Components\Database::escape($name) .",flagpic = " . \NexusPHP\Components\Database::escape($flagpic) . ",location_main = " . \NexusPHP\Components\Database::escape($location_main). ",location_sub= " . \NexusPHP\Components\Database::escape($location_sub) . ",start_ip = " . \NexusPHP\Components\Database::escape($start_ip) .  ",end_ip = " . \NexusPHP\Components\Database::escape($end_ip) . ",theory_upspeed = " . \NexusPHP\Components\Database::escape($theory_upspeed) .  ",practical_upspeed = " . \NexusPHP\Components\Database::escape($practical_upspeed) .  ",theory_downspeed = " . \NexusPHP\Components\Database::escape($theory_downspeed) .  ",practical_downspeed = " . \NexusPHP\Components\Database::escape($practical_downspeed). " WHERE id=".\NexusPHP\Components\Database::escape($id);
+            $sql = \NexusPHP\Components\Database::query($query) or sqlerr(__FILE__, __LINE__);
             if ($sql) {
                 stdmsg("Success!", "Location has been edited, click <a class=altlink href=" . $_SERVER['PHP_SELF'] .">here</a> to go back");
                 stdfoot();
@@ -63,9 +62,9 @@ if ($edited == 1) {
 
 $editid = 0 + $_GET['editid'];
 if ($editid > 0) {
-    $query = "SELECT * FROM locations WHERE id=" . sqlesc($editid);
-    $sql = sql_query($query);
-    $row = mysql_fetch_array($sql);
+    $query = "SELECT * FROM locations WHERE id=" . \NexusPHP\Components\Database::escape($editid);
+    $sql = \NexusPHP\Components\Database::query($query);
+    $row = mysqli_fetch_array($sql);
     
     $name = $row['name'];
     $flagpic = $row['flagpic'];
@@ -114,8 +113,8 @@ if ($add == 'true') {
     
     if (validip_format($start_ip) && validip_format($end_ip)) {
         if (ip2long($end_ip) > ip2long($start_ip)) {
-            $query = "INSERT INTO locations (name, flagpic, location_main, location_sub, start_ip, end_ip, theory_upspeed, practical_upspeed, theory_downspeed, practical_downspeed) VALUES (" . sqlesc($name) ."," . sqlesc($flagpic) . "," . sqlesc($location_main). "," . sqlesc($location_sub) . "," . sqlesc($start_ip) .  "," . sqlesc($end_ip) . "," . sqlesc($theory_upspeed) .  "," . sqlesc($practical_upspeed) .  "," . sqlesc($theory_downspeed) .  "," . sqlesc($practical_downspeed) . ")";
-            $sql = sql_query($query)  or sqlerr(__FILE__, __LINE__);
+            $query = "INSERT INTO locations (name, flagpic, location_main, location_sub, start_ip, end_ip, theory_upspeed, practical_upspeed, theory_downspeed, practical_downspeed) VALUES (" . \NexusPHP\Components\Database::escape($name) ."," . \NexusPHP\Components\Database::escape($flagpic) . "," . \NexusPHP\Components\Database::escape($location_main). "," . \NexusPHP\Components\Database::escape($location_sub) . "," . \NexusPHP\Components\Database::escape($start_ip) .  "," . \NexusPHP\Components\Database::escape($end_ip) . "," . \NexusPHP\Components\Database::escape($theory_upspeed) .  "," . \NexusPHP\Components\Database::escape($practical_upspeed) .  "," . \NexusPHP\Components\Database::escape($theory_downspeed) .  "," . \NexusPHP\Components\Database::escape($practical_downspeed) . ")";
+            $sql = \NexusPHP\Components\Database::query($query)  or sqlerr(__FILE__, __LINE__);
             if ($sql) {
                 $success = true;
             } else {
@@ -184,16 +183,16 @@ if ($check_range == 'true') {
 echo("<table class=main cellspacing=0 cellpadding=5>");
 echo("<td class=colhead align=center><b>ID</b></td> <td class=colhead align=left><b>Name</b></td> <td class=colhead align=center><b>Pic</b></td> <td class=colhead align=center><b><nobr>Main Location</nobr></b></td> <td class=colhead align=center><b><nobr>Sub Location</nobr></b></td> <td class=colhead align=center><b>Start IP</b></td> <td class=colhead align=center><b>End IP</b></td> <td class=colhead align=center><b>T.U</b></td> <td class=colhead align=center><b>P.U</b></td>  <td class=colhead align=center><b>T.D</b></td> <td class=colhead align=center><b>P.D</b></td> <td class=colhead align=center><b>Edit</b></td><td class=colhead align=center><b>Delete</b></td>");
 
-$res = sql_query("SELECT COUNT(*) FROM locations ".$wherea);
-$row = mysql_fetch_array($res);
+$res = \NexusPHP\Components\Database::query("SELECT COUNT(*) FROM locations ".$wherea);
+$row = mysqli_fetch_array($res);
 $count = $row[0];
 $perpage = 50;
 list($pagertop, $pagerbottom, $limit) = pager($perpage, $count, "location.php?");
 
 $query = "SELECT * FROM locations " . $wherea ." ORDER BY name ASC, start_ip ASC ".$limit;
-$sql = sql_query($query);
+$sql = \NexusPHP\Components\Database::query($query);
 $maxlen_sub_location = 40;
-while ($row = mysql_fetch_array($sql)) {
+while ($row = mysqli_fetch_array($sql)) {
     $id = $row['id'];
     $name = $row['name'];
     $flagpic = $row['flagpic'];

@@ -11,20 +11,20 @@ if (get_user_class() < $staffmem_class) {
 
 
 if ($_POST['setdealt']) {
-    $res = sql_query("SELECT id FROM cheaters WHERE dealtwith=0 AND id IN (" . implode(", ", $_POST[delcheater]) . ")");
-    while ($arr = mysql_fetch_assoc($res)) {
-        sql_query("UPDATE cheaters SET dealtwith=1, dealtby = $CURUSER[id] WHERE id = $arr[id]") or sqlerr();
+    $res = \NexusPHP\Components\Database::query("SELECT id FROM cheaters WHERE dealtwith=0 AND id IN (" . implode(", ", $_POST[delcheater]) . ")");
+    while ($arr = mysqli_fetch_assoc($res)) {
+        \NexusPHP\Components\Database::query("UPDATE cheaters SET dealtwith=1, dealtby = $CURUSER[id] WHERE id = $arr[id]") or sqlerr();
     }
     $Cache->delete_value('staff_new_cheater_count');
 } elseif ($_POST['delete']) {
-    $res = sql_query("SELECT id FROM cheaters WHERE id IN (" . implode(", ", $_POST[delcheater]) . ")");
-    while ($arr = mysql_fetch_assoc($res)) {
-        sql_query("DELETE from cheaters WHERE id = $arr[id]") or sqlerr();
+    $res = \NexusPHP\Components\Database::query("SELECT id FROM cheaters WHERE id IN (" . implode(", ", $_POST[delcheater]) . ")");
+    while ($arr = mysqli_fetch_assoc($res)) {
+        \NexusPHP\Components\Database::query("DELETE from cheaters WHERE id = $arr[id]") or sqlerr();
     }
     $Cache->delete_value('staff_new_cheater_count');
 }
 
-$count = get_row_count("cheaters");
+$count = \NexusPHP\Components\Database::count("cheaters");
 if (!$count) {
     stderr($lang_cheaterbox['std_oho'], $lang_cheaterbox['std_no_suspect_detected']);
 }
@@ -45,13 +45,13 @@ print("<table class=cheaterbox border=1 cellspacing=0 cellpadding=5 align=center
 print("<tr><td class=colhead><nobr>".$lang_cheaterbox['col_added']."</nobr></td><td class=colhead>".$lang_cheaterbox['col_suspect']."</td><td class=colhead><nobr>".$lang_cheaterbox['col_hit']."</nobr></td><td class=colhead>".$lang_cheaterbox['col_torrent']."</td><td class=colhead>".$lang_cheaterbox['col_ul']."</td><td class=colhead>".$lang_cheaterbox['col_dl']."</td><td class=colhead><nobr>".$lang_cheaterbox['col_ann_time']."</nobr></td><td class=colhead><nobr>".$lang_cheaterbox['col_seeders']."</nobr></td><td class=colhead><nobr>".$lang_cheaterbox['col_leechers']."</nobr></td><td class=colhead>".$lang_cheaterbox['col_comment']."</td><td class=colhead><nobr>".$lang_cheaterbox['col_dealt_with']."</nobr></td><td class=colhead><nobr>".$lang_cheaterbox['col_action']."</nobr></td></tr>");
 
 print("<form method=post action=cheaterbox.php>");
-$cheatersres = sql_query("SELECT * FROM cheaters ORDER BY dealtwith ASC, id DESC $limit");
+$cheatersres = \NexusPHP\Components\Database::query("SELECT * FROM cheaters ORDER BY dealtwith ASC, id DESC $limit");
 
-while ($row = mysql_fetch_array($cheatersres)) {
+while ($row = mysqli_fetch_array($cheatersres)) {
     $upspeed = ($row['uploaded'] > 0 ? $row['uploaded'] / $row['anctime'] : 0);
     $lespeed = ($row['downloaded'] > 0 ? $row['downloaded'] / $row['anctime'] : 0);
-    $torrentres = sql_query("SELECT name FROM torrents WHERE id=".sqlesc($row['torrentid']));
-    $torrentrow = mysql_fetch_array($torrentres);
+    $torrentres = \NexusPHP\Components\Database::query("SELECT name FROM torrents WHERE id=".\NexusPHP\Components\Database::escape($row['torrentid']));
+    $torrentrow = mysqli_fetch_array($torrentres);
     if ($torrentrow) {
         $torrent = "<a href=details.php?id=".$row['torrentid'].">".htmlspecialchars($torrentrow['name'])."</a>";
     } else {

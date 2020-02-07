@@ -13,8 +13,8 @@ $dlkey = $_GET["dlkey"];
 if (!$dlkey) {
     die('Invalid key');
 }
-$res = sql_query("SELECT * FROM attachments WHERE id = ".sqlesc($id)." AND dlkey = ".sqlesc($dlkey)." LIMIT 1") or sqlerr(__FILE__, __LINE__);
-$row = mysql_fetch_assoc($res);
+$res = \NexusPHP\Components\Database::query("SELECT * FROM attachments WHERE id = ".\NexusPHP\Components\Database::escape($id)." AND dlkey = ".\NexusPHP\Components\Database::escape($dlkey)." LIMIT 1") or sqlerr(__FILE__, __LINE__);
+$row = mysqli_fetch_assoc($res);
 if (!$row) {
     die('No attachment found.');
 }
@@ -46,6 +46,6 @@ do {
     $s = fread($f, 4096);
     print($s);
 } while (!feof($f));
-sql_query("UPDATE attachments SET downloads = downloads + 1 WHERE id = ".sqlesc($id)) or sqlerr(__FILE__, __LINE__);
+\NexusPHP\Components\Database::query("UPDATE attachments SET downloads = downloads + 1 WHERE id = ".\NexusPHP\Components\Database::escape($id)) or sqlerr(__FILE__, __LINE__);
 $Cache->delete_value('attachment_'.$dlkey.'_content');
 exit;

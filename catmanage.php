@@ -51,9 +51,9 @@ function return_category_db_table_name($type)
 }
 function return_category_mode_selection($selname, $selectionid)
 {
-    $res = sql_query("SELECT * FROM searchbox ORDER BY id ASC");
+    $res = \NexusPHP\Components\Database::query("SELECT * FROM searchbox ORDER BY id ASC");
     $selection = "<select name=\"".$selname."\">";
-    while ($row = mysql_fetch_array($res)) {
+    while ($row = mysqli_fetch_array($res)) {
         $selection .= "<option value=\"" . $row["id"] . "\"". ($row["id"]==$selectedid ? " selected=\"selected\"" : "").">" . htmlspecialchars($row["name"]) . "</option>\n";
     }
     $selection .= "</select>";
@@ -146,12 +146,12 @@ function print_sub_category_list($type)
     global $lang_catmanage;
     $dbtablename = return_category_db_table_name($type);
     $perpage = 50;
-    $num = get_row_count($dbtablename);
+    $num = \NexusPHP\Components\Database::count($dbtablename);
     if (!$num) {
         print("<p align=\"center\">".$lang_catmanage['text_no_record_yet']."</p>");
     } else {
         list($pagertop, $pagerbottom, $limit) = pager($perpage, $num, "?");
-        $res = sql_query("SELECT * FROM ".$dbtablename." ORDER BY id DESC ".$limit) or sqlerr(__FILE__, __LINE__); ?>
+        $res = \NexusPHP\Components\Database::query("SELECT * FROM ".$dbtablename." ORDER BY id DESC ".$limit) or sqlerr(__FILE__, __LINE__); ?>
 <table border="1" cellspacing="0" cellpadding="5" width="940">
 <tr>
 <td class="colhead"><?php echo $lang_catmanage['col_id']?></td>
@@ -160,7 +160,7 @@ function print_sub_category_list($type)
 <td class="colhead"><?php echo $lang_catmanage['col_action']?></td>
 </tr>
 <?php
-        while ($row = mysql_fetch_array($res)) {
+        while ($row = mysqli_fetch_array($res)) {
             ?>
 <tr>
 <td class="colfollow"><?php echo $row['id']?></td>
@@ -345,12 +345,12 @@ if ($action == 'view') {
     } elseif ($type=='searchbox') {
         $perpage = 50;
         $dbtablename=return_category_db_table_name($type);
-        $num = get_row_count($dbtablename);
+        $num = \NexusPHP\Components\Database::count($dbtablename);
         if (!$num) {
             print("<p align=\"center\">".$lang_catmanage['text_no_record_yet']."</p>");
         } else {
             list($pagertop, $pagerbottom, $limit) = pager($perpage, $num, "?");
-            $res = sql_query("SELECT * FROM ".$dbtablename." ORDER BY id ASC ".$limit) or sqlerr(__FILE__, __LINE__); ?>
+            $res = \NexusPHP\Components\Database::query("SELECT * FROM ".$dbtablename." ORDER BY id ASC ".$limit) or sqlerr(__FILE__, __LINE__); ?>
 <table border="1" cellspacing="0" cellpadding="5" width="940">
 <tr>
 <td class="colhead"><?php echo $lang_catmanage['col_id']?></td>
@@ -368,7 +368,7 @@ if ($action == 'view') {
 <td class="colhead"><?php echo $lang_catmanage['col_action']?></td>
 </tr>
 <?php
-        while ($row = mysql_fetch_array($res)) {
+        while ($row = mysqli_fetch_array($res)) {
             ?>
 <tr>
 <td class="colfollow"><?php echo $row['id']?></td>
@@ -394,12 +394,12 @@ print($pagerbottom);
     } elseif ($type=='caticon') {
         $perpage = 50;
         $dbtablename=return_category_db_table_name($type);
-        $num = get_row_count($dbtablename);
+        $num = \NexusPHP\Components\Database::count($dbtablename);
         if (!$num) {
             print("<p align=\"center\">".$lang_catmanage['text_no_record_yet']."</p>");
         } else {
             list($pagertop, $pagerbottom, $limit) = pager($perpage, $num, "?");
-            $res = sql_query("SELECT * FROM ".$dbtablename." ORDER BY id ASC ".$limit) or sqlerr(__FILE__, __LINE__); ?>
+            $res = \NexusPHP\Components\Database::query("SELECT * FROM ".$dbtablename." ORDER BY id ASC ".$limit) or sqlerr(__FILE__, __LINE__); ?>
 <table border="1" cellspacing="0" cellpadding="5" width="940">
 <tr>
 <td class="colhead"><?php echo $lang_catmanage['col_id']?></td>
@@ -413,7 +413,7 @@ print($pagerbottom);
 <td class="colhead"><?php echo $lang_catmanage['col_action']?></td>
 </tr>
 <?php
-        while ($row = mysql_fetch_array($res)) {
+        while ($row = mysqli_fetch_array($res)) {
             ?>
 <tr>
 <td class="colfollow"><?php echo $row['id']?></td>
@@ -435,12 +435,12 @@ print($pagerbottom);
     } elseif ($type=='secondicon') {
         $perpage = 50;
         $dbtablename=return_category_db_table_name($type);
-        $num = get_row_count($dbtablename);
+        $num = \NexusPHP\Components\Database::count($dbtablename);
         if (!$num) {
             print("<p align=\"center\">".$lang_catmanage['text_no_record_yet']."</p>");
         } else {
             list($pagertop, $pagerbottom, $limit) = pager($perpage, $num, "?");
-            $res = sql_query("SELECT * FROM ".$dbtablename." ORDER BY id ASC ".$limit) or sqlerr(__FILE__, __LINE__); ?>
+            $res = \NexusPHP\Components\Database::query("SELECT * FROM ".$dbtablename." ORDER BY id ASC ".$limit) or sqlerr(__FILE__, __LINE__); ?>
 <table border="1" cellspacing="0" cellpadding="5" width="940">
 <tr>
 <td class="colhead"><?php echo $lang_catmanage['col_id']?></td>
@@ -457,7 +457,7 @@ print($pagerbottom);
 <td class="colhead"><?php echo $lang_catmanage['col_action']?></td>
 </tr>
 <?php
-        while ($row = mysql_fetch_array($res)) {
+        while ($row = mysqli_fetch_array($res)) {
             ?>
 <tr>
 <td class="colfollow"><?php echo $row['id']?></td>
@@ -482,12 +482,12 @@ print($pagerbottom);
     } elseif ($type=='category') {
         $perpage = 50;
         $dbtablename=return_category_db_table_name($type);
-        $num = get_row_count($dbtablename);
+        $num = \NexusPHP\Components\Database::count($dbtablename);
         if (!$num) {
             print("<p align=\"center\">".$lang_catmanage['text_no_record_yet']."</p>");
         } else {
             list($pagertop, $pagerbottom, $limit) = pager($perpage, $num, "?");
-            $res = sql_query("SELECT ".$dbtablename.".*, searchbox.name AS catmodename FROM ".$dbtablename." LEFT JOIN searchbox ON ".$dbtablename.".mode=searchbox.id ORDER BY ".$dbtablename.".mode ASC, ".$dbtablename.".id ASC ".$limit) or sqlerr(__FILE__, __LINE__); ?>
+            $res = \NexusPHP\Components\Database::query("SELECT ".$dbtablename.".*, searchbox.name AS catmodename FROM ".$dbtablename." LEFT JOIN searchbox ON ".$dbtablename.".mode=searchbox.id ORDER BY ".$dbtablename.".mode ASC, ".$dbtablename.".id ASC ".$limit) or sqlerr(__FILE__, __LINE__); ?>
 <table border="1" cellspacing="0" cellpadding="5" width="940">
 <tr>
 <td class="colhead"><?php echo $lang_catmanage['col_id']?></td>
@@ -499,7 +499,7 @@ print($pagerbottom);
 <td class="colhead"><?php echo $lang_catmanage['col_action']?></td>
 </tr>
 <?php
-        while ($row = mysql_fetch_array($res)) {
+        while ($row = mysqli_fetch_array($res)) {
             ?>
 <tr>
 <td class="colfollow"><?php echo $row['id']?></td>
@@ -527,9 +527,9 @@ print($pagerbottom);
         stderr($lang_catmanage['std_error'], $lang_catmanage['std_invalid_id']);
     }
     $dbtablename=return_category_db_table_name($type);
-    $res = sql_query("SELECT * FROM ".$dbtablename." WHERE id = ".sqlesc($id)." LIMIT 1");
-    if ($row = mysql_fetch_array($res)) {
-        sql_query("DELETE FROM ".$dbtablename." WHERE id = ".sqlesc($row['id'])) or sqlerr(__FILE__, __LINE__);
+    $res = \NexusPHP\Components\Database::query("SELECT * FROM ".$dbtablename." WHERE id = ".\NexusPHP\Components\Database::escape($id)." LIMIT 1");
+    if ($row = mysqli_fetch_array($res)) {
+        \NexusPHP\Components\Database::query("DELETE FROM ".$dbtablename." WHERE id = ".\NexusPHP\Components\Database::escape($row['id'])) or sqlerr(__FILE__, __LINE__);
         if (in_array($type, $validsubcattype)) {
             $Cache->delete_value($dbtablename.'_list');
         } elseif ($type=='searchbox') {
@@ -551,8 +551,8 @@ print($pagerbottom);
         stderr($lang_catmanage['std_error'], $lang_catmanage['std_invalid_id']);
     } else {
         $dbtablename=return_category_db_table_name($type);
-        $res = sql_query("SELECT * FROM ".$dbtablename." WHERE id = ".sqlesc($id)." LIMIT 1");
-        if (!$row = mysql_fetch_array($res)) {
+        $res = \NexusPHP\Components\Database::query("SELECT * FROM ".$dbtablename." WHERE id = ".\NexusPHP\Components\Database::escape($id)." LIMIT 1");
+        if (!$row = mysqli_fetch_array($res)) {
             stderr($lang_catmanage['std_error'], $lang_catmanage['std_invalid_id']);
         } else {
             $typename=return_type_name($type);
@@ -580,8 +580,8 @@ print($pagerbottom);
         if (!$id) {
             stderr($lang_catmanage['std_error'], $lang_catmanage['std_invalid_id']);
         } else {
-            $res = sql_query("SELECT * FROM ".$dbtablename." WHERE id = ".sqlesc($id)." LIMIT 1");
-            if (!$row = mysql_fetch_array($res)) {
+            $res = \NexusPHP\Components\Database::query("SELECT * FROM ".$dbtablename." WHERE id = ".\NexusPHP\Components\Database::escape($id)." LIMIT 1");
+            if (!$row = mysqli_fetch_array($res)) {
                 stderr($lang_catmanage['std_error'], $lang_catmanage['std_invalid_id']);
             }
         }
@@ -592,9 +592,9 @@ print($pagerbottom);
         if (!$name) {
             stderr($lang_catmanage['std_error'], $lang_catmanage['std_missing_form_data']);
         }
-        $updateset[] = "name=".sqlesc($name);
+        $updateset[] = "name=".\NexusPHP\Components\Database::escape($name);
         $sort_index = 0+$_POST['sort_index'];
-        $updateset[] = "sort_index=".sqlesc($sort_index);
+        $updateset[] = "sort_index=".\NexusPHP\Components\Database::escape($sort_index);
         $Cache->delete_value($dbtablename.'_list');
     } elseif ($type=='searchbox') {
         $name = $_POST['name'];
@@ -610,16 +610,16 @@ print($pagerbottom);
         $showprocessing = 0+$_POST['showprocessing'];
         $showteam = 0+$_POST['showteam'];
         $showaudiocodec = 0+$_POST['showaudiocodec'];
-        $updateset[] = "catsperrow=".sqlesc($catsperrow);
-        $updateset[] = "catpadding=".sqlesc($catpadding);
-        $updateset[] = "name=".sqlesc($name);
-        $updateset[] = "showsource=".sqlesc($showsource);
-        $updateset[] = "showmedium=".sqlesc($showmedium);
-        $updateset[] = "showcodec=".sqlesc($showcodec);
-        $updateset[] = "showstandard=".sqlesc($showstandard);
-        $updateset[] = "showprocessing=".sqlesc($showprocessing);
-        $updateset[] = "showteam=".sqlesc($showteam);
-        $updateset[] = "showaudiocodec=".sqlesc($showaudiocodec);
+        $updateset[] = "catsperrow=".\NexusPHP\Components\Database::escape($catsperrow);
+        $updateset[] = "catpadding=".\NexusPHP\Components\Database::escape($catpadding);
+        $updateset[] = "name=".\NexusPHP\Components\Database::escape($name);
+        $updateset[] = "showsource=".\NexusPHP\Components\Database::escape($showsource);
+        $updateset[] = "showmedium=".\NexusPHP\Components\Database::escape($showmedium);
+        $updateset[] = "showcodec=".\NexusPHP\Components\Database::escape($showcodec);
+        $updateset[] = "showstandard=".\NexusPHP\Components\Database::escape($showstandard);
+        $updateset[] = "showprocessing=".\NexusPHP\Components\Database::escape($showprocessing);
+        $updateset[] = "showteam=".\NexusPHP\Components\Database::escape($showteam);
+        $updateset[] = "showaudiocodec=".\NexusPHP\Components\Database::escape($showaudiocodec);
         if ($showsource || $showmedium || $showcodec || $showstandard || $showprocessing || $showteam || $showaudiocodec) {
             $updateset[] = "showsubcat=1";
         } else {
@@ -645,13 +645,13 @@ print($pagerbottom);
         if ($cssfile && !valid_file_name($cssfile)) {
             stderr($lang_catmanage['std_error'], $lang_catmanage['std_invalid_character_in_filename'].htmlspecialchars($cssfile));
         }
-        $updateset[] = "name=".sqlesc($name);
-        $updateset[] = "folder=".sqlesc($folder);
-        $updateset[] = "multilang=".sqlesc($multilang);
-        $updateset[] = "secondicon=".sqlesc($secondicon);
-        $updateset[] = "cssfile=".sqlesc($cssfile);
-        $updateset[] = "designer=".sqlesc($designer);
-        $updateset[] = "comment=".sqlesc($comment);
+        $updateset[] = "name=".\NexusPHP\Components\Database::escape($name);
+        $updateset[] = "folder=".\NexusPHP\Components\Database::escape($folder);
+        $updateset[] = "multilang=".\NexusPHP\Components\Database::escape($multilang);
+        $updateset[] = "secondicon=".\NexusPHP\Components\Database::escape($secondicon);
+        $updateset[] = "cssfile=".\NexusPHP\Components\Database::escape($cssfile);
+        $updateset[] = "designer=".\NexusPHP\Components\Database::escape($designer);
+        $updateset[] = "comment=".\NexusPHP\Components\Database::escape($comment);
         if ($_POST['isedit']) {
             $Cache->delete_value('category_icon_content');
         }
@@ -678,18 +678,18 @@ print($pagerbottom);
         if (!$source && !$medium && !$codec && !$standard && !$processing && !$team && !$audiocodec) {
             stderr($lang_catmanage['std_error'], $lang_catmanage['std_must_define_one_selection']);
         }
-        $updateset[] = "name=".sqlesc($name);
-        $updateset[] = "image=".sqlesc($image);
-        $updateset[] = "class_name=".sqlesc($class_name);
-        $updateset[] = "medium=".sqlesc($medium);
-        $updateset[] = "codec=".sqlesc($codec);
-        $updateset[] = "standard=".sqlesc($standard);
-        $updateset[] = "processing=".sqlesc($processing);
-        $updateset[] = "team=".sqlesc($team);
-        $updateset[] = "audiocodec=".sqlesc($audiocodec);
+        $updateset[] = "name=".\NexusPHP\Components\Database::escape($name);
+        $updateset[] = "image=".\NexusPHP\Components\Database::escape($image);
+        $updateset[] = "class_name=".\NexusPHP\Components\Database::escape($class_name);
+        $updateset[] = "medium=".\NexusPHP\Components\Database::escape($medium);
+        $updateset[] = "codec=".\NexusPHP\Components\Database::escape($codec);
+        $updateset[] = "standard=".\NexusPHP\Components\Database::escape($standard);
+        $updateset[] = "processing=".\NexusPHP\Components\Database::escape($processing);
+        $updateset[] = "team=".\NexusPHP\Components\Database::escape($team);
+        $updateset[] = "audiocodec=".\NexusPHP\Components\Database::escape($audiocodec);
         if ($_POST['isedit']) {
-            $res2=sql_query("SELECT * FROM secondicons WHERE id=".sqlesc($id)." LIMIT 1");
-            if ($row2=mysql_fetch_array($res)) {
+            $res2=\NexusPHP\Components\Database::query("SELECT * FROM secondicons WHERE id=".\NexusPHP\Components\Database::escape($id)." LIMIT 1");
+            if ($row2=mysqli_fetch_array($res)) {
                 $Cache->delete_value('secondicon_'.$row2['source'].'_'.$row2['medium'].'_'.$row2['codec'].'_'.$row2['standard'].'_'.$row2['processing'].'_'.$row2['team'].'_'.$row2['audiocodec'].'_content');
             }
         }
@@ -712,20 +712,20 @@ print($pagerbottom);
         if (!$mode) {
             stderr($lang_catmanage['std_error'], $lang_catmanage['std_invalid_mode_id']);
         }
-        $updateset[] = "name=".sqlesc($name);
-        $updateset[] = "image=".sqlesc($image);
-        $updateset[] = "mode=".sqlesc($mode);
-        $updateset[] = "class_name=".sqlesc($class_name);
-        $updateset[] = "sort_index=".sqlesc($sort_index);
+        $updateset[] = "name=".\NexusPHP\Components\Database::escape($name);
+        $updateset[] = "image=".\NexusPHP\Components\Database::escape($image);
+        $updateset[] = "mode=".\NexusPHP\Components\Database::escape($mode);
+        $updateset[] = "class_name=".\NexusPHP\Components\Database::escape($class_name);
+        $updateset[] = "sort_index=".\NexusPHP\Components\Database::escape($sort_index);
         if ($_POST['isedit']) {
             $Cache->delete_value('category_content');
         }
         $Cache->delete_value('category_list_mode_'.$mode);
     }
     if ($_POST['isedit']) {
-        sql_query("UPDATE ".$dbtablename." SET " . join(",", $updateset) . " WHERE id = ".sqlesc($id)) or sqlerr(__FILE__, __LINE__);
+        \NexusPHP\Components\Database::query("UPDATE ".$dbtablename." SET " . join(",", $updateset) . " WHERE id = ".\NexusPHP\Components\Database::escape($id)) or sqlerr(__FILE__, __LINE__);
     } else {
-        sql_query("INSERT INTO ".$dbtablename." SET " . join(",", $updateset)) or sqlerr(__FILE__, __LINE__);
+        \NexusPHP\Components\Database::query("INSERT INTO ".$dbtablename." SET " . join(",", $updateset)) or sqlerr(__FILE__, __LINE__);
     }
     header("Location: ".get_protocol_prefix() . $BASEURL."/catmanage.php?action=view&type=".$type);
 }

@@ -16,8 +16,8 @@ if (!$Cache->get_page()) {
     $sendpmimg = "<img class=\"button_pm\" src=\"pic/trans.gif\" alt=\"pm\" />";
     //--------------------- FIRST LINE SUPPORT SECTION ---------------------------//
     unset($ppl);
-    $res = sql_query("SELECT * FROM users WHERE users.support='yes' AND users.status='confirmed' ORDER BY users.username") or sqlerr();
-    while ($arr = mysql_fetch_assoc($res)) {
+    $res = \NexusPHP\Components\Database::query("SELECT * FROM users WHERE users.support='yes' AND users.status='confirmed' ORDER BY users.username") or sqlerr();
+    while ($arr = mysqli_fetch_assoc($res)) {
         $countryrow = get_country_row($arr['country']);
         $ppl .= "<tr><td class=embedded>". get_username($arr['id']) ."</td><td class=embedded><img width=24 height=15 src=\"pic/flag/".$countryrow[flagpic]."\" title=\"".$countryrow['name']."\" style=\"padding-bottom:1px;\"></td>
  <td class=embedded> ".(strtotime($arr['last_access']) > $dt ? $onlineimg : $offlineimg)."</td>".
@@ -52,8 +52,8 @@ end_frame();
 
     //--------------------- film critics section ---------------------------//
     unset($ppl);
-    $res = sql_query("SELECT * FROM users WHERE users.picker='yes' AND users.status='confirmed' ORDER BY users.username") or sqlerr();
-    while ($arr = mysql_fetch_assoc($res)) {
+    $res = \NexusPHP\Components\Database::query("SELECT * FROM users WHERE users.picker='yes' AND users.status='confirmed' ORDER BY users.username") or sqlerr();
+    while ($arr = mysqli_fetch_assoc($res)) {
         $countryrow = get_country_row($arr['country']);
         $ppl .= "<tr height=15><td class=embedded>". get_username($arr['id']) ."</td><td class=embedded ><img width=24 height=15 src=\"pic/flag/".$countryrow['flagpic']."\" title=\"".$countryrow['name']."\" style=\"padding-bottom:1px;\"></td>
  <td class=embedded> ".(strtotime($arr['last_access']) > $dt ? $onlineimg : $offlineimg)."</td>".
@@ -86,12 +86,12 @@ end_frame();
 
     //--------------------- forum moderators section ---------------------------//
     unset($ppl);
-    $res = sql_query("SELECT forummods.userid AS userid, users.last_access, users.country FROM forummods LEFT JOIN users ON forummods.userid = users.id GROUP BY userid ORDER BY forummods.forumid, forummods.userid") or sqlerr();
-    while ($arr = mysql_fetch_assoc($res)) {
+    $res = \NexusPHP\Components\Database::query("SELECT forummods.userid AS userid, users.last_access, users.country FROM forummods LEFT JOIN users ON forummods.userid = users.id GROUP BY userid ORDER BY forummods.forumid, forummods.userid") or sqlerr();
+    while ($arr = mysqli_fetch_assoc($res)) {
         $countryrow = get_country_row($arr['country']);
         $forums = "";
-        $forumres = sql_query("SELECT forums.id, forums.name FROM forums LEFT JOIN forummods ON forums.id = forummods.forumid WHERE forummods.userid = ".sqlesc($arr[userid]));
-        while ($forumrow = mysql_fetch_array($forumres)) {
+        $forumres = \NexusPHP\Components\Database::query("SELECT forums.id, forums.name FROM forums LEFT JOIN forummods ON forums.id = forummods.forumid WHERE forummods.userid = ".\NexusPHP\Components\Database::escape($arr[userid]));
+        while ($forumrow = mysqli_fetch_array($forumres)) {
             $forums .= "<a href=forums.php?action=viewforum&forumid=".$forumrow['id'].">".$forumrow['name']."</a>, ";
         }
         $forums = rtrim(trim($forums), ",");
@@ -126,8 +126,8 @@ end_frame();
 
     //--------------------- general staff section ---------------------------//
     unset($ppl);
-    $res = sql_query("SELECT * FROM users WHERE class > ".UC_VIP." AND status='confirmed' ORDER BY class DESC, username") or sqlerr();
-    while ($arr = mysql_fetch_assoc($res)) {
+    $res = \NexusPHP\Components\Database::query("SELECT * FROM users WHERE class > ".UC_VIP." AND status='confirmed' ORDER BY class DESC, username") or sqlerr();
+    while ($arr = mysqli_fetch_assoc($res)) {
         if ($curr_class != $arr['class']) {
             $curr_class = $arr['class'];
             if ($ppl != "") {
@@ -165,8 +165,8 @@ end_frame();
     //--------------------- VIP section ---------------------------//
 
     unset($ppl);
-    $res = sql_query("SELECT * FROM users WHERE class=".UC_VIP." AND status='confirmed' ORDER BY username") or sqlerr();
-    while ($arr = mysql_fetch_assoc($res)) {
+    $res = \NexusPHP\Components\Database::query("SELECT * FROM users WHERE class=".UC_VIP." AND status='confirmed' ORDER BY username") or sqlerr();
+    while ($arr = mysqli_fetch_assoc($res)) {
         $countryrow = get_country_row($arr['country']);
         $ppl .= "<tr><td class=embedded>". get_username($arr['id']) ."</td><td class=embedded><img width=24 height=15 src=\"pic/flag/".$countryrow['flagpic']."\" title=\"".$countryrow['name']."\" style=\"padding-bottom:1px;\"></td>
  <td class=embedded> ".(strtotime($arr['last_access']) > $dt ? $onlineimg : $offlineimg)."</td>".

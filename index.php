@@ -10,18 +10,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($showpolls_main == "yes") {
         $choice = $_POST["choice"];
         if ($CURUSER && $choice != "" && $choice < 256 && $choice == floor($choice)) {
-            $res = sql_query("SELECT * FROM polls ORDER BY added DESC LIMIT 1") or sqlerr(__FILE__, __LINE__);
-            $arr = mysql_fetch_assoc($res) or die($lang_index['std_no_poll']);
+            $res = \NexusPHP\Components\Database::query("SELECT * FROM polls ORDER BY added DESC LIMIT 1") or sqlerr(__FILE__, __LINE__);
+            $arr = mysqli_fetch_assoc($res) or die($lang_index['std_no_poll']);
             $pollid = $arr["id"];
 
-            $hasvoted = get_row_count("pollanswers", "WHERE pollid=".sqlesc($pollid)." && userid=".sqlesc($CURUSER["id"]));
+            $hasvoted = \NexusPHP\Components\Database::count("pollanswers", "WHERE pollid=".\NexusPHP\Components\Database::escape($pollid)." && userid=".\NexusPHP\Components\Database::escape($CURUSER["id"]));
             if ($hasvoted) {
                 stderr($lang_index['std_error'], $lang_index['std_duplicate_votes_denied']);
             }
-            sql_query("INSERT INTO pollanswers VALUES(0, ".sqlesc($pollid).", ".sqlesc($CURUSER["id"]).", ".sqlesc($choice).")") or sqlerr(__FILE__, __LINE__);
+            \NexusPHP\Components\Database::query("INSERT INTO pollanswers VALUES(0, ".\NexusPHP\Components\Database::escape($pollid).", ".\NexusPHP\Components\Database::escape($CURUSER["id"]).", ".\NexusPHP\Components\Database::escape($choice).")") or sqlerr(__FILE__, __LINE__);
             $Cache->delete_value('current_poll_content');
             $Cache->delete_value('current_poll_result', true);
-            if (mysql_affected_rows() != 1) {
+            if (\NexusPHP\Components\Database::affected_rows() != 1) {
                 stderr($lang_index['std_error'], $lang_index['std_vote_not_counted']);
             }
             //add karma
@@ -43,13 +43,13 @@ print("<h2>".$lang_index['text_recent_news'].(get_user_class() >= $newsmanage_cl
 
 $Cache->new_page('recent_news', 86400, true);
 if (!$Cache->get_page()) {
-    $res = sql_query("SELECT * FROM news ORDER BY added DESC LIMIT ".(int)$maxnewsnum_main) or sqlerr(__FILE__, __LINE__);
-    if (mysql_num_rows($res) > 0) {
+    $res = \NexusPHP\Components\Database::query("SELECT * FROM news ORDER BY added DESC LIMIT ".(int)$maxnewsnum_main) or sqlerr(__FILE__, __LINE__);
+    if (mysqli_num_rows($res) > 0) {
         $Cache->add_whole_row();
         print("<table width=\"100%\"><tr><td class=\"text\"><div style=\"margin-left: 16pt;\">\n");
         $Cache->end_whole_row();
         $news_flag = 0;
-        while ($array = mysql_fetch_array($res)) {
+        while ($array = mysqli_fetch_array($res)) {
             $Cache->add_row();
             $Cache->add_part();
             if ($news_flag < 1) {
@@ -93,12 +93,12 @@ if ($showextinfo['imdb'] == 'yes' && ($showmovies['hot'] == "yes" || $showmovies
                 $Cache->add_whole_row();
 
                 $imdbcfg = new imdb_config();
-                $res = sql_query("SELECT * FROM torrents WHERE picktype = " . sqlesc($type_each) . " AND seeders > 0 AND url != '' ORDER BY id DESC LIMIT 30") or sqlerr(__FILE__, __LINE__);
-                if (mysql_num_rows($res) > 0) {
+                $res = \NexusPHP\Components\Database::query("SELECT * FROM torrents WHERE picktype = " . \NexusPHP\Components\Database::escape($type_each) . " AND seeders > 0 AND url != '' ORDER BY id DESC LIMIT 30") or sqlerr(__FILE__, __LINE__);
+                if (mysqli_num_rows($res) > 0) {
                     $movies_list = "";
                     $count = 0;
                     $allImdb = array();
-                    while ($array = mysql_fetch_array($res)) {
+                    while ($array = mysqli_fetch_array($res)) {
                         $pro_torrent = get_torrent_promotion_append($array[sp_state], 'word');
                         if ($imdb_id = parse_imdb_id($array["url"])) {
                             if (array_search($imdb_id, $allImdb) !== false) { //a torrent with the same IMDb url already exists
@@ -139,8 +139,8 @@ if ($showextinfo['imdb'] == 'yes' && ($showmovies['hot'] == "yes" || $showmovies
 if ($showfunbox_main == "yes" && (!isset($CURUSER) || $CURUSER['showfb'] == "yes")) {
     // Get the newest fun stuff
     if (!$row = $Cache->get_value('current_fun_content')) {
-        $result = sql_query("SELECT fun.*, IF(ADDTIME(added, '1 0:0:0') < NOW(),true,false) AS neednew FROM fun WHERE status != 'banned' AND status != 'dull' ORDER BY added DESC LIMIT 1") or sqlerr(__FILE__, __LINE__);
-        $row = mysql_fetch_array($result);
+        $result = \NexusPHP\Components\Database::query("SELECT fun.*, IF(ADDTIME(added, '1 0:0:0') < NOW(),true,false) AS neednew FROM fun WHERE status != 'banned' AND status != 'dull' ORDER BY added DESC LIMIT 1") or sqlerr(__FILE__, __LINE__);
+        $row = mysqli_fetch_array($result);
         $Cache->cache_value('current_fun_content', $row, 1043);
     }
     if (!$row) { //There is no funbox item
@@ -148,16 +148,16 @@ if ($showfunbox_main == "yes" && (!isset($CURUSER) || $CURUSER['showfb'] == "yes
     } else {
         $totalvote = $Cache->get_value('current_fun_vote_count');
         if ($totalvote == "") {
-            $totalvote = get_row_count("funvotes", "WHERE funid = ".sqlesc($row['id']));
+            $totalvote = \NexusPHP\Components\Database::count("funvotes", "WHERE funid = ".\NexusPHP\Components\Database::escape($row['id']));
             $Cache->cache_value('current_fun_vote_count', $totalvote, 756);
         }
         $funvote = $Cache->get_value('current_fun_vote_funny_count');
         if ($funvote == "") {
-            $funvote = get_row_count("funvotes", "WHERE funid = ".sqlesc($row['id'])." AND vote='fun'");
+            $funvote = \NexusPHP\Components\Database::count("funvotes", "WHERE funid = ".\NexusPHP\Components\Database::escape($row['id'])." AND vote='fun'");
             $Cache->cache_value('current_fun_vote_funny_count', $funvote, 756);
         }
         //check whether current user has voted
-        $funvoted = get_row_count("funvotes", "WHERE funid = ".sqlesc($row['id'])." AND userid=".sqlesc($CURUSER[id]));
+        $funvoted = \NexusPHP\Components\Database::count("funvotes", "WHERE funid = ".\NexusPHP\Components\Database::escape($row['id'])." AND userid=".\NexusPHP\Components\Database::escape($CURUSER[id]));
 
         print("<h2>".$lang_index['text_funbox']);
         if ($CURUSER) {
@@ -198,13 +198,13 @@ if ($showshoutbox_main == "yes") {
 /*
 if ($showlastxforumposts_main == "yes" && $CURUSER)
 {
-    $res = sql_query("SELECT posts.id AS pid, posts.userid AS userpost, posts.added, topics.id AS tid, topics.subject, topics.forumid, topics.views, forums.name FROM posts, topics, forums WHERE posts.topicid = topics.id AND topics.forumid = forums.id AND minclassread <=" . sqlesc(get_user_class()) . " ORDER BY posts.id DESC LIMIT 5") or sqlerr(__FILE__,__LINE__);
-    if(mysql_num_rows($res) != 0)
+    $res = \NexusPHP\Components\Database::query("SELECT posts.id AS pid, posts.userid AS userpost, posts.added, topics.id AS tid, topics.subject, topics.forumid, topics.views, forums.name FROM posts, topics, forums WHERE posts.topicid = topics.id AND topics.forumid = forums.id AND minclassread <=" . \NexusPHP\Components\Database::escape(get_user_class()) . " ORDER BY posts.id DESC LIMIT 5") or sqlerr(__FILE__,__LINE__);
+    if(mysqli_num_rows($res) != 0)
     {
         print("<h2>".$lang_index['text_last_five_posts']."</h2>");
         print("<table width=\"100%\" border=\"1\" cellspacing=\"0\" cellpadding=\"5\"><tr><td class=\"colhead\" width=\"100%\" align=\"left\">".$lang_index['col_topic_title']."</td><td class=\"colhead\" align=\"center\">".$lang_index['col_view']."</td><td class=\"colhead\" align=\"center\">".$lang_index['col_author']."</td><td class=\"colhead\" align=\"left\">".$lang_index['col_posted_at']."</td></tr>");
 
-        while ($postsx = mysql_fetch_assoc($res))
+        while ($postsx = mysqli_fetch_assoc($res))
         {
             print("<tr><td><a href=\"forums.php?action=viewtopic&amp;topicid=".$postsx["tid"]."&amp;page=p".$postsx["pid"]."#pid".$postsx["pid"]."\"><b>".htmlspecialchars($postsx["subject"])."</b></a><br />".$lang_index['text_in']."<a href=\"forums.php?action=viewforum&amp;forumid=".$postsx["forumid"]."\">".htmlspecialchars($postsx["name"])."</a></td><td align=\"center\">".$postsx["views"]."</td><td align=\"center\">" . get_username($postsx["userpost"]) ."</td><td>".gettime($postsx["added"])."</td></tr>");
         }
@@ -216,12 +216,12 @@ if ($showlastxforumposts_main == "yes" && $CURUSER)
 // ------------- start: latest torrents ------------------//
 
 if ($showlastxtorrents_main == "yes") {
-    $result = sql_query("SELECT * FROM torrents where visible='yes' ORDER BY added DESC LIMIT 5") or sqlerr(__FILE__, __LINE__);
-    if (mysql_num_rows($result) != 0) {
+    $result = \NexusPHP\Components\Database::query("SELECT * FROM torrents where visible='yes' ORDER BY added DESC LIMIT 5") or sqlerr(__FILE__, __LINE__);
+    if (mysqli_num_rows($result) != 0) {
         print("<h2>".$lang_index['text_last_five_torrent']."</h2>");
         print("<table width=\"100%\" border=\"1\" cellspacing=\"0\" cellpadding=\"5\"><tr><td class=\"colhead\" width=\"100%\">".$lang_index['col_name']."</td><td class=\"colhead\" align=\"center\">".$lang_index['col_seeder']."</td><td class=\"colhead\" align=\"center\">".$lang_index['col_leecher']."</td></tr>");
 
-        while ($row = mysql_fetch_assoc($result)) {
+        while ($row = mysqli_fetch_assoc($result)) {
             print("<tr><a href=\"details.php?id=". $row['id'] ."&amp;hit=1\"><td><a href=\"details.php?id=". $row['id'] ."&amp;hit=1\"><b>" . htmlspecialchars($row['name']) . "</b></td></a><td align=\"center\">" . $row['seeders'] . "</td><td align=\"center\">" . $row['leechers'] . "</td></tr>");
         }
         print("</table>");
@@ -232,8 +232,8 @@ if ($showlastxtorrents_main == "yes") {
 if ($CURUSER && $showpolls_main == "yes") {
     // Get current poll
     if (!$arr = $Cache->get_value('current_poll_content')) {
-        $res = sql_query("SELECT * FROM polls ORDER BY id DESC LIMIT 1") or sqlerr(__FILE__, __LINE__);
-        $arr = mysql_fetch_array($res);
+        $res = \NexusPHP\Components\Database::query("SELECT * FROM polls ORDER BY id DESC LIMIT 1") or sqlerr(__FILE__, __LINE__);
+        $arr = mysqli_fetch_array($res);
         $Cache->cache_value('current_poll_content', $arr, 7226);
     }
     if (!$arr) {
@@ -268,22 +268,22 @@ if ($CURUSER && $showpolls_main == "yes") {
         print("<p align=\"center\"><b>".$question."</b></p>\n");
 
         // Check if user has already voted
-        $res = sql_query("SELECT selection FROM pollanswers WHERE pollid=".sqlesc($pollid)." AND userid=".sqlesc($CURUSER["id"])) or sqlerr();
-        $voted = mysql_fetch_assoc($res);
+        $res = \NexusPHP\Components\Database::query("SELECT selection FROM pollanswers WHERE pollid=".\NexusPHP\Components\Database::escape($pollid)." AND userid=".\NexusPHP\Components\Database::escape($CURUSER["id"])) or sqlerr();
+        $voted = mysqli_fetch_assoc($res);
         if ($voted) { //user has already voted
             $uservote = $voted["selection"];
             $Cache->new_page('current_poll_result', 3652, true);
             if (!$Cache->get_page()) {
                 // we reserve 255 for blank vote.
-                $res = sql_query("SELECT selection FROM pollanswers WHERE pollid=".sqlesc($pollid)." AND selection < 20") or sqlerr();
+                $res = \NexusPHP\Components\Database::query("SELECT selection FROM pollanswers WHERE pollid=".\NexusPHP\Components\Database::escape($pollid)." AND selection < 20") or sqlerr();
 
-                $tvotes = mysql_num_rows($res);
+                $tvotes = mysqli_num_rows($res);
 
                 $vs = array();
                 $os = array();
 
                 // Count votes
-                while ($arr2 = mysql_fetch_row($res)) {
+                while ($arr2 = mysqli_fetch_row($res)) {
                     $vs[$arr2[0]] ++;
                 }
 
@@ -377,16 +377,16 @@ if ($showstats_main == "yes") {
     $Cache->new_page('stats_users', 3000, true);
     if (!$Cache->get_page()) {
         $Cache->add_whole_row();
-        $registered = number_format(get_row_count("users"));
-        $unverified = number_format(get_row_count("users", "WHERE status='pending'"));
-        $totalonlinetoday = number_format(get_row_count("users", "WHERE last_access >= ". sqlesc(date("Y-m-d H:i:s", (TIMENOW - 86400)))));
-        $totalonlineweek = number_format(get_row_count("users", "WHERE last_access >= ". sqlesc(date("Y-m-d H:i:s", (TIMENOW - 604800)))));
-        $VIP = number_format(get_row_count("users", "WHERE class=".UC_VIP));
-        $donated = number_format(get_row_count("users", "WHERE donor = 'yes'"));
-        $warned = number_format(get_row_count("users", "WHERE warned='yes'"));
-        $disabled = number_format(get_row_count("users", "WHERE enabled='no'"));
-        $registered_male = number_format(get_row_count("users", "WHERE gender='Male'"));
-        $registered_female = number_format(get_row_count("users", "WHERE gender='Female'")); ?>
+        $registered = number_format(\NexusPHP\Components\Database::count("users"));
+        $unverified = number_format(\NexusPHP\Components\Database::count("users", "WHERE status='pending'"));
+        $totalonlinetoday = number_format(\NexusPHP\Components\Database::count("users", "WHERE last_access >= ". \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s", (TIMENOW - 86400)))));
+        $totalonlineweek = number_format(\NexusPHP\Components\Database::count("users", "WHERE last_access >= ". \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s", (TIMENOW - 604800)))));
+        $VIP = number_format(\NexusPHP\Components\Database::count("users", "WHERE class=".UC_VIP));
+        $donated = number_format(\NexusPHP\Components\Database::count("users", "WHERE donor = 'yes'"));
+        $warned = number_format(\NexusPHP\Components\Database::count("users", "WHERE warned='yes'"));
+        $disabled = number_format(\NexusPHP\Components\Database::count("users", "WHERE enabled='no'"));
+        $registered_male = number_format(\NexusPHP\Components\Database::count("users", "WHERE gender='Male'"));
+        $registered_female = number_format(\NexusPHP\Components\Database::count("users", "WHERE gender='Female'")); ?>
 <tr>
 <?php
     twotd($lang_index['row_users_active_today'], $totalonlinetoday);
@@ -422,24 +422,24 @@ if ($showstats_main == "yes") {
     $Cache->new_page('stats_torrents', 1800, true);
     if (!$Cache->get_page()) {
         $Cache->add_whole_row();
-        $torrents = number_format(get_row_count("torrents"));
-        $dead = number_format(get_row_count("torrents", "WHERE visible='no'"));
-        $seeders = get_row_count("peers", "WHERE seeder='yes'");
-        $leechers = get_row_count("peers", "WHERE seeder='no'");
+        $torrents = number_format(\NexusPHP\Components\Database::count("torrents"));
+        $dead = number_format(\NexusPHP\Components\Database::count("torrents", "WHERE visible='no'"));
+        $seeders = \NexusPHP\Components\Database::count("peers", "WHERE seeder='yes'");
+        $leechers = \NexusPHP\Components\Database::count("peers", "WHERE seeder='no'");
         if ($leechers == 0) {
             $ratio = 0;
         } else {
             $ratio = round($seeders / $leechers * 100);
         }
-        $activewebusernow = get_row_count("users", "WHERE last_access >= ".sqlesc(date("Y-m-d H:i:s", (TIMENOW - 900))));
+        $activewebusernow = \NexusPHP\Components\Database::count("users", "WHERE last_access >= ".\NexusPHP\Components\Database::escape(date("Y-m-d H:i:s", (TIMENOW - 900))));
         $activewebusernow=number_format($activewebusernow);
-        $activetrackerusernow = number_format(get_single_value("peers", "COUNT(DISTINCT(userid))"));
+        $activetrackerusernow = number_format(\NexusPHP\Components\Database::single("peers", "COUNT(DISTINCT(userid))"));
         $peers = number_format($seeders + $leechers);
         $seeders = number_format($seeders);
         $leechers = number_format($leechers);
-        $totaltorrentssize = mksize(get_row_sum("torrents", "size"));
-        $totaluploaded = get_row_sum("users", "uploaded");
-        $totaldownloaded = get_row_sum("users", "downloaded");
+        $totaltorrentssize = mksize(\NexusPHP\Components\Database::sum("torrents", "size"));
+        $totaluploaded = \NexusPHP\Components\Database::sum("users", "uploaded");
+        $totaldownloaded = \NexusPHP\Components\Database::sum("users", "downloaded");
         $totaldata = $totaldownloaded+$totaluploaded; ?>
 <tr>
 <?php
@@ -481,16 +481,16 @@ if ($showstats_main == "yes") {
     $Cache->new_page('stats_classes', 4535, true);
     if (!$Cache->get_page()) {
         $Cache->add_whole_row();
-        $peasants =  number_format(get_row_count("users", "WHERE class=".UC_PEASANT));
-        $users = number_format(get_row_count("users", "WHERE class=".UC_USER));
-        $powerusers = number_format(get_row_count("users", "WHERE class=".UC_POWER_USER));
-        $eliteusers = number_format(get_row_count("users", "WHERE class=".UC_ELITE_USER));
-        $crazyusers = number_format(get_row_count("users", "WHERE class=".UC_CRAZY_USER));
-        $insaneusers = number_format(get_row_count("users", "WHERE class=".UC_INSANE_USER));
-        $veteranusers = number_format(get_row_count("users", "WHERE class=".UC_VETERAN_USER));
-        $extremeusers = number_format(get_row_count("users", "WHERE class=".UC_EXTREME_USER));
-        $ultimateusers = number_format(get_row_count("users", "WHERE class=".UC_ULTIMATE_USER));
-        $nexusmasters = number_format(get_row_count("users", "WHERE class=".UC_NEXUS_MASTER)); ?>
+        $peasants =  number_format(\NexusPHP\Components\Database::count("users", "WHERE class=".UC_PEASANT));
+        $users = number_format(\NexusPHP\Components\Database::count("users", "WHERE class=".UC_USER));
+        $powerusers = number_format(\NexusPHP\Components\Database::count("users", "WHERE class=".UC_POWER_USER));
+        $eliteusers = number_format(\NexusPHP\Components\Database::count("users", "WHERE class=".UC_ELITE_USER));
+        $crazyusers = number_format(\NexusPHP\Components\Database::count("users", "WHERE class=".UC_CRAZY_USER));
+        $insaneusers = number_format(\NexusPHP\Components\Database::count("users", "WHERE class=".UC_INSANE_USER));
+        $veteranusers = number_format(\NexusPHP\Components\Database::count("users", "WHERE class=".UC_VETERAN_USER));
+        $extremeusers = number_format(\NexusPHP\Components\Database::count("users", "WHERE class=".UC_EXTREME_USER));
+        $ultimateusers = number_format(\NexusPHP\Components\Database::count("users", "WHERE class=".UC_ULTIMATE_USER));
+        $nexusmasters = number_format(\NexusPHP\Components\Database::count("users", "WHERE class=".UC_NEXUS_MASTER)); ?>
 <tr>
 <?php
     twotd(get_user_class_name(UC_PEASANT, false, false, true)." <img class=\"leechwarned\" src=\"pic/trans.gif\" alt=\"leechwarned\" />", $peasants);
@@ -562,10 +562,10 @@ if ($showtrackerload == "yes") {
     $Cache->new_page('links', 86400, false);
     if (!$Cache->get_page()) {
         $Cache->add_whole_row();
-        $res = sql_query("SELECT * FROM links ORDER BY id ASC") or sqlerr(__FILE__, __LINE__);
-        if (mysql_num_rows($res) > 0) {
+        $res = \NexusPHP\Components\Database::query("SELECT * FROM links ORDER BY id ASC") or sqlerr(__FILE__, __LINE__);
+        if (mysqli_num_rows($res) > 0) {
             $links = "";
-            while ($array = mysql_fetch_array($res)) {
+            while ($array = mysqli_fetch_array($res)) {
                 $links .= "<a href=\"" . $array['url'] . "\" title=\"" . $array['title'] . "\" target=\"_blank\">" . $array['name'] . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
             }
             print("<table width=\"100%\"><tr><td class=\"text\">".trim($links)."</td></tr></table>");
@@ -584,7 +584,7 @@ if ($showtrackerload == "yes") {
 <?php
 // ------------- end: browser, client and code note ------------------//
 if ($CURUSER) {
-    $USERUPDATESET[] = "last_home = ".sqlesc(date("Y-m-d H:i:s"));
+    $USERUPDATESET[] = "last_home = ".\NexusPHP\Components\Database::escape(date("Y-m-d H:i:s"));
 }
 $Cache->delete_value('user_'.$CURUSER["id"].'_unread_news_count');
 end_main_frame();

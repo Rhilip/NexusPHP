@@ -12,10 +12,10 @@ header("Content-Type: text/xml; charset=utf-8");
 if (isset($_GET['q']) && $_GET['q'] != '') {
     $searchstr = unesc(trim($_GET['q']));
     
-    $suggest_query = sql_query("SELECT keywords AS suggest, COUNT(*) AS count FROM suggest WHERE keywords LIKE " . sqlesc($searchstr . "%")." GROUP BY keywords ORDER BY count DESC, keywords DESC LIMIT 10") or sqlerr(__FILE__, __LINE__);
+    $suggest_query = \NexusPHP\Components\Database::query("SELECT keywords AS suggest, COUNT(*) AS count FROM suggest WHERE keywords LIKE " . \NexusPHP\Components\Database::escape($searchstr . "%")." GROUP BY keywords ORDER BY count DESC, keywords DESC LIMIT 10") or sqlerr(__FILE__, __LINE__);
     $result = "";
     $i = 0;
-    while ($suggest = mysql_fetch_array($suggest_query)) {
+    while ($suggest = mysqli_fetch_array($suggest_query)) {
         if (strlen($suggest['suggest']) > 25) {
             continue;
         }

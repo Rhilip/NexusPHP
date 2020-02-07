@@ -15,8 +15,8 @@ if ($_SERVER["REQUEST_METHOD"] != "POST") {
         if (!$origmsg) {
             stderr($lang_takemessage['std_error'], $lang_takemessage['std_invalid_id']);
         }
-        $res = sql_query("SELECT * FROM messages WHERE id=" . sqlesc($origmsg) . " AND (receiver=" . sqlesc($CURUSER['id']) . " OR sender=" . sqlesc($CURUSER['id']) .") LIMIT 1") or sqlerr(__FILE__, __LINE__);
-        $origmsgrow = mysql_fetch_assoc($res);
+        $res = \NexusPHP\Components\Database::query("SELECT * FROM messages WHERE id=" . \NexusPHP\Components\Database::escape($origmsg) . " AND (receiver=" . \NexusPHP\Components\Database::escape($CURUSER['id']) . " OR sender=" . \NexusPHP\Components\Database::escape($CURUSER['id']) .") LIMIT 1") or sqlerr(__FILE__, __LINE__);
+        $origmsgrow = mysqli_fetch_assoc($res);
         if (!$origmsgrow) {
             stderr($lang_takemessage['std_error'], $lang_takemessage['std_no_permission_forwarding']);
         }
@@ -57,8 +57,8 @@ if ($_SERVER["REQUEST_METHOD"] != "POST") {
     $save = ($save == 'yes') ? "yes" : "no";
     // End of Change
 
-    $res = sql_query("SELECT id,username,parked,email,acceptpms, notifs, UNIX_TIMESTAMP(last_access) as la FROM users WHERE id=".sqlesc($receiver)) or sqlerr(__FILE__, __LINE__);
-    $user = mysql_fetch_assoc($res);
+    $res = \NexusPHP\Components\Database::query("SELECT id,username,parked,email,acceptpms, notifs, UNIX_TIMESTAMP(last_access) as la FROM users WHERE id=".\NexusPHP\Components\Database::escape($receiver)) or sqlerr(__FILE__, __LINE__);
+    $user = mysqli_fetch_assoc($res);
     if (!$user) {
         stderr($lang_takemessage['std_error'], $lang_takemessage['std_user_not_exist']);
     }
@@ -69,13 +69,13 @@ if ($_SERVER["REQUEST_METHOD"] != "POST") {
             stderr($lang_takemessage['std_refused'], $lang_takemessage['std_account_parked']);
         }
         if ($user["acceptpms"] == "yes") {
-            $res2 = sql_query("SELECT * FROM blocks WHERE userid=".sqlesc($receiver)." AND blockid=" . sqlesc($CURUSER["id"])) or sqlerr(__FILE__, __LINE__);
-            if (mysql_num_rows($res2) == 1) {
+            $res2 = \NexusPHP\Components\Database::query("SELECT * FROM blocks WHERE userid=".\NexusPHP\Components\Database::escape($receiver)." AND blockid=" . \NexusPHP\Components\Database::escape($CURUSER["id"])) or sqlerr(__FILE__, __LINE__);
+            if (mysqli_num_rows($res2) == 1) {
                 stderr($lang_takemessage['std_refused'], $lang_takemessage['std_user_blocks_your_pms']);
             }
         } elseif ($user["acceptpms"] == "friends") {
-            $res2 = sql_query("SELECT * FROM friends WHERE userid=".sqlesc($receiver)." AND friendid=" . sqlesc($CURUSER["id"])) or sqlerr(__FILE__, __LINE__);
-            if (mysql_num_rows($res2) != 1) {
+            $res2 = \NexusPHP\Components\Database::query("SELECT * FROM friends WHERE userid=".\NexusPHP\Components\Database::escape($receiver)." AND friendid=" . \NexusPHP\Components\Database::escape($CURUSER["id"])) or sqlerr(__FILE__, __LINE__);
+            if (mysqli_num_rows($res2) != 1) {
                 stderr($lang_takemessage['std_refused'], $lang_takemessage['std_user_accepts_friends_pms']);
             }
         } elseif ($user["acceptpms"] == "no") {
@@ -84,15 +84,15 @@ if ($_SERVER["REQUEST_METHOD"] != "POST") {
     }
 
     $subject = trim($_POST['subject']);
-    sql_query("INSERT INTO messages (sender, receiver, added, msg, subject, saved, location) VALUES(" . sqlesc($CURUSER["id"]) . ", ".sqlesc($receiver).", '" . date("Y-m-d H:i:s") . "', " . sqlesc($msg) . ", " . sqlesc($subject) . ", " . sqlesc($save) . ", 1)") or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("INSERT INTO messages (sender, receiver, added, msg, subject, saved, location) VALUES(" . \NexusPHP\Components\Database::escape($CURUSER["id"]) . ", ".\NexusPHP\Components\Database::escape($receiver).", '" . date("Y-m-d H:i:s") . "', " . \NexusPHP\Components\Database::escape($msg) . ", " . \NexusPHP\Components\Database::escape($subject) . ", " . \NexusPHP\Components\Database::escape($save) . ", 1)") or sqlerr(__FILE__, __LINE__);
     $Cache->delete_value('user_'.$receiver.'_unread_message_count');
     $Cache->delete_value('user_'.$receiver.'_inbox_count');
     $Cache->delete_value('user_'.$CURUSER["id"].'_outbox_count');
     
-    $msgid=mysql_insert_id();
+    $msgid=\NexusPHP\Components\Database::insert_id();
     $date=date("Y-m-d H:i:s");
     // Update Last PM sent...
-    sql_query("UPDATE users SET last_pm = NOW() WHERE id = ".sqlesc($CURUSER['id'])) or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("UPDATE users SET last_pm = NOW() WHERE id = ".\NexusPHP\Components\Database::escape($CURUSER['id'])) or sqlerr(__FILE__, __LINE__);
 
     // Send notification email.
 if ($emailnotify_smtp=='yes' && $smtptype != 'none') {
@@ -135,16 +135,16 @@ EOD;
     if ($origmsg) {
         if ($delete == "yes") {
             // Make sure receiver of $origmsg is current user
-            $res = sql_query("SELECT * FROM messages WHERE id=$origmsg") or sqlerr(__FILE__, __LINE__);
-            if (mysql_num_rows($res) == 1) {
-                $arr = mysql_fetch_assoc($res);
+            $res = \NexusPHP\Components\Database::query("SELECT * FROM messages WHERE id=$origmsg") or sqlerr(__FILE__, __LINE__);
+            if (mysqli_num_rows($res) == 1) {
+                $arr = mysqli_fetch_assoc($res);
                 if ($arr["receiver"] != $CURUSER["id"]) {
                     stderr("w00t", "This shouldn't happen.");
                 }
                 if ($arr["saved"] == "no") {
-                    sql_query("DELETE FROM messages WHERE id=$origmsg") or sqlerr(__FILE__, __LINE__);
+                    \NexusPHP\Components\Database::query("DELETE FROM messages WHERE id=$origmsg") or sqlerr(__FILE__, __LINE__);
                 } elseif ($arr["saved"] == "yes") {
-                    sql_query("UPDATE messages SET location = '0' WHERE id=$origmsg") or sqlerr(__FILE__, __LINE__);
+                    \NexusPHP\Components\Database::query("UPDATE messages SET location = '0' WHERE id=$origmsg") or sqlerr(__FILE__, __LINE__);
                 }
             }
         }

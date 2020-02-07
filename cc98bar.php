@@ -31,8 +31,8 @@ if (!$my_img = $Cache->get_value('userbar_'.$_SERVER['REQUEST_URI'])) {
     $bg = 0 + preg_replace($pattern, "\\44", $_SERVER['REQUEST_URI']);
     $id = preg_replace($pattern, "\\45", $_SERVER['REQUEST_URI']);
 
-    $res = sql_query("SELECT username, uploaded, downloaded, class, privacy FROM users WHERE id=".sqlesc($id)." LIMIT 1");
-    $row = mysql_fetch_array($res);
+    $res = \NexusPHP\Components\Database::query("SELECT username, uploaded, downloaded, class, privacy FROM users WHERE id=".\NexusPHP\Components\Database::escape($id)." LIMIT 1");
+    $row = mysqli_fetch_array($res);
     if (!$row) {
         die;
     } elseif ($row['privacy'] == 'strong') {

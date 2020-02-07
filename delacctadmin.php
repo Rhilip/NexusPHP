@@ -12,16 +12,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         stderr("Error", "Please fill out the form correctly.");
     }
 
-    $res = sql_query("SELECT * FROM users WHERE id=" . sqlesc($userid)) or sqlerr();
-    if (mysql_num_rows($res) != 1) {
+    $res = \NexusPHP\Components\Database::query("SELECT * FROM users WHERE id=" . \NexusPHP\Components\Database::escape($userid)) or sqlerr();
+    if (mysqli_num_rows($res) != 1) {
         stderr("Error", "Bad user id or password. Please verify that all entered information is correct.");
     }
-    $arr = mysql_fetch_assoc($res);
+    $arr = mysqli_fetch_assoc($res);
 
     $id = $arr['id'];
     $name = $arr['username'];
-    $res = sql_query("DELETE FROM users WHERE id=$id") or sqlerr();
-    if (mysql_affected_rows() != 1) {
+    $res = \NexusPHP\Components\Database::query("DELETE FROM users WHERE id=$id") or sqlerr();
+    if (\NexusPHP\Components\Database::affected_rows() != 1) {
         stderr("Error", "Unable to delete the account.");
     }
     stderr("Success", "The account <b>".htmlspecialchars($name)."</b> was deleted.", false);

@@ -9,20 +9,20 @@ if ($_GET['id']) {
 }
 $userid = $CURUSER["id"];
 $torrentid = $_POST["id"];
-$tsql = sql_query("SELECT owner FROM torrents where id=".sqlesc($torrentid));
-$arr = mysql_fetch_array($tsql);
+$tsql = \NexusPHP\Components\Database::query("SELECT owner FROM torrents where id=".\NexusPHP\Components\Database::escape($torrentid));
+$arr = mysqli_fetch_array($tsql);
 if (!$arr) {
     stderr("Error", "Invalid torrent id!");
 }
 $torrentowner = $arr['owner'];
-$tsql = sql_query("SELECT COUNT(*) FROM thanks where torrentid=".sqlesc($torrentid)." and userid=".sqlesc($userid));
-$trows = mysql_fetch_array($tsql);
+$tsql = \NexusPHP\Components\Database::query("SELECT COUNT(*) FROM thanks where torrentid=".\NexusPHP\Components\Database::escape($torrentid)." and userid=".\NexusPHP\Components\Database::escape($userid));
+$trows = mysqli_fetch_array($tsql);
 $t_ab = $trows[0];
 if ($t_ab != 0) {
     stderr("Error", "You already said thanks!");
 }
 if (isset($userid) && isset($torrentid)) {
-    $res = sql_query("INSERT INTO thanks (torrentid, userid) VALUES (".sqlesc($torrentid).", ".sqlesc($userid).")");
+    $res = \NexusPHP\Components\Database::query("INSERT INTO thanks (torrentid, userid) VALUES (".\NexusPHP\Components\Database::escape($torrentid).", ".\NexusPHP\Components\Database::escape($userid).")");
     KPS("+", $saythanks_bonus, $CURUSER['id']);//User gets bonus for saying thanks
 KPS("+", $receivethanks_bonus, $torrentowner);//Thanks receiver get bonus
 }

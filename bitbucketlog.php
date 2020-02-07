@@ -10,11 +10,11 @@ $bucketpath = "$bitbucket";
 if (get_user_class() >= UC_MODERATOR) {
     $delete = $_GET["delete"];
     if (is_valid_id($delete)) {
-        $r = sql_query("SELECT name,owner FROM bitbucket WHERE id=".mysql_real_escape_string($delete)) or sqlerr(__FILE__, __LINE__);
-        if (mysql_num_rows($r) == 1) {
-            $a = mysql_fetch_assoc($r);
+        $r = \NexusPHP\Components\Database::query("SELECT name,owner FROM bitbucket WHERE id=".\NexusPHP\Components\Database::real_escape_string($delete)) or sqlerr(__FILE__, __LINE__);
+        if (mysqli_num_rows($r) == 1) {
+            $a = mysqli_fetch_assoc($r);
             if (get_user_class() >= UC_MODERATOR || $a["owner"] == $CURUSER["id"]) {
-                sql_query("DELETE FROM bitbucket WHERE id=".mysql_real_escape_string($delete)) or sqlerr(__FILE__, __LINE__);
+                \NexusPHP\Components\Database::query("DELETE FROM bitbucket WHERE id=".\NexusPHP\Components\Database::real_escape_string($delete)) or sqlerr(__FILE__, __LINE__);
                 if (!unlink("$bucketpath/$a[name]")) {
                     stderr("Warning", "Unable to unlink file: <b>$a[name]</b>. You should contact an administrator about this error.", false);
                 }
@@ -23,18 +23,18 @@ if (get_user_class() >= UC_MODERATOR) {
     }
 }
                                 stdhead("BitBucket Log");
-                                $res = sql_query("SELECT count(*) FROM bitbucket") or die(mysql_error());	$row = mysql_fetch_array($res);	$count = $row[0];
+                                $res = \NexusPHP\Components\Database::query("SELECT count(*) FROM bitbucket") or die(\NexusPHP\Components\Database::error());	$row = mysqli_fetch_array($res);	$count = $row[0];
                                 $perpage = 10;
                                 list($pagertop, $pagerbottom, $limit) = pager($perpage, $count, $_SERVER["PHP_SELF"] . "?out=" . $_GET["out"] . "&");
                                 print("<h1>BitBucket Log</h1>\n");
                                 print("Total Images Stored: $count");
                                 echo $pagertop;
-                                $res = sql_query("SELECT * FROM bitbucket ORDER BY added DESC $limit") or sqlerr(__FILE__, __LINE__);
-                                if (mysql_num_rows($res) == 0) {
+                                $res = \NexusPHP\Components\Database::query("SELECT * FROM bitbucket ORDER BY added DESC $limit") or sqlerr(__FILE__, __LINE__);
+                                if (mysqli_num_rows($res) == 0) {
                                     print("<b>BitBucket Log is empty</b>\n");
                                 } else {
                                     print("<table align='center' border='0' cellspacing='0' cellpadding='5'>\n");
-                                    while ($arr = mysql_fetch_assoc($res)) {
+                                    while ($arr = mysqli_fetch_assoc($res)) {
                                         $date = substr($arr['added'], 0, strpos($arr['added'], " "));
                                         $time = substr($arr['added'], strpos($arr['added'], " ") + 1);
                                         $name = $arr["name"];

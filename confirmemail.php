@@ -16,8 +16,8 @@ if (!$id) {
 }
 dbconn();
 
-$res = sql_query("SELECT editsecret FROM users WHERE id = $id");
-$row = mysql_fetch_array($res);
+$res = \NexusPHP\Components\Database::query("SELECT editsecret FROM users WHERE id = $id");
+$row = mysqli_fetch_array($res);
 
 if (!$row) {
     httperr();
@@ -31,9 +31,9 @@ if ($md5 != md5($sec . $email . $sec)) {
     httperr();
 }
 
-sql_query("UPDATE users SET editsecret='', email=" . sqlesc($email) . " WHERE id=$id AND editsecret=" . sqlesc($row["editsecret"]));
+\NexusPHP\Components\Database::query("UPDATE users SET editsecret='', email=" . \NexusPHP\Components\Database::escape($email) . " WHERE id=$id AND editsecret=" . \NexusPHP\Components\Database::escape($row["editsecret"]));
 
-if (!mysql_affected_rows()) {
+if (!\NexusPHP\Components\Database::affected_rows()) {
     httperr();
 }
 

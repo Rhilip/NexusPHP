@@ -16,13 +16,13 @@ if (!$filename || !$dirname) {
 $filename = 0 + $filename;
 $dirname = 0 + $dirname;
 
-$res = sql_query("SELECT * FROM subs WHERE id=$filename") or sqlerr(__FILE__, __LINE__);
-$arr = mysql_fetch_assoc($res);
+$res = \NexusPHP\Components\Database::query("SELECT * FROM subs WHERE id=$filename") or sqlerr(__FILE__, __LINE__);
+$arr = mysqli_fetch_assoc($res);
 if (!$arr) {
     die("Not found\n");
 }
 
-sql_query("UPDATE subs SET hits=hits+1 WHERE id=$filename") or sqlerr(__FILE__, __LINE__);
+\NexusPHP\Components\Database::query("UPDATE subs SET hits=hits+1 WHERE id=$filename") or sqlerr(__FILE__, __LINE__);
 $file = "$SUBSPATH/$dirname/$filename.$arr[ext]";
 
 if (!is_file($file)) {

@@ -5,7 +5,7 @@ require_once(get_langfile_path());
 if (isset($_GET['del'])) {
     if (is_valid_id($_GET['del'])) {
         if ((get_user_class() >= $sbmanage_class)) {
-            sql_query("DELETE FROM shoutbox WHERE id=".mysql_real_escape_string($_GET['del']));
+            \NexusPHP\Components\Database::query("DELETE FROM shoutbox WHERE id=".\NexusPHP\Components\Database::real_escape_string($_GET['del']));
         }
     }
 }
@@ -79,10 +79,10 @@ if ($_GET["sent"]=="yes") {
                 $type = 'sb';
             }
         }
-        $date=sqlesc(time());
+        $date=\NexusPHP\Components\Database::escape(time());
         $text=trim($_GET["shbox_text"]);
 
-        sql_query("INSERT INTO shoutbox (userid, date, text, type) VALUES (" . sqlesc($userid) . ", $date, " . sqlesc($text) . ", ".sqlesc($type).")") or sqlerr(__FILE__, __LINE__);
+        \NexusPHP\Components\Database::query("INSERT INTO shoutbox (userid, date, text, type) VALUES (" . \NexusPHP\Components\Database::escape($userid) . ", $date, " . \NexusPHP\Components\Database::escape($text) . ", ".\NexusPHP\Components\Database::escape($type).")") or sqlerr(__FILE__, __LINE__);
         print "<script type=\"text/javascript\">parent.document.forms['shbox'].shbox_text.value='';</script>";
     }
 }
@@ -97,13 +97,13 @@ if ($where == "helpbox") {
 } else {
     die("<h1>".$lang_shoutbox['std_access_denied']."</h1>"."<p>".$lang_shoutbox['std_access_denied_note']."</p></body></html>");
 }
-$res = sql_query($sql) or sqlerr(__FILE__, __LINE__);
-if (mysql_num_rows($res) == 0) {
+$res = \NexusPHP\Components\Database::query($sql) or sqlerr(__FILE__, __LINE__);
+if (mysqli_num_rows($res) == 0) {
     print("\n");
 } else {
     print("<table border='0' cellspacing='0' cellpadding='2' width='100%' align='left'>\n");
 
-    while ($arr = mysql_fetch_assoc($res)) {
+    while ($arr = mysqli_fetch_assoc($res)) {
         if (get_user_class() >= $sbmanage_class) {
             $del="[<a href=\"shoutbox.php?del=".$arr[id]."\">".$lang_shoutbox['text_del']."</a>]";
         }

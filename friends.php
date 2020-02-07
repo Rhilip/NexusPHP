@@ -46,12 +46,12 @@ if ($action == 'add') {
         stderr($lang_friends['std_error'], $lang_friends['std_unknown_type']."$type");
     }
 
-    $r = sql_query("SELECT id FROM $table_is WHERE userid=$userid AND $field_is=$targetid") or sqlerr(__FILE__, __LINE__);
-    if (mysql_num_rows($r) == 1) {
+    $r = \NexusPHP\Components\Database::query("SELECT id FROM $table_is WHERE userid=$userid AND $field_is=$targetid") or sqlerr(__FILE__, __LINE__);
+    if (mysqli_num_rows($r) == 1) {
         stderr($lang_friends['std_error'], $lang_friends['std_user_id'].$targetid.$lang_friends['std_already_in'].$table_is.$lang_friends['std_list']);
     }
 
-    sql_query("INSERT INTO $table_is VALUES (0,$userid, $targetid)") or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("INSERT INTO $table_is VALUES (0,$userid, $targetid)") or sqlerr(__FILE__, __LINE__);
     
     purge_neighbors_cache();
     
@@ -81,14 +81,14 @@ if ($action == 'delete') {
     }
 
     if ($type == 'friend') {
-        sql_query("DELETE FROM friends WHERE userid=$userid AND friendid=$targetid") or sqlerr(__FILE__, __LINE__);
-        if (mysql_affected_rows() == 0) {
+        \NexusPHP\Components\Database::query("DELETE FROM friends WHERE userid=$userid AND friendid=$targetid") or sqlerr(__FILE__, __LINE__);
+        if (\NexusPHP\Components\Database::affected_rows() == 0) {
             stderr($lang_friends['std_error'], $lang_friends['std_no_friend_found']."$targetid");
         }
         $frag = "friends";
     } elseif ($type == 'block') {
-        sql_query("DELETE FROM blocks WHERE userid=$userid AND blockid=$targetid") or sqlerr(__FILE__, __LINE__);
-        if (mysql_affected_rows() == 0) {
+        \NexusPHP\Components\Database::query("DELETE FROM blocks WHERE userid=$userid AND blockid=$targetid") or sqlerr(__FILE__, __LINE__);
+        if (\NexusPHP\Components\Database::affected_rows() == 0) {
             stderr($lang_friends['std_error'], $lang_friends['std_no_block_found']."$targetid");
         }
         $frag = "blocks";
@@ -121,11 +121,11 @@ print("<table width=737 border=1 cellspacing=0 cellpadding=5><tr class=tablea><t
 $i = 0;
 
 unset($friend_id_arr);
-$res = sql_query("SELECT f.friendid as id, u.last_access, u.class, u.avatar, u.title FROM friends AS f LEFT JOIN users as u ON f.friendid = u.id WHERE userid=$userid ORDER BY id") or sqlerr(__FILE__, __LINE__);
-if (mysql_num_rows($res) == 0) {
+$res = \NexusPHP\Components\Database::query("SELECT f.friendid as id, u.last_access, u.class, u.avatar, u.title FROM friends AS f LEFT JOIN users as u ON f.friendid = u.id WHERE userid=$userid ORDER BY id") or sqlerr(__FILE__, __LINE__);
+if (mysqli_num_rows($res) == 0) {
     $friends = $lang_friends['text_friends_empty'];
 } else {
-    while ($friend = mysql_fetch_array($res)) {
+    while ($friend = mysqli_fetch_array($res)) {
         $friend_id_arr[] = $friend["id"];
         $title = $friend["title"];
         if (!$title) {
@@ -189,19 +189,19 @@ else
 {
     ob_start(); // start the output buffer
 
-    $user_snatched = sql_query("SELECT * FROM snatched WHERE userid = $CURUSER[id]") or sqlerr(__FILE__, __LINE__);
-    if(mysql_num_rows($user_snatched) == 0)
+    $user_snatched = \NexusPHP\Components\Database::query("SELECT * FROM snatched WHERE userid = $CURUSER[id]") or sqlerr(__FILE__, __LINE__);
+    if(mysqli_num_rows($user_snatched) == 0)
     $neighbors_info = $lang_friends['text_neighbors_empty'];
     else
     {
-        while ($user_snatched_arr = mysql_fetch_array($user_snatched))
+        while ($user_snatched_arr = mysqli_fetch_array($user_snatched))
         {
             $torrent_2_user_value = get_torrent_2_user_value($user_snatched_arr);
 
-            $user_snatched_res_target = sql_query("SELECT * FROM snatched WHERE torrentid = " . $user_snatched_arr['torrentid'] . " AND userid != " . $user_snatched_arr['userid']) or sqlerr(__FILE__, __LINE__);	//
-            if(mysql_num_rows($user_snatched_res_target)>0)	// have other peole snatched this torrent
+            $user_snatched_res_target = \NexusPHP\Components\Database::query("SELECT * FROM snatched WHERE torrentid = " . $user_snatched_arr['torrentid'] . " AND userid != " . $user_snatched_arr['userid']) or sqlerr(__FILE__, __LINE__);	//
+            if(mysqli_num_rows($user_snatched_res_target)>0)	// have other peole snatched this torrent
             {
-                while($user_snatched_arr_target = mysql_fetch_array($user_snatched_res_target))	// find target user's current analyzing torrent's snatch info
+                while($user_snatched_arr_target = mysqli_fetch_array($user_snatched_res_target))	// find target user's current analyzing torrent's snatch info
                 {
                     $torrent_2_user_value_target = get_torrent_2_user_value($user_snatched_arr_target);	//get this torrent to target user's value
 
@@ -222,10 +222,10 @@ else
             //print(" userid: " . $other_user_2_curuser_value_key . " value: " . $other_user_2_curuser_value_val . "<br />");
 
 
-            $neighbors_res = sql_query("SELECT * FROM users WHERE id = " . intval($other_user_2_curuser_value_key)) or sqlerr(__FILE__, __LINE__);
-            if(mysql_num_rows($neighbors_res) == 1)
+            $neighbors_res = \NexusPHP\Components\Database::query("SELECT * FROM users WHERE id = " . intval($other_user_2_curuser_value_key)) or sqlerr(__FILE__, __LINE__);
+            if(mysqli_num_rows($neighbors_res) == 1)
             {
-                $neighbors_arr = mysql_fetch_array($neighbors_res) or sqlerr(__FILE__, __LINE__);
+                $neighbors_arr = mysqli_fetch_array($neighbors_res) or sqlerr(__FILE__, __LINE__);
                 if($neighbors_arr['enabled'] == 'yes')
                 {
                     $title = $neighbors_arr["title"];
@@ -285,10 +285,10 @@ else
 }
 
 
-if(mysql_num_rows($friendadd) == 0)
+if(mysqli_num_rows($friendadd) == 0)
 $friendsno = $lang_friends['text_friends_empty'];
 else
-while ($friend = mysql_fetch_array($friendadd))
+while ($friend = mysqli_fetch_array($friendadd))
 {
 $title = $friend["title"];
 if (!$title)
@@ -330,13 +330,13 @@ print("</td></tr></table></table><br />\n");
 
 
 
-$res = sql_query("SELECT blockid as id FROM blocks WHERE userid=$userid ORDER BY id") or sqlerr(__FILE__, __LINE__);
-if (mysql_num_rows($res) == 0) {
+$res = \NexusPHP\Components\Database::query("SELECT blockid as id FROM blocks WHERE userid=$userid ORDER BY id") or sqlerr(__FILE__, __LINE__);
+if (mysqli_num_rows($res) == 0) {
     $blocks = $lang_friends['text_blocklist_empty'];
 } else {
     $i = 0;
     $blocks = "<table width=100% cellspacing=0 cellpadding=0>";
-    while ($block = mysql_fetch_array($res)) {
+    while ($block = mysqli_fetch_array($res)) {
         if ($i % 6 == 0) {
             $blocks .= "<tr>";
         }

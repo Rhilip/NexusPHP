@@ -13,15 +13,15 @@ $redir=htmlspecialchars_decode(urldecode($_GET['url']));
 if (!$redir) {
     stderr($lang_adredir['std_error'], $lang_adredir['std_no_redirect_url']);
 }
-$adcount=get_row_count("advertisements", "WHERE id=".sqlesc($id));
+$adcount=\NexusPHP\Components\Database::count("advertisements", "WHERE id=".\NexusPHP\Components\Database::escape($id));
 if (!$adcount) {
     stderr($lang_adredir['std_error'], $lang_adredir['std_invalid_ad_id']);
 }
 if ($adclickbonus_advertisement) {
-    $clickcount=get_row_count("adclicks", "WHERE adid=".sqlesc($id)." AND userid=".sqlesc($CURUSER['id']));
+    $clickcount=\NexusPHP\Components\Database::count("adclicks", "WHERE adid=".\NexusPHP\Components\Database::escape($id)." AND userid=".\NexusPHP\Components\Database::escape($CURUSER['id']));
     if (!$clickcount) {
         KPS("+", $adclickbonus_advertisement, $CURUSER['id']);
     }
 }
-sql_query("INSERT INTO adclicks (adid, userid, added) VALUES (".sqlesc($id).", ".sqlesc($CURUSER['id']).", ".sqlesc(date("Y-m-d H:i:s")).")");
+\NexusPHP\Components\Database::query("INSERT INTO adclicks (adid, userid, added) VALUES (".\NexusPHP\Components\Database::escape($id).", ".\NexusPHP\Components\Database::escape($CURUSER['id']).", ".\NexusPHP\Components\Database::escape(date("Y-m-d H:i:s")).")");
 header("Location: $redir");

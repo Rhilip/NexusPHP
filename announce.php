@@ -59,8 +59,8 @@ $seeder = ($left == 0) ? "yes" : "no";
 
 // check passkey
 if (!$az = $Cache->get_value('user_passkey_'.$passkey.'_content')) {
-    $res = sql_query("SELECT id, downloadpos, enabled, uploaded, downloaded, class, parked, clientselect, showclienterror FROM users WHERE passkey=". sqlesc($passkey)." LIMIT 1");
-    $az = mysql_fetch_array($res);
+    $res = \NexusPHP\Components\Database::query("SELECT id, downloadpos, enabled, uploaded, downloaded, class, parked, clientselect, showclienterror FROM users WHERE passkey=". \NexusPHP\Components\Database::escape($passkey)." LIMIT 1");
+    $az = mysqli_fetch_array($res);
     $Cache->cache_value('user_passkey_'.$passkey.'_content', $az, 950);
 }
 if (!$az) {
@@ -72,7 +72,7 @@ $userid = 0+$az['id'];
 $clicheck_res = check_client($peer_id, $agent, $client_familyid);
 if ($clicheck_res) {
     if ($az['showclienterror'] == 'no') {
-        sql_query("UPDATE users SET showclienterror = 'yes' WHERE id = ".sqlesc($userid));
+        \NexusPHP\Components\Database::query("UPDATE users SET showclienterror = 'yes' WHERE id = ".\NexusPHP\Components\Database::escape($userid));
         $Cache->delete_value('user_passkey_'.$passkey.'_content');
     }
     err($clicheck_res);
@@ -83,8 +83,8 @@ if ($clicheck_res) {
 
 // check torrent based on info_hash
 if (!$torrent = $Cache->get_value('torrent_hash_'.$info_hash.'_content')) {
-    $res = sql_query("SELECT id, owner, sp_state, seeders, leechers, UNIX_TIMESTAMP(added) AS ts, banned FROM torrents WHERE " . hash_where("info_hash", $info_hash));
-    $torrent = mysql_fetch_array($res);
+    $res = \NexusPHP\Components\Database::query("SELECT id, owner, sp_state, seeders, leechers, UNIX_TIMESTAMP(added) AS ts, banned FROM torrents WHERE " . hash_where("info_hash", $info_hash));
+    $torrent = mysqli_fetch_array($res);
     $Cache->cache_value('torrent_hash_'.$info_hash.'_content', $torrent, 350);
 }
 if (!$torrent) {
@@ -112,7 +112,7 @@ $announce_wait = 30;
 
 $fields = "seeder, peer_id, ip, port, uploaded, downloaded, (".TIMENOW." - UNIX_TIMESTAMP(last_action)) AS announcetime, UNIX_TIMESTAMP(prev_action) AS prevts";
 $peerlistsql = "SELECT ".$fields." FROM peers WHERE torrent = ".$torrentid." AND connectable = 'yes' ".$only_leech_query.$limit;
-$res = sql_query($peerlistsql);
+$res = \NexusPHP\Components\Database::query($peerlistsql);
 
 $real_annnounce_interval = $announce_interval;
 if ($anninterthreeage && ($anninterthree > $announce_wait) && (TIMENOW - $torrent['ts']) >= ($anninterthreeage * 86400)) {
@@ -140,7 +140,7 @@ if (isset($event) && $event == "stopped") {
     // Don't fetch peers for stopped event
 } else {
     // bencoding the peers info get for this announce
-    while ($row = mysql_fetch_assoc($res)) {
+    while ($row = mysqli_fetch_assoc($res)) {
         $row["peer_id"] = hash_pad($row["peer_id"]);
 
         // $peer_id is the announcer's peer_id while $row["peer_id"] is randomly selected from the peers table
@@ -171,8 +171,8 @@ $selfwhere = "torrent = $torrentid AND " . hash_where("peer_id", $peer_id);
 
 //no found in the above random selection
 if (!isset($self)) {
-    $res = sql_query("SELECT $fields FROM peers WHERE $selfwhere LIMIT 1");
-    $row = mysql_fetch_assoc($res);
+    $res = \NexusPHP\Components\Database::query("SELECT $fields FROM peers WHERE $selfwhere LIMIT 1");
+    $row = mysqli_fetch_assoc($res);
     if ($row) {
         $self = $row;
     }
@@ -185,7 +185,7 @@ if (isset($self) && $self['prevts'] > (TIMENOW - $announce_wait)) {
 
 // current peer_id, or you could say session with tracker not found in table peers
 if (!isset($self)) {
-    $valid = @mysql_fetch_row(@sql_query("SELECT COUNT(*) FROM peers WHERE torrent=$torrentid AND userid=" . sqlesc($userid)));
+    $valid = @mysqli_fetch_row(@\NexusPHP\Components\Database::query("SELECT COUNT(*) FROM peers WHERE torrent=$torrentid AND userid=" . \NexusPHP\Components\Database::escape($userid)));
     if ($valid[0] >= 1 && $seeder == 'no') {
         err("You already are downloading the same torrent. You may only leech from one location at a time.");
     }
@@ -239,8 +239,8 @@ if (!isset($self)) {
                 }
             }
             if ($max > 0) {
-                $res = sql_query("SELECT COUNT(*) AS num FROM peers WHERE userid='$userid' AND seeder='no'") or err("Tracker error 5");
-                $row = mysql_fetch_assoc($res);
+                $res = \NexusPHP\Components\Database::query("SELECT COUNT(*) AS num FROM peers WHERE userid='$userid' AND seeder='no'") or err("Tracker error 5");
+                $row = mysqli_fetch_assoc($res);
                 if ($row['num'] >= $max) {
                     err("Your slot limit is reached! You may at most download $max torrents at the same time, please read $BASEURL/faq.php#id66 for details");
                 }
@@ -332,33 +332,33 @@ if (!isset($self)) {
     }
 }
 
-$dt = sqlesc(date("Y-m-d H:i:s"));
+$dt = \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s"));
 $updateset = array();
 // set non-type event
 if (!isset($event)) {
     $event = "";
 }
 if (isset($self) && $event == "stopped") {
-    sql_query("DELETE FROM peers WHERE $selfwhere") or err("D Err");
-    if (mysql_affected_rows()) {
+    \NexusPHP\Components\Database::query("DELETE FROM peers WHERE $selfwhere") or err("D Err");
+    if (\NexusPHP\Components\Database::affected_rows()) {
         $updateset[] = ($self["seeder"] == "yes" ? "seeders = seeders - 1" : "leechers = leechers - 1");
-        sql_query("UPDATE snatched SET uploaded = uploaded + $trueupthis, downloaded = downloaded + $truedownthis, to_go = $left, $announcetime, last_action = ".$dt." WHERE torrentid = $torrentid AND userid = $userid") or err("SL Err 1");
+        \NexusPHP\Components\Database::query("UPDATE snatched SET uploaded = uploaded + $trueupthis, downloaded = downloaded + $truedownthis, to_go = $left, $announcetime, last_action = ".$dt." WHERE torrentid = $torrentid AND userid = $userid") or err("SL Err 1");
     }
 } elseif (isset($self)) {
     if ($event == "completed") {
-        //sql_query("UPDATE snatched SET  finished  = 'yes', completedat = $dt WHERE torrentid = $torrentid AND userid = $userid");
+        //\NexusPHP\Components\Database::query("UPDATE snatched SET  finished  = 'yes', completedat = $dt WHERE torrentid = $torrentid AND userid = $userid");
         $finished = ", finishedat = ".TIMENOW;
         $finished_snatched = ", completedat = ".$dt . ", finished  = 'yes'";
         $updateset[] = "times_completed = times_completed + 1";
     }
 
-    sql_query("UPDATE peers SET ip = ".sqlesc($ip).", port = $port, uploaded = $uploaded, downloaded = $downloaded, to_go = $left, prev_action = last_action, last_action = $dt, seeder = '$seeder', agent = ".sqlesc($agent)." $finished WHERE $selfwhere") or err("PL Err 1");
+    \NexusPHP\Components\Database::query("UPDATE peers SET ip = ".\NexusPHP\Components\Database::escape($ip).", port = $port, uploaded = $uploaded, downloaded = $downloaded, to_go = $left, prev_action = last_action, last_action = $dt, seeder = '$seeder', agent = ".\NexusPHP\Components\Database::escape($agent)." $finished WHERE $selfwhere") or err("PL Err 1");
 
-    if (mysql_affected_rows()) {
+    if (\NexusPHP\Components\Database::affected_rows()) {
         if ($seeder <> $self["seeder"]) {
             $updateset[] = ($seeder == "yes" ? "seeders = seeders + 1, leechers = leechers - 1" : "seeders = seeders - 1, leechers = leechers + 1");
         }
-        sql_query("UPDATE snatched SET uploaded = uploaded + $trueupthis, downloaded = downloaded + $truedownthis, to_go = $left, $announcetime, last_action = ".$dt." $finished_snatched WHERE torrentid = $torrentid AND userid = $userid") or err("SL Err 2");
+        \NexusPHP\Components\Database::query("UPDATE snatched SET uploaded = uploaded + $trueupthis, downloaded = downloaded + $truedownthis, to_go = $left, $announcetime, last_action = ".$dt." $finished_snatched WHERE torrentid = $torrentid AND userid = $userid") or err("SL Err 2");
     }
 } else {
     $sockres = @pfsockopen($ip, $port, $errno, $errstr, 5);
@@ -368,16 +368,16 @@ if (isset($self) && $event == "stopped") {
         $connectable = "yes";
         @fclose($sockres);
     }
-    sql_query("INSERT INTO peers (torrent, userid, peer_id, ip, port, connectable, uploaded, downloaded, to_go, started, last_action, seeder, agent, downloadoffset, uploadoffset, passkey) VALUES ($torrentid, $userid, ".sqlesc($peer_id).", ".sqlesc($ip).", $port, '$connectable', $uploaded, $downloaded, $left, $dt, $dt, '$seeder', ".sqlesc($agent).", $downloaded, $uploaded, ".sqlesc($passkey).")") or err("PL Err 2");
+    \NexusPHP\Components\Database::query("INSERT INTO peers (torrent, userid, peer_id, ip, port, connectable, uploaded, downloaded, to_go, started, last_action, seeder, agent, downloadoffset, uploadoffset, passkey) VALUES ($torrentid, $userid, ".\NexusPHP\Components\Database::escape($peer_id).", ".\NexusPHP\Components\Database::escape($ip).", $port, '$connectable', $uploaded, $downloaded, $left, $dt, $dt, '$seeder', ".\NexusPHP\Components\Database::escape($agent).", $downloaded, $uploaded, ".\NexusPHP\Components\Database::escape($passkey).")") or err("PL Err 2");
 
-    if (mysql_affected_rows()) {
+    if (\NexusPHP\Components\Database::affected_rows()) {
         $updateset[] = ($seeder == "yes" ? "seeders = seeders + 1" : "leechers = leechers + 1");
 
-        $check = @mysql_fetch_row(@sql_query("SELECT COUNT(*) FROM snatched WHERE torrentid = $torrentid AND userid = $userid"));
+        $check = @mysqli_fetch_row(@\NexusPHP\Components\Database::query("SELECT COUNT(*) FROM snatched WHERE torrentid = $torrentid AND userid = $userid"));
         if (!$check['0']) {
-            sql_query("INSERT INTO snatched (torrentid, userid, ip, port, uploaded, downloaded, to_go, startdat, last_action) VALUES ($torrentid, $userid, ".sqlesc($ip).", $port, $uploaded, $downloaded, $left, $dt, $dt)") or err("SL Err 4");
+            \NexusPHP\Components\Database::query("INSERT INTO snatched (torrentid, userid, ip, port, uploaded, downloaded, to_go, startdat, last_action) VALUES ($torrentid, $userid, ".\NexusPHP\Components\Database::escape($ip).", $port, $uploaded, $downloaded, $left, $dt, $dt)") or err("SL Err 4");
         } else {
-            sql_query("UPDATE snatched SET to_go = $left, last_action = ".$dt ." WHERE torrentid = $torrentid AND userid = $userid") or err("SL Err 3.1");
+            \NexusPHP\Components\Database::query("UPDATE snatched SET to_go = $left, last_action = ".$dt ." WHERE torrentid = $torrentid AND userid = $userid") or err("SL Err 3.1");
         }
     }
 }
@@ -385,15 +385,15 @@ if (isset($self) && $event == "stopped") {
 if (count($updateset)) { // Update only when there is change in peer counts
     $updateset[] = "visible = 'yes'";
     $updateset[] = "last_action = $dt";
-    sql_query("UPDATE torrents SET " . join(",", $updateset) . " WHERE id = $torrentid");
+    \NexusPHP\Components\Database::query("UPDATE torrents SET " . join(",", $updateset) . " WHERE id = $torrentid");
 }
 
 if ($client_familyid != 0 && $client_familyid != $az['clientselect']) {
-    $USERUPDATESET[] = "clientselect = ".sqlesc($client_familyid);
+    $USERUPDATESET[] = "clientselect = ".\NexusPHP\Components\Database::escape($client_familyid);
 }
 
 if (count($USERUPDATESET) && $userid) {
-    sql_query("UPDATE users SET " . join(",", $USERUPDATESET) . " WHERE id = ".$userid);
+    \NexusPHP\Components\Database::query("UPDATE users SET " . join(",", $USERUPDATESET) . " WHERE id = ".$userid);
 }
 
 benc_resp($rep_dict);

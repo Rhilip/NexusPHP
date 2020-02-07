@@ -41,8 +41,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!check_email($email)) {
         failedlogins($lang_confirm_resend['std_invalid_email_address'], true);
     }
-    $res = sql_query("SELECT * FROM users WHERE email=" . sqlesc($email) . " LIMIT 1") or sqlerr(__FILE__, __LINE__);
-    $arr = mysql_fetch_assoc($res) or failedlogins($lang_confirm_resend['std_email_not_found'], true);
+    $res = \NexusPHP\Components\Database::query("SELECT * FROM users WHERE email=" . \NexusPHP\Components\Database::escape($email) . " LIMIT 1") or sqlerr(__FILE__, __LINE__);
+    $arr = mysqli_fetch_assoc($res) or failedlogins($lang_confirm_resend['std_email_not_found'], true);
     if ($arr["status"] != "pending") {
         failedlogins($lang_confirm_resend['std_user_already_confirm'], true);
     }
@@ -67,9 +67,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $wantpasshash = md5($secret . $wantpassword . $secret);
     $editsecret = ($verification == 'admin' ? '' : $secret);
 
-    sql_query("UPDATE users SET passhash=" .sqlesc($wantpasshash) . ",secret=" . sqlesc($secret) . ",editsecret=" . sqlesc($editsecret) . " WHERE id=" . sqlesc($arr["id"])) or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("UPDATE users SET passhash=" .\NexusPHP\Components\Database::escape($wantpasshash) . ",secret=" . \NexusPHP\Components\Database::escape($secret) . ",editsecret=" . \NexusPHP\Components\Database::escape($editsecret) . " WHERE id=" . \NexusPHP\Components\Database::escape($arr["id"])) or sqlerr(__FILE__, __LINE__);
     
-    if (!mysql_affected_rows()) {
+    if (!\NexusPHP\Components\Database::affected_rows()) {
         stderr($lang_confirm_resend['std_error'], $lang_confirm_resend['std_database_error']);
     }
 

@@ -56,9 +56,9 @@ if ($type=='invite') {
     $code = unesc($_POST["hash"]);
 
     //check invite code
-    $sq = sprintf("SELECT inviter FROM invites WHERE hash ='%s'", mysql_real_escape_string($code));
-    $res = sql_query($sq) or sqlerr(__FILE__, __LINE__);
-    $inv = mysql_fetch_assoc($res);
+    $sq = sprintf("SELECT inviter FROM invites WHERE hash ='%s'", \NexusPHP\Components\Database::real_escape_string($code));
+    $res = \NexusPHP\Components\Database::query($sq) or sqlerr(__FILE__, __LINE__);
+    $inv = mysqli_fetch_assoc($res);
     if (!$inv) {
         bark('invalid invite code');
     }
@@ -66,8 +66,8 @@ if ($type=='invite') {
     $ip = getip();
 
 
-    $res = sql_query("SELECT username FROM users WHERE id = $inviter") or sqlerr(__FILE__, __LINE__);
-    $arr = mysql_fetch_assoc($res);
+    $res = \NexusPHP\Components\Database::query("SELECT username FROM users WHERE id = $inviter") or sqlerr(__FILE__, __LINE__);
+    $arr = mysqli_fetch_assoc($res);
     $invusername = $arr[username];
 }
 
@@ -142,7 +142,7 @@ if ($_POST["rulesverify"] != "yes" || $_POST["faqverify"] != "yes" || $_POST["ag
 }
 
 // check if email addy is already in use
-$a = (@mysql_fetch_row(@sql_query("select count(*) from users where email='".mysql_real_escape_string($email)."'"))) or sqlerr(__FILE__, __LINE__);
+$a = (@mysqli_fetch_row(@\NexusPHP\Components\Database::query("select count(*) from users where email='".\NexusPHP\Components\Database::real_escape_string($email)."'"))) or sqlerr(__FILE__, __LINE__);
 if ($a[0] != 0) {
     bark($lang_takesignup['std_email_address'].$email.$lang_takesignup['std_in_use']);
 }
@@ -152,8 +152,8 @@ if ($a[0] != 0) {
 if (isproxy())
     bark("You appear to be connecting through a proxy server. Your organization or ISP may use a transparent caching HTTP proxy. Please try and access the site on <a href="." . get_protocol_prefix() . "$BASEURL.":81/signup.php>port 81</a> (this should bypass the proxy server). <p><b>Note:</b> if you run an Internet-accessible web server on the local machine you need to shut it down until the sign-up is complete.");
 
-$res = sql_query("SELECT COUNT(*) FROM users") or sqlerr(__FILE__, __LINE__);
-$arr = mysql_fetch_row($res);
+$res = \NexusPHP\Components\Database::query("SELECT COUNT(*) FROM users") or sqlerr(__FILE__, __LINE__);
+$arr = mysqli_fetch_row($res);
 */
 
 $secret = mksecret();
@@ -161,32 +161,32 @@ $wantpasshash = md5($secret . $wantpassword . $secret);
 $editsecret = ($verification == 'admin' ? '' : $secret);
 $invite_count = (int) $invite_count;
 
-$wantusername = sqlesc($wantusername);
-$wantpasshash = sqlesc($wantpasshash);
-$secret = sqlesc($secret);
-$editsecret = sqlesc($editsecret);
+$wantusername = \NexusPHP\Components\Database::escape($wantusername);
+$wantpasshash = \NexusPHP\Components\Database::escape($wantpasshash);
+$secret = \NexusPHP\Components\Database::escape($secret);
+$editsecret = \NexusPHP\Components\Database::escape($editsecret);
 $send_email = $email;
-$email = sqlesc($email);
-$country = sqlesc($country);
-$gender = sqlesc($gender);
-$sitelangid = sqlesc(get_langid_from_langcookie());
+$email = \NexusPHP\Components\Database::escape($email);
+$country = \NexusPHP\Components\Database::escape($country);
+$gender = \NexusPHP\Components\Database::escape($gender);
+$sitelangid = \NexusPHP\Components\Database::escape(get_langid_from_langcookie());
 
-$res_check_user = sql_query("SELECT * FROM users WHERE username = " . $wantusername);
+$res_check_user = \NexusPHP\Components\Database::query("SELECT * FROM users WHERE username = " . $wantusername);
 
-if (mysql_num_rows($res_check_user) == 1) {
+if (mysqli_num_rows($res_check_user) == 1) {
     bark($lang_takesignup['std_username_exists']);
 }
 
-$ret = sql_query("INSERT INTO users (username, passhash, secret, editsecret, email, country, gender, status, class, invites, ".($type == 'invite' ? "invited_by," : "")." added, last_access, lang, stylesheet".($showschool == 'yes' ? ", school" : "").", uploaded) VALUES (" . $wantusername . "," . $wantpasshash . "," . $secret . "," . $editsecret . "," . $email . "," . $country . "," . $gender . ", 'pending', ".$defaultclass_class.",". $invite_count .", ".($type == 'invite' ? "'$inviter'," : "") ." '". date("Y-m-d H:i:s") ."' , " . " '". date("Y-m-d H:i:s") ."' , ".$sitelangid . ",".$defcss.($showschool == 'yes' ? ",".$school : "").",".($iniupload_main > 0 ? $iniupload_main : 0).")") or sqlerr(__FILE__, __LINE__);
-$id = mysql_insert_id();
-$dt = sqlesc(date("Y-m-d H:i:s"));
-$subject = sqlesc($lang_takesignup['msg_subject'].$SITENAME."!");
-$msg = sqlesc($lang_takesignup['msg_congratulations'].htmlspecialchars($wantusername).$lang_takesignup['msg_you_are_a_member']);
-sql_query("INSERT INTO messages (sender, receiver, subject, added, msg) VALUES(0, $id, $subject, $dt, $msg)") or sqlerr(__FILE__, __LINE__);
+$ret = \NexusPHP\Components\Database::query("INSERT INTO users (username, passhash, secret, editsecret, email, country, gender, status, class, invites, ".($type == 'invite' ? "invited_by," : "")." added, last_access, lang, stylesheet".($showschool == 'yes' ? ", school" : "").", uploaded) VALUES (" . $wantusername . "," . $wantpasshash . "," . $secret . "," . $editsecret . "," . $email . "," . $country . "," . $gender . ", 'pending', ".$defaultclass_class.",". $invite_count .", ".($type == 'invite' ? "'$inviter'," : "") ." '". date("Y-m-d H:i:s") ."' , " . " '". date("Y-m-d H:i:s") ."' , ".$sitelangid . ",".$defcss.($showschool == 'yes' ? ",".$school : "").",".($iniupload_main > 0 ? $iniupload_main : 0).")") or sqlerr(__FILE__, __LINE__);
+$id = \NexusPHP\Components\Database::insert_id();
+$dt = \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s"));
+$subject = \NexusPHP\Components\Database::escape($lang_takesignup['msg_subject'].$SITENAME."!");
+$msg = \NexusPHP\Components\Database::escape($lang_takesignup['msg_congratulations'].htmlspecialchars($wantusername).$lang_takesignup['msg_you_are_a_member']);
+\NexusPHP\Components\Database::query("INSERT INTO messages (sender, receiver, subject, added, msg) VALUES(0, $id, $subject, $dt, $msg)") or sqlerr(__FILE__, __LINE__);
 
 //write_log("User account $id ($wantusername) was created");
-$res = sql_query("SELECT passhash, secret, editsecret, status FROM users WHERE id = ".sqlesc($id)) or sqlerr(__FILE__, __LINE__);
-$row = mysql_fetch_assoc($res);
+$res = \NexusPHP\Components\Database::query("SELECT passhash, secret, editsecret, status FROM users WHERE id = ".\NexusPHP\Components\Database::escape($id)) or sqlerr(__FILE__, __LINE__);
+$row = mysqli_fetch_assoc($res);
 $psecret = md5($row['secret']);
 $ip = getip();
 $usern = htmlspecialchars($wantusername);
@@ -205,12 +205,12 @@ EOD;
 
 if ($type == 'invite') {
     //don't forget to delete confirmed invitee's hash code from table invites
-    sql_query("DELETE FROM invites WHERE hash = '".mysql_real_escape_string($code)."'");
-    $dt = sqlesc(date("Y-m-d H:i:s"));
-    $subject = sqlesc($lang_takesignup_target[get_user_lang($inviter)]['msg_invited_user_has_registered']);
-    $msg = sqlesc($lang_takesignup_target[get_user_lang($inviter)]['msg_user_you_invited'].$usern.$lang_takesignup_target[get_user_lang($inviter)]['msg_has_registered']);
-    //sql_query("UPDATE users SET uploaded = uploaded + 10737418240 WHERE id = $inviter"); //add 10GB to invitor's uploading credit
-    sql_query("INSERT INTO messages (sender, receiver, subject, added, msg) VALUES(0, $inviter, $subject, $dt, $msg)") or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("DELETE FROM invites WHERE hash = '".\NexusPHP\Components\Database::real_escape_string($code)."'");
+    $dt = \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s"));
+    $subject = \NexusPHP\Components\Database::escape($lang_takesignup_target[get_user_lang($inviter)]['msg_invited_user_has_registered']);
+    $msg = \NexusPHP\Components\Database::escape($lang_takesignup_target[get_user_lang($inviter)]['msg_user_you_invited'].$usern.$lang_takesignup_target[get_user_lang($inviter)]['msg_has_registered']);
+    //\NexusPHP\Components\Database::query("UPDATE users SET uploaded = uploaded + 10737418240 WHERE id = $inviter"); //add 10GB to invitor's uploading credit
+    \NexusPHP\Components\Database::query("INSERT INTO messages (sender, receiver, subject, added, msg) VALUES(0, $inviter, $subject, $dt, $msg)") or sqlerr(__FILE__, __LINE__);
     $Cache->delete_value('user_'.$inviter.'_unread_message_count');
     $Cache->delete_value('user_'.$inviter.'_inbox_count');
 }

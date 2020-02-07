@@ -14,12 +14,12 @@ if (count($info_hash_array[1]) < 1) {
     $query = "SELECT $fields FROM torrents WHERE " . hash_where_arr('info_hash', $info_hash_array[1]);
 }
 
-$res = sql_query($query);
-if (mysql_num_rows($res) < 1) {
+$res = \NexusPHP\Components\Database::query($query);
+if (mysqli_num_rows($res) < 1) {
     err("Torrent not registered with this tracker.");
 } else {
     $torrent_details = [];
-    while ($row = mysql_fetch_assoc($res)) {
+    while ($row = mysqli_fetch_assoc($res)) {
         $torrent_details[$row['info_hash']] = [
             'complete' => (int)$row['seeders'],
             'downloaded' => (int)$row['times_completed'],

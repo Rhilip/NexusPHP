@@ -1,5 +1,7 @@
 <?php
-class ATTACHMENT
+namespace NexusPHP;
+
+class Attachment
 {
     public $userid;
     public $class;
@@ -39,7 +41,7 @@ class ATTACHMENT
     {
         $userid = $this->userid;
         $now = date("Y-m-d H:i:s", TIMENOW-86400);
-        $countsofar = get_row_count("attachments", "WHERE userid=".sqlesc($userid)." AND added > ".sqlesc($now));
+        $countsofar = \NexusPHP\Components\Database::count("attachments", "WHERE userid=".\NexusPHP\Components\Database::escape($userid)." AND added > ".\NexusPHP\Components\Database::escape($now));
         $this->countsofar = $countsofar;
     }
 

@@ -10,8 +10,8 @@ if (!$id) {
 }
 $passkey = $_GET['passkey'];
 if ($passkey) {
-    $res = sql_query("SELECT * FROM users WHERE passkey=". sqlesc($passkey)." LIMIT 1");
-    $user = mysql_fetch_array($res);
+    $res = \NexusPHP\Components\Database::query("SELECT * FROM users WHERE passkey=". \NexusPHP\Components\Database::escape($passkey)." LIMIT 1");
+    $user = mysqli_fetch_array($res);
     if (!$user) {
         die("invalid passkey");
     } elseif ($user['enabled'] == 'no' || $user['parked'] == 'yes') {
@@ -35,11 +35,11 @@ if ($passkey) {
 //User may choose to download torrent from RSS. So log ip changes when downloading torrents.
 if ($iplog1 == "yes") {
     if (($oldip != $CURUSER["ip"]) && $CURUSER["ip"]) {
-        sql_query("INSERT INTO iplog (ip, userid, access) VALUES (" . sqlesc($CURUSER['ip']) . ", " . $CURUSER['id'] . ", '" . $CURUSER['last_access'] . "')");
+        \NexusPHP\Components\Database::query("INSERT INTO iplog (ip, userid, access) VALUES (" . \NexusPHP\Components\Database::escape($CURUSER['ip']) . ", " . $CURUSER['id'] . ", '" . $CURUSER['last_access'] . "')");
     }
 }
 //User may choose to download torrent from RSS. So update his last_access and ip when downloading torrents.
-sql_query("UPDATE users SET last_access = ".sqlesc(date("Y-m-d H:i:s")).", ip = ".sqlesc($CURUSER['ip'])."  WHERE id = ".sqlesc($CURUSER['id']));
+\NexusPHP\Components\Database::query("UPDATE users SET last_access = ".\NexusPHP\Components\Database::escape(date("Y-m-d H:i:s")).", ip = ".\NexusPHP\Components\Database::escape($CURUSER['ip'])."  WHERE id = ".\NexusPHP\Components\Database::escape($CURUSER['id']));
 
 /*
 @ini_set('zlib.output_compression', 'Off');
@@ -70,8 +70,8 @@ if ($tracker_ssl == true) {
 
 
 
-$res = sql_query("SELECT name, filename, save_as,  size, owner,banned FROM torrents WHERE id = ".sqlesc($id)) or sqlerr(__FILE__, __LINE__);
-$row = mysql_fetch_assoc($res);
+$res = \NexusPHP\Components\Database::query("SELECT name, filename, save_as,  size, owner,banned FROM torrents WHERE id = ".\NexusPHP\Components\Database::escape($id)) or sqlerr(__FILE__, __LINE__);
+$row = mysqli_fetch_assoc($res);
 $fn = "$torrent_dir/$id.torrent";
 if ($CURUSER['downloadpos']=="no") {
     permissiondenied();
@@ -82,11 +82,11 @@ if (!$row || !is_file($fn) || !is_readable($fn)) {
 if ($row['banned'] == 'yes' && get_user_class() < $seebanned_class) {
     permissiondenied();
 }
-sql_query("UPDATE torrents SET hits = hits + 1 WHERE id = ".sqlesc($id)) or sqlerr(__FILE__, __LINE__);
+\NexusPHP\Components\Database::query("UPDATE torrents SET hits = hits + 1 WHERE id = ".\NexusPHP\Components\Database::escape($id)) or sqlerr(__FILE__, __LINE__);
 
 if (strlen($CURUSER['passkey']) != 32) {
     $CURUSER['passkey'] = md5($CURUSER['username'].date("Y-m-d H:i:s").$CURUSER['passhash']);
-    sql_query("UPDATE users SET passkey=".sqlesc($CURUSER[passkey])." WHERE id=".sqlesc($CURUSER[id]));
+    \NexusPHP\Components\Database::query("UPDATE users SET passkey=".\NexusPHP\Components\Database::escape($CURUSER[passkey])." WHERE id=".\NexusPHP\Components\Database::escape($CURUSER[id]));
 }
 
 $dict = Bencode::load($fn);

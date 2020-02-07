@@ -5,7 +5,6 @@ if (!defined('IN_TRACKER')) {
 }
 include_once($rootpath . 'include/globalfunctions.php');
 include_once($rootpath . 'include/config.php');
-include_once($rootpath . 'classes/class_advertisement.php');
 require_once($rootpath . get_langfile_path("functions.php"));
 
 function get_langfolder_cookie()
@@ -26,7 +25,7 @@ function get_langfolder_cookie()
 
 function get_user_lang($user_id)
 {
-    $lang = mysql_fetch_assoc(sql_query("SELECT site_lang_folder FROM language LEFT JOIN users ON language.id = users.lang WHERE language.site_lang=1 AND users.id= ". sqlesc($user_id) ." LIMIT 1")) or sqlerr(__FILE__, __LINE__);
+    $lang = mysqli_fetch_assoc(\NexusPHP\Components\Database::query("SELECT site_lang_folder FROM language LEFT JOIN users ON language.id = users.lang WHERE language.site_lang=1 AND users.id= ". \NexusPHP\Components\Database::escape($user_id) ." LIMIT 1")) or sqlerr(__FILE__, __LINE__);
     return $lang['site_lang_folder'];
 }
 
@@ -38,31 +37,6 @@ function get_langfile_path($script_name ="", $target = false, $lang_folder = "")
         $lang_folder = $CURLANGDIR;
     }
     return "lang/" . ($target == false ? $lang_folder : "_target") ."/lang_". ($script_name == "" ? substr(strrchr($_SERVER['SCRIPT_NAME'], '/'), 1) : $script_name);
-}
-
-function get_row_count($table, $suffix = "")
-{
-    $r = sql_query("SELECT COUNT(*) FROM $table $suffix") or sqlerr(__FILE__, __LINE__);
-    $a = mysql_fetch_row($r) or die(mysql_error());
-    return $a[0];
-}
-
-function get_row_sum($table, $field, $suffix = "")
-{
-    $r = sql_query("SELECT SUM($field) FROM $table $suffix") or sqlerr(__FILE__, __LINE__);
-    $a = mysql_fetch_row($r) or die(mysql_error());
-    return $a[0];
-}
-
-function get_single_value($table, $field, $suffix = "")
-{
-    $r = sql_query("SELECT $field FROM $table $suffix LIMIT 1") or sqlerr(__FILE__, __LINE__);
-    $a = mysql_fetch_row($r) or die(mysql_error());
-    if ($a) {
-        return $a[0];
-    } else {
-        return false;
-    }
 }
 
 function stdmsg($heading, $text, $htmlstrip = false)
@@ -97,7 +71,7 @@ function sqlerr($file = '', $line = '')
 {
     print("<table border=\"0\" bgcolor=\"blue\" align=\"left\" cellspacing=\"0\" cellpadding=\"10\" style=\"background: blue;\">" .
     "<tr><td class=\"embedded\"><font color=\"white\"><h1>SQL Error</h1>\n" .
-    "<b>" . mysql_error() . ($file != '' && $line != '' ? "<p>in $file, line $line</p>" : "") . "</b></font></td></tr></table>");
+    "<b>" . \NexusPHP\Components\Database::error() . ($file != '' && $line != '' ? "<p>in $file, line $line</p>" : "") . "</b></font></td></tr></table>");
     die;
 }
 
@@ -149,8 +123,8 @@ function print_attachment($dlkey, $enableimage = true, $imageresizer = true)
     global $lang_functions;
     if (strlen($dlkey) == 32) {
         if (!$row = $Cache->get_value('attachment_'.$dlkey.'_content')) {
-            $res = sql_query("SELECT * FROM attachments WHERE dlkey=".sqlesc($dlkey)." LIMIT 1") or sqlerr(__FILE__, __LINE__);
-            $row = mysql_fetch_array($res);
+            $res = \NexusPHP\Components\Database::query("SELECT * FROM attachments WHERE dlkey=".\NexusPHP\Components\Database::escape($dlkey)." LIMIT 1") or sqlerr(__FILE__, __LINE__);
+            $row = mysqli_fetch_array($res);
             $Cache->cache_value('attachment_'.$dlkey.'_content', $row, 86400);
         }
     }
@@ -659,13 +633,8 @@ function get_slr_color($ratio)
 
 function write_log($text, $security = "normal")
 {
-    $text = sqlesc($text);
-    $added = sqlesc(date("Y-m-d H:i:s"));
-    $security = sqlesc($security);
-    sql_query("INSERT INTO sitelog (added, txt, security_level) VALUES($added, $text, $security)") or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("INSERT INTO sitelog (added, txt, security_level) VALUES(NOW(), ?, ?)", [$text, $security]) or sqlerr(__FILE__, __LINE__);
 }
-
-
 
 function get_elapsed_time($ts, $shortunit = false)
 {
@@ -1094,7 +1063,7 @@ function insert_suggest($keyword, $userid, $pre_escaped = true)
     if (mb_strlen($keyword, "UTF-8") >= 2) {
         $userid = 0 + $userid;
         if ($userid) {
-            sql_query("INSERT INTO suggest(keywords, userid, adddate) VALUES (" . ($pre_escaped == true ? "'" . $keyword . "'" : sqlesc($keyword)) . "," . sqlesc($userid) . ", NOW())") or sqlerr(__FILE__, __LINE__);
+            \NexusPHP\Components\Database::query("INSERT INTO suggest(keywords, userid, adddate) VALUES (" . ($pre_escaped == true ? "'" . $keyword . "'" : \NexusPHP\Components\Database::escape($keyword)) . "," . \NexusPHP\Components\Database::escape($userid) . ", NOW())") or sqlerr(__FILE__, __LINE__);
         }
     }
 }
@@ -1115,9 +1084,9 @@ function get_torrent_extinfo_identifier($torrentid)
     unset($result);
 
     if ($torrentid) {
-        $res = sql_query("SELECT url FROM torrents WHERE id=" . $torrentid) or sqlerr(__FILE__, __LINE__);
-        if (mysql_num_rows($res) == 1) {
-            $arr = mysql_fetch_array($res) or sqlerr(__FILE__, __LINE__);
+        $res = \NexusPHP\Components\Database::query("SELECT url FROM torrents WHERE id=" . $torrentid) or sqlerr(__FILE__, __LINE__);
+        if (mysqli_num_rows($res) == 1) {
+            $arr = mysqli_fetch_array($res) or sqlerr(__FILE__, __LINE__);
 
             $imdb_id = parse_imdb_id($arr["url"]);
             $result['imdb_id'] = $imdb_id;
@@ -1148,9 +1117,9 @@ function get_torrent_2_user_value($user_snatched_arr)
     // check if it's current user's torrent
     $torrent_2_user_value = 1.0;
 
-    $torrent_res = sql_query("SELECT * FROM torrents WHERE id = " . $user_snatched_arr['torrentid']) or sqlerr(__FILE__, __LINE__);
-    if (mysql_num_rows($torrent_res) == 1) {	// torrent still exists
-        $torrent_arr = mysql_fetch_array($torrent_res) or sqlerr(__FILE__, __LINE__);
+    $torrent_res = \NexusPHP\Components\Database::query("SELECT * FROM torrents WHERE id = " . $user_snatched_arr['torrentid']) or sqlerr(__FILE__, __LINE__);
+    if (mysqli_num_rows($torrent_res) == 1) {	// torrent still exists
+        $torrent_arr = mysqli_fetch_array($torrent_res) or sqlerr(__FILE__, __LINE__);
         if ($torrent_arr['owner'] == $user_snatched_arr['userid']) {	// owner's torrent
             $torrent_2_user_value *= 0.7;	// owner's torrent
             $torrent_2_user_value += ($user_snatched_arr['uploaded'] / $torrent_arr['size']) -1 > 0 ? 0.2 - exp(-(($user_snatched_arr['uploaded'] / $torrent_arr['size']) -1)) : ($user_snatched_arr['uploaded'] / $torrent_arr['size']) -1;
@@ -1187,7 +1156,7 @@ function cur_user_check()
     global $lang_functions;
     global $CURUSER;
     if ($CURUSER) {
-        sql_query("UPDATE users SET lang=" . get_langid_from_langcookie() . " WHERE id = ". $CURUSER['id']);
+        \NexusPHP\Components\Database::query("UPDATE users SET lang=" . get_langid_from_langcookie() . " WHERE id = ". $CURUSER['id']);
         stderr($lang_functions['std_permission_denied'], $lang_functions['std_already_logged_in']);
     }
 }
@@ -1196,9 +1165,9 @@ function KPS($type = "+", $point = "1.0", $id = "")
 {
     global $bonus_tweak;
     if ($point != 0) {
-        $point = sqlesc($point);
+        $point = \NexusPHP\Components\Database::escape($point);
         if ($bonus_tweak == "enable" || $bonus_tweak == "disablesave") {
-            sql_query("UPDATE users SET seedbonus = seedbonus$type$point WHERE id = ".sqlesc($id)) or sqlerr(__FILE__, __LINE__);
+            \NexusPHP\Components\Database::query("UPDATE users SET seedbonus = seedbonus$type$point WHERE id = ".\NexusPHP\Components\Database::escape($id)) or sqlerr(__FILE__, __LINE__);
         }
     } else {
         return;
@@ -1213,8 +1182,8 @@ function get_agent($peer_id, $agent)
 function EmailBanned($newEmail)
 {
     $newEmail = trim(strtolower($newEmail));
-    $sql = sql_query("SELECT * FROM bannedemails") or sqlerr(__FILE__, __LINE__);
-    $list = mysql_fetch_array($sql);
+    $sql = \NexusPHP\Components\Database::query("SELECT * FROM bannedemails") or sqlerr(__FILE__, __LINE__);
+    $list = mysqli_fetch_array($sql);
     $addresses = explode(' ', preg_replace("/[[:space:]]+/", " ", trim($list[value])));
 
     if (count($addresses) > 0) {
@@ -1249,8 +1218,8 @@ function EmailAllowed($newEmail)
     global $restrictemaildomain;
     if ($restrictemaildomain == 'yes') {
         $newEmail = trim(strtolower($newEmail));
-        $sql = sql_query("SELECT * FROM allowedemails") or sqlerr(__FILE__, __LINE__);
-        $list = mysql_fetch_array($sql);
+        $sql = \NexusPHP\Components\Database::query("SELECT * FROM allowedemails") or sqlerr(__FILE__, __LINE__);
+        $list = mysqli_fetch_array($sql);
         $addresses = explode(' ', preg_replace("/[[:space:]]+/", " ", trim($list[value])));
 
         if (count($addresses) > 0) {
@@ -1284,8 +1253,8 @@ function EmailAllowed($newEmail)
 
 function allowedemails()
 {
-    $sql = sql_query("SELECT * FROM allowedemails") or sqlerr(__FILE__, __LINE__);
-    $list = mysql_fetch_array($sql);
+    $sql = \NexusPHP\Components\Database::query("SELECT * FROM allowedemails") or sqlerr(__FILE__, __LINE__);
+    $list = mysqli_fetch_array($sql);
     return $list['value'];
 }
 
@@ -1301,11 +1270,11 @@ function redirect($url)
 
 function set_cachetimestamp($id, $field = "cache_stamp")
 {
-    sql_query("UPDATE torrents SET $field = " . time() . " WHERE id = " . sqlesc($id)) or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("UPDATE torrents SET $field = " . time() . " WHERE id = " . \NexusPHP\Components\Database::escape($id)) or sqlerr(__FILE__, __LINE__);
 }
 function reset_cachetimestamp($id, $field = "cache_stamp")
 {
-    sql_query("UPDATE torrents SET $field = 0 WHERE id = " . sqlesc($id)) or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("UPDATE torrents SET $field = 0 WHERE id = " . \NexusPHP\Components\Database::escape($id)) or sqlerr(__FILE__, __LINE__);
 }
 
 function cache_check($file = 'cachefile', $endpage = true, $cachetime = 600)
@@ -1469,27 +1438,27 @@ function failedloginscheck($type = 'Login')
     global $lang_functions;
     global $maxloginattempts;
     $total = 0;
-    $ip = sqlesc(getip());
-    $Query = sql_query("SELECT SUM(attempts) FROM loginattempts WHERE ip=$ip") or sqlerr(__FILE__, __LINE__);
-    list($total) = mysql_fetch_array($Query);
+    $ip = \NexusPHP\Components\Database::escape(getip());
+    $Query = \NexusPHP\Components\Database::query("SELECT SUM(attempts) FROM loginattempts WHERE ip=$ip") or sqlerr(__FILE__, __LINE__);
+    list($total) = mysqli_fetch_array($Query);
     if ($total >= $maxloginattempts) {
-        sql_query("UPDATE loginattempts SET banned = 'yes' WHERE ip=$ip") or sqlerr(__FILE__, __LINE__);
+        \NexusPHP\Components\Database::query("UPDATE loginattempts SET banned = 'yes' WHERE ip=$ip") or sqlerr(__FILE__, __LINE__);
         stderr($type.$lang_functions['std_locked'].$type.$lang_functions['std_attempts_reached'], $lang_functions['std_your_ip_banned']);
     }
 }
 function failedlogins($type = 'login', $recover = false, $head = true)
 {
     global $lang_functions;
-    $ip = sqlesc(getip());
-    $added = sqlesc(date("Y-m-d H:i:s"));
-    $a = (@mysql_fetch_row(@sql_query("select count(*) from loginattempts where ip=$ip"))) or sqlerr(__FILE__, __LINE__);
+    $ip = \NexusPHP\Components\Database::escape(getip());
+    $added = \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s"));
+    $a = (@mysqli_fetch_row(@\NexusPHP\Components\Database::query("select count(*) from loginattempts where ip=$ip"))) or sqlerr(__FILE__, __LINE__);
     if ($a[0] == 0) {
-        sql_query("INSERT INTO loginattempts (ip, added, attempts) VALUES ($ip, $added, 1)") or sqlerr(__FILE__, __LINE__);
+        \NexusPHP\Components\Database::query("INSERT INTO loginattempts (ip, added, attempts) VALUES ($ip, $added, 1)") or sqlerr(__FILE__, __LINE__);
     } else {
-        sql_query("UPDATE loginattempts SET attempts = attempts + 1 where ip=$ip") or sqlerr(__FILE__, __LINE__);
+        \NexusPHP\Components\Database::query("UPDATE loginattempts SET attempts = attempts + 1 where ip=$ip") or sqlerr(__FILE__, __LINE__);
     }
     if ($recover) {
-        sql_query("UPDATE loginattempts SET type = 'recover' WHERE ip = $ip") or sqlerr(__FILE__, __LINE__);
+        \NexusPHP\Components\Database::query("UPDATE loginattempts SET type = 'recover' WHERE ip = $ip") or sqlerr(__FILE__, __LINE__);
     }
     if ($type == 'silent') {
         return;
@@ -1503,16 +1472,16 @@ function failedlogins($type = 'login', $recover = false, $head = true)
 function login_failedlogins($type = 'login', $recover = false, $head = true)
 {
     global $lang_functions;
-    $ip = sqlesc(getip());
-    $added = sqlesc(date("Y-m-d H:i:s"));
-    $a = (@mysql_fetch_row(@sql_query("select count(*) from loginattempts where ip=$ip"))) or sqlerr(__FILE__, __LINE__);
+    $ip = \NexusPHP\Components\Database::escape(getip());
+    $added = \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s"));
+    $a = (@mysqli_fetch_row(@\NexusPHP\Components\Database::query("select count(*) from loginattempts where ip=$ip"))) or sqlerr(__FILE__, __LINE__);
     if ($a[0] == 0) {
-        sql_query("INSERT INTO loginattempts (ip, added, attempts) VALUES ($ip, $added, 1)") or sqlerr(__FILE__, __LINE__);
+        \NexusPHP\Components\Database::query("INSERT INTO loginattempts (ip, added, attempts) VALUES ($ip, $added, 1)") or sqlerr(__FILE__, __LINE__);
     } else {
-        sql_query("UPDATE loginattempts SET attempts = attempts + 1 where ip=$ip") or sqlerr(__FILE__, __LINE__);
+        \NexusPHP\Components\Database::query("UPDATE loginattempts SET attempts = attempts + 1 where ip=$ip") or sqlerr(__FILE__, __LINE__);
     }
     if ($recover) {
-        sql_query("UPDATE loginattempts SET type = 'recover' WHERE ip = $ip") or sqlerr(__FILE__, __LINE__);
+        \NexusPHP\Components\Database::query("UPDATE loginattempts SET type = 'recover' WHERE ip = $ip") or sqlerr(__FILE__, __LINE__);
     }
     if ($type == 'silent') {
         return;
@@ -1527,9 +1496,9 @@ function remaining($type = 'login')
 {
     global $maxloginattempts;
     $total = 0;
-    $ip = sqlesc(getip());
-    $Query = sql_query("SELECT SUM(attempts) FROM loginattempts WHERE ip=$ip") or sqlerr(__FILE__, __LINE__);
-    list($total) = mysql_fetch_array($Query);
+    $ip = \NexusPHP\Components\Database::escape(getip());
+    $Query = \NexusPHP\Components\Database::query("SELECT SUM(attempts) FROM loginattempts WHERE ip=$ip") or sqlerr(__FILE__, __LINE__);
+    list($total) = mysqli_fetch_array($Query);
     $remaining = $maxloginattempts - $total;
     if ($remaining <= 2) {
         $remaining = "<font color=\"red\" size=\"2\">[".$remaining."]</font>";
@@ -1557,8 +1526,8 @@ function registration_check($type = "invitesystem", $maxuserscheck = true, $ipch
     }
 
     if ($maxuserscheck) {
-        $res = sql_query("SELECT COUNT(*) FROM users") or sqlerr(__FILE__, __LINE__);
-        $arr = mysql_fetch_row($res);
+        $res = \NexusPHP\Components\Database::query("SELECT COUNT(*) FROM users") or sqlerr(__FILE__, __LINE__);
+        $arr = mysqli_fetch_row($res);
         if ($arr[0] >= $maxusers) {
             stderr($lang_functions['std_sorry'], $lang_functions['std_account_limit_reached'], 0);
         }
@@ -1566,7 +1535,7 @@ function registration_check($type = "invitesystem", $maxuserscheck = true, $ipch
 
     if ($ipcheck) {
         $ip = getip() ;
-        $a = (@mysql_fetch_row(@sql_query("select count(*) from users where ip='" . mysql_real_escape_string($ip) . "'"))) or sqlerr(__FILE__, __LINE__);
+        $a = (@mysqli_fetch_row(@\NexusPHP\Components\Database::query("select count(*) from users where ip='" . \NexusPHP\Components\Database::real_escape_string($ip) . "'"))) or sqlerr(__FILE__, __LINE__);
         if ($a[0] > $maxip) {
             stderr($lang_functions['std_sorry'], $lang_functions['std_the_ip']."<b>" . htmlspecialchars($ip) ."</b>". $lang_functions['std_used_many_times'], false);
         }
@@ -1590,7 +1559,7 @@ function image_code()
     $imagehash = md5($randomstr);
     $dateline = time();
     $sql = 'INSERT INTO `regimages` (`imagehash`, `imagestring`, `dateline`) VALUES (\''.$imagehash.'\', \''.$randomstr.'\', \''.$dateline.'\');';
-    sql_query($sql) or die(mysql_error());
+    \NexusPHP\Components\Database::query($sql) or die(\NexusPHP\Components\Database::error());
     return $imagehash;
 }
 
@@ -1599,17 +1568,17 @@ function check_code($imagehash, $imagestring, $where = 'signup.php', $maxattempt
     global $lang_functions;
     $query = sprintf(
         "SELECT * FROM regimages WHERE imagehash='%s' AND imagestring='%s'",
-        mysql_real_escape_string($imagehash),
-        mysql_real_escape_string($imagestring)
+        \NexusPHP\Components\Database::real_escape_string($imagehash),
+        \NexusPHP\Components\Database::real_escape_string($imagestring)
     );
-    $sql = sql_query($query);
-    $imgcheck = mysql_fetch_array($sql);
+    $sql = \NexusPHP\Components\Database::query($query);
+    $imgcheck = mysqli_fetch_array($sql);
     if (!$imgcheck['dateline']) {
         $delete = sprintf(
             "DELETE FROM regimages WHERE imagehash='%s'",
-            mysql_real_escape_string($imagehash)
+            \NexusPHP\Components\Database::real_escape_string($imagehash)
         );
-        sql_query($delete);
+        \NexusPHP\Components\Database::query($delete);
         if (!$maxattemptlog) {
             bark($lang_functions['std_invalid_image_code']."<a href=\"".htmlspecialchars($where)."\">".$lang_functions['std_here_to_request_new']);
         } else {
@@ -1618,9 +1587,9 @@ function check_code($imagehash, $imagestring, $where = 'signup.php', $maxattempt
     } else {
         $delete = sprintf(
             "DELETE FROM regimages WHERE imagehash='%s'",
-            mysql_real_escape_string($imagehash)
+            \NexusPHP\Components\Database::real_escape_string($imagehash)
         );
-        sql_query($delete);
+        \NexusPHP\Components\Database::query($delete);
         return true;
     }
 }
@@ -1645,8 +1614,8 @@ function get_ip_location($ip)
     global $Cache;
     if (!$ret = $Cache->get_value('location_list')) {
         $ret = array();
-        $res = sql_query("SELECT * FROM locations") or sqlerr(__FILE__, __LINE__);
-        while ($row = mysql_fetch_array($res)) {
+        $res = \NexusPHP\Components\Database::query("SELECT * FROM locations") or sqlerr(__FILE__, __LINE__);
+        while ($row = mysqli_fetch_array($res)) {
             $ret[] = $row;
         }
         $Cache->cache_value('location_list', $ret, 152800);
@@ -1782,24 +1751,6 @@ function getExportedValue($input, $t = null)
 
 function dbconn($autoclean = false)
 {
-    global $lang_functions;
-    global $mysql_host, $mysql_user, $mysql_pass, $mysql_db;
-    global $useCronTriggerCleanUp;
-
-    if (!mysql_connect($mysql_host, $mysql_user, $mysql_pass)) {
-        switch (mysql_errno()) {
-            case 1040:
-            case 2002:
-                die("<html><head><meta http-equiv=refresh content=\"10 $_SERVER[REQUEST_URI]\"><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"></head><body><table border=0 width=100% height=100%><tr><td><h3 align=center>".$lang_functions['std_server_load_very_high']."</h3></td></tr></table></body></html>");
-            default:
-                die("[" . mysql_errno() . "] dbconn: mysql_connect: " . mysql_error());
-        }
-    }
-    mysql_query("SET NAMES UTF8");
-    mysql_query("SET collation_connection = 'utf8_general_ci'");
-    mysql_query("SET sql_mode=''");
-    mysql_select_db($mysql_db) or die('dbconn: mysql_select_db: ' + mysql_error());
-
     if (PHP_SAPI != 'cli') {
         userlogin();
     }
@@ -1820,8 +1771,8 @@ function get_user_row($id)
             $curuserRowUpdated = true;
         }
     } elseif (!$row = $Cache->get_value('user_'.$id.'_content')) {
-        $res = sql_query("SELECT ".implode(',', $neededColumns)." FROM users WHERE id = ".sqlesc($id)) or sqlerr(__FILE__, __LINE__);
-        $row = mysql_fetch_array($res);
+        $res = \NexusPHP\Components\Database::query("SELECT ".implode(',', $neededColumns)." FROM users WHERE id = ".\NexusPHP\Components\Database::escape($id)) or sqlerr(__FILE__, __LINE__);
+        $row = mysqli_fetch_array($res);
         $Cache->cache_value('user_'.$id.'_content', $row, 900);
     }
 
@@ -1843,8 +1794,8 @@ function userlogin()
     $ip = getip();
     $nip = ip2long($ip);
     if ($nip) { //$nip would be false for IPv6 address
-        $res = sql_query("SELECT * FROM bans WHERE $nip >= first AND $nip <= last") or sqlerr(__FILE__, __LINE__);
-        if (mysql_num_rows($res) > 0) {
+        $res = \NexusPHP\Components\Database::query("SELECT * FROM bans WHERE $nip >= first AND $nip <= last") or sqlerr(__FILE__, __LINE__);
+        if (mysqli_num_rows($res) > 0) {
             header("HTTP/1.0 403 Forbidden");
             print("<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"></head><body>".$lang_functions['text_unauthorized_ip']."</body></html>\n");
             die;
@@ -1869,8 +1820,8 @@ function userlogin()
         //return;
     }
 
-    $res = sql_query("SELECT * FROM users WHERE users.id = ".sqlesc($id)." AND users.enabled='yes' AND users.status = 'confirmed' LIMIT 1");
-    $row = mysql_fetch_array($res);
+    $res = \NexusPHP\Components\Database::query("SELECT * FROM users WHERE users.id = ".\NexusPHP\Components\Database::escape($id)." AND users.enabled='yes' AND users.status = 'confirmed' LIMIT 1");
+    $row = mysqli_fetch_array($res);
     if (!$row) {
         return;
     }
@@ -1895,7 +1846,7 @@ function userlogin()
     }
     if (!$row["passkey"]) {
         $passkey = md5($row['username'].date("Y-m-d H:i:s").$row['passhash']);
-        sql_query("UPDATE users SET passkey = ".sqlesc($passkey)." WHERE id=" . sqlesc($row["id"]));// or die(mysql_error());
+        \NexusPHP\Components\Database::query("UPDATE users SET passkey = ".\NexusPHP\Components\Database::escape($passkey)." WHERE id=" . \NexusPHP\Components\Database::escape($row["id"]));// or die(\NexusPHP\Components\Database::error());
     }
 
     $oldip = $row['ip'];
@@ -2095,9 +2046,9 @@ function validlang($langid)
 {
     global $deflang;
     $langid = 0 + $langid;
-    $res = sql_query("SELECT * FROM language WHERE site_lang = 1 AND id = " . sqlesc($langid)) or sqlerr(__FILE__, __LINE__);
-    if (mysql_num_rows($res) == 1) {
-        $arr = mysql_fetch_array($res)  or sqlerr(__FILE__, __LINE__);
+    $res = \NexusPHP\Components\Database::query("SELECT * FROM language WHERE site_lang = 1 AND id = " . \NexusPHP\Components\Database::escape($langid)) or sqlerr(__FILE__, __LINE__);
+    if (mysqli_num_rows($res) == 1) {
+        $arr = mysqli_fetch_array($res)  or sqlerr(__FILE__, __LINE__);
         return $arr['site_lang_folder'];
     } else {
         return $deflang;
@@ -2180,7 +2131,7 @@ function menu($selected = "home")
 
     if ($CURUSER) {
         if ($where_tweak == 'yes') {
-            $USERUPDATESET[] = "page = ".sqlesc($selected);
+            $USERUPDATESET[] = "page = ".\NexusPHP\Components\Database::escape($selected);
         }
     }
 }
@@ -2191,8 +2142,8 @@ function get_css_row()
     $cssid = $CURUSER ? $CURUSER["stylesheet"] : $defcss;
     if (!$rows && !$rows = $Cache->get_value('stylesheet_content')) {
         $rows = array();
-        $res = sql_query("SELECT * FROM stylesheets ORDER BY id ASC");
-        while ($row = mysql_fetch_array($res)) {
+        $res = \NexusPHP\Components\Database::query("SELECT * FROM stylesheets ORDER BY id ASC");
+        while ($row = mysqli_fetch_array($res)) {
             $rows[$row['id']] = $row;
         }
         $Cache->cache_value('stylesheet_content', $rows, 95400);
@@ -2204,7 +2155,7 @@ function get_css_uri($file = "")
     $cssRow = get_css_row();
     $ss_uri = $cssRow['uri'];
     if (!$ss_uri) {
-        $ss_uri = get_single_value("stylesheets", "uri", "WHERE id=".sqlesc($defcss));
+        $ss_uri = \NexusPHP\Components\Database::single("stylesheets", "uri", "WHERE id=".\NexusPHP\Components\Database::escape($defcss));
     }
     if ($file == "") {
         return $ss_uri;
@@ -2249,14 +2200,14 @@ function get_style_highlight()
 {
     global $CURUSER;
     if ($CURUSER) {
-        $ss_a = @mysql_fetch_array(@sql_query("select hltr from stylesheets where id=" . $CURUSER["stylesheet"]));
+        $ss_a = @mysqli_fetch_array(@\NexusPHP\Components\Database::query("select hltr from stylesheets where id=" . $CURUSER["stylesheet"]));
         if ($ss_a) {
             $hltr = $ss_a["hltr"];
         }
     }
     if (!$hltr) {
-        $r = sql_query("SELECT hltr FROM stylesheets WHERE id=5") or die(mysql_error());
-        $a = mysql_fetch_array($r) or die(mysql_error());
+        $r = \NexusPHP\Components\Database::query("SELECT hltr FROM stylesheets WHERE id=5") or die(\NexusPHP\Components\Database::error());
+        $a = mysqli_fetch_array($r) or die(\NexusPHP\Components\Database::error());
         $hltr = $a["hltr"];
     }
     return $hltr;
@@ -2272,7 +2223,7 @@ function stdhead($title = "", $msgalert = true, $script = "", $place = "")
 
     $Cache->setLanguage($CURLANGDIR);
     
-    $Advertisement = new ADVERTISEMENT($CURUSER['id']);
+    $Advertisement = new NexusPHP\Advertisement($CURUSER['id']);
     $cssupdatedate = $cssdate_tweak;
     // Variable for Start Time
     $tstart = getmicrotime(); // Start time
@@ -2281,11 +2232,11 @@ function stdhead($title = "", $msgalert = true, $script = "", $place = "")
     if ($CURUSER) {
         if ($iplog1 == "yes") {
             if (($oldip != $CURUSER["ip"]) && $CURUSER["ip"]) {
-                sql_query("INSERT INTO iplog (ip, userid, access) VALUES (" . sqlesc($CURUSER['ip']) . ", " . $CURUSER['id'] . ", '" . $CURUSER['last_access'] . "')");
+                \NexusPHP\Components\Database::query("INSERT INTO iplog (ip, userid, access) VALUES (" . \NexusPHP\Components\Database::escape($CURUSER['ip']) . ", " . $CURUSER['id'] . ", '" . $CURUSER['last_access'] . "')");
             }
         }
-        $USERUPDATESET[] = "last_access = ".sqlesc(date("Y-m-d H:i:s"));
-        $USERUPDATESET[] = "ip = ".sqlesc($CURUSER['ip']);
+        $USERUPDATESET[] = "last_access = ".\NexusPHP\Components\Database::escape(date("Y-m-d H:i:s"));
+        $USERUPDATESET[] = "ip = ".\NexusPHP\Components\Database::escape($CURUSER['ip']);
     }
     header("Content-Type: text/html; charset=utf-8; Cache-control:private");
     //header("Pragma: No-cache");
@@ -2400,17 +2351,17 @@ if ($logo_main == "") {
         //// check every 15 minutes //////////////////
         $messages = $Cache->get_value('user_'.$CURUSER["id"].'_inbox_count');
         if ($messages == "") {
-            $messages = get_row_count("messages", "WHERE receiver=" . sqlesc($CURUSER["id"]) . " AND location<>0");
+            $messages = \NexusPHP\Components\Database::count("messages", "WHERE receiver=" . \NexusPHP\Components\Database::escape($CURUSER["id"]) . " AND location<>0");
             $Cache->cache_value('user_'.$CURUSER["id"].'_inbox_count', $messages, 900);
         }
         $outmessages = $Cache->get_value('user_'.$CURUSER["id"].'_outbox_count');
         if ($outmessages == "") {
-            $outmessages = get_row_count("messages", "WHERE sender=" . sqlesc($CURUSER["id"]) . " AND saved='yes'");
+            $outmessages = \NexusPHP\Components\Database::count("messages", "WHERE sender=" . \NexusPHP\Components\Database::escape($CURUSER["id"]) . " AND saved='yes'");
             $Cache->cache_value('user_'.$CURUSER["id"].'_outbox_count', $outmessages, 900);
         }
         if (!$connect = $Cache->get_value('user_'.$CURUSER["id"].'_connect')) {
-            $res3 = sql_query("SELECT connectable FROM peers WHERE userid=" . sqlesc($CURUSER["id"]) . " LIMIT 1");
-            if ($row = mysql_fetch_row($res3)) {
+            $res3 = \NexusPHP\Components\Database::query("SELECT connectable FROM peers WHERE userid=" . \NexusPHP\Components\Database::escape($CURUSER["id"]) . " LIMIT 1");
+            if ($row = mysqli_fetch_row($res3)) {
                 $connect = $row[0];
             } else {
                 $connect = 'unknown';
@@ -2429,17 +2380,17 @@ if ($logo_main == "") {
         //// check every 60 seconds //////////////////
         $activeseed = $Cache->get_value('user_'.$CURUSER["id"].'_active_seed_count');
         if ($activeseed == "") {
-            $activeseed = get_row_count("peers", "WHERE userid=" . sqlesc($CURUSER["id"]) . " AND seeder='yes'");
+            $activeseed = \NexusPHP\Components\Database::count("peers", "WHERE userid=" . \NexusPHP\Components\Database::escape($CURUSER["id"]) . " AND seeder='yes'");
             $Cache->cache_value('user_'.$CURUSER["id"].'_active_seed_count', $activeseed, 60);
         }
         $activeleech = $Cache->get_value('user_'.$CURUSER["id"].'_active_leech_count');
         if ($activeleech == "") {
-            $activeleech = get_row_count("peers", "WHERE userid=" . sqlesc($CURUSER["id"]) . " AND seeder='no'");
+            $activeleech = \NexusPHP\Components\Database::count("peers", "WHERE userid=" . \NexusPHP\Components\Database::escape($CURUSER["id"]) . " AND seeder='no'");
             $Cache->cache_value('user_'.$CURUSER["id"].'_active_leech_count', $activeleech, 60);
         }
         $unread = $Cache->get_value('user_'.$CURUSER["id"].'_unread_message_count');
         if ($unread == "") {
-            $unread = get_row_count("messages", "WHERE receiver=" . sqlesc($CURUSER["id"]) . " AND unread='yes'");
+            $unread = \NexusPHP\Components\Database::count("messages", "WHERE receiver=" . \NexusPHP\Components\Database::escape($CURUSER["id"]) . " AND unread='yes'");
             $Cache->cache_value('user_'.$CURUSER["id"].'_unread_message_count', $unread, 60);
         }
     
@@ -2457,17 +2408,17 @@ if ($logo_main == "") {
     if (get_user_class() >= $staffmem_class) {
         $totalreports = $Cache->get_value('staff_report_count');
         if ($totalreports == "") {
-            $totalreports = get_row_count("reports");
+            $totalreports = \NexusPHP\Components\Database::count("reports");
             $Cache->cache_value('staff_report_count', $totalreports, 900);
         }
         $totalsm = $Cache->get_value('staff_message_count');
         if ($totalsm == "") {
-            $totalsm = get_row_count("staffmessages");
+            $totalsm = \NexusPHP\Components\Database::count("staffmessages");
             $Cache->cache_value('staff_message_count', $totalsm, 900);
         }
         $totalcheaters = $Cache->get_value('staff_cheater_count');
         if ($totalcheaters == "") {
-            $totalcheaters = get_row_count("cheaters");
+            $totalcheaters = \NexusPHP\Components\Database::count("cheaters");
             $Cache->cache_value('staff_cheater_count', $totalcheaters, 900);
         }
         print("<a href=\"cheaterbox.php\"><img class=\"cheaterbox\" alt=\"cheaterbox\" title=\"".$lang_functions['title_cheaterbox']."\" src=\"pic/trans.gif\" />  </a>".$totalcheaters."  <a href=\"reports.php\"><img class=\"reportbox\" alt=\"reportbox\" title=\"".$lang_functions['title_reportbox']."\" src=\"pic/trans.gif\" />  </a>".$totalreports."  <a href=\"staffbox.php\"><img class=\"staffbox\" alt=\"staffbox\" title=\"".$lang_functions['title_staffbox']."\" src=\"pic/trans.gif\" />  </a>".$totalsm."  ");
@@ -2529,7 +2480,7 @@ if ($logo_main == "") {
             /*
                 $pending_invitee = $Cache->get_value('user_'.$CURUSER["id"].'_pending_invitee_count');
                 if ($pending_invitee == ""){
-                    $pending_invitee = get_row_count("users","WHERE status = 'pending' AND invited_by = ".sqlesc($CURUSER[id]));
+                    $pending_invitee = \NexusPHP\Components\Database::count("users","WHERE status = 'pending' AND invited_by = ".\NexusPHP\Components\Database::escape($CURUSER[id]));
                     $Cache->cache_value('user_'.$CURUSER["id"].'_pending_invitee_count', $pending_invitee, 900);
                 }
                 if ($pending_invitee > 0)
@@ -2541,7 +2492,7 @@ if ($logo_main == "") {
             if (!preg_match("/index/i", $settings_script_name)) {
                 $new_news = $Cache->get_value('user_'.$CURUSER["id"].'_unread_news_count');
                 if ($new_news == "") {
-                    $new_news = get_row_count("news", "WHERE notify = 'yes' AND added > ".sqlesc($CURUSER['last_home']));
+                    $new_news = \NexusPHP\Components\Database::count("news", "WHERE notify = 'yes' AND added > ".\NexusPHP\Components\Database::escape($CURUSER['last_home']));
                     $Cache->cache_value('user_'.$CURUSER["id"].'_unread_news_count', $new_news, 300);
                 }
                 if ($new_news > 0) {
@@ -2553,7 +2504,7 @@ if ($logo_main == "") {
             if (get_user_class() >= $staffmem_class) {
                 $numreports = $Cache->get_value('staff_new_report_count');
                 if ($numreports == "") {
-                    $numreports = get_row_count("reports", "WHERE dealtwith=0");
+                    $numreports = \NexusPHP\Components\Database::count("reports", "WHERE dealtwith=0");
                     $Cache->cache_value('staff_new_report_count', $numreports, 900);
                 }
                 if ($numreports) {
@@ -2562,7 +2513,7 @@ if ($logo_main == "") {
                 }
                 $nummessages = $Cache->get_value('staff_new_message_count');
                 if ($nummessages == "") {
-                    $nummessages = get_row_count("staffmessages", "WHERE answered='no'");
+                    $nummessages = \NexusPHP\Components\Database::count("staffmessages", "WHERE answered='no'");
                     $Cache->cache_value('staff_new_message_count', $nummessages, 900);
                 }
                 if ($nummessages > 0) {
@@ -2571,7 +2522,7 @@ if ($logo_main == "") {
                 }
                 $numcheaters = $Cache->get_value('staff_new_cheater_count');
                 if ($numcheaters == "") {
-                    $numcheaters = get_row_count("cheaters", "WHERE dealtwith=0");
+                    $numcheaters = \NexusPHP\Components\Database::count("cheaters", "WHERE dealtwith=0");
                     $Cache->cache_value('staff_new_cheater_count', $numcheaters, 900);
                 }
                 if ($numcheaters) {
@@ -2591,7 +2542,7 @@ if ($logo_main == "") {
 
 function stdfoot()
 {
-    global $SITENAME,$BASEURL,$Cache,$datefounded,$tstart,$icplicense_main,$add_key_shortcut,$query_name, $USERUPDATESET, $CURUSER, $enablesqldebug_tweak, $sqldebug_tweak, $Advertisement, $analyticscode_tweak;
+    global $SITENAME,$BASEURL,$Cache,$datefounded,$tstart,$icplicense_main,$add_key_shortcut, $USERUPDATESET, $CURUSER, $enablesqldebug_tweak, $sqldebug_tweak, $Advertisement, $analyticscode_tweak;
     print("</td></tr></table>");
     print("<div id=\"footer\">");
     if ($Advertisement->enable_ad()) {
@@ -2602,7 +2553,7 @@ function stdfoot()
     }
     print("<div style=\"margin-top: 10px; margin-bottom: 30px;\" align=\"center\">");
     if ($CURUSER) {
-        sql_query("UPDATE users SET " . join(",", $USERUPDATESET) . " WHERE id = ".$CURUSER['id']);
+        \NexusPHP\Components\Database::query("UPDATE users SET " . join(",", $USERUPDATESET) . " WHERE id = ".$CURUSER['id']);
     }
     // Variables for End Time
     $tend = getmicrotime();
@@ -2611,11 +2562,11 @@ function stdfoot()
     $yearfounded = ($year ? $year : 2007);
     print(" (c) "." <a href=\"" . get_protocol_prefix() . $BASEURL."\" target=\"_self\">".$SITENAME."</a> ".($icplicense_main ? " ".$icplicense_main." " : "").(date("Y") != $yearfounded ? $yearfounded."-" : "").date("Y")." ".VERSION."<br /><br />");
     printf("[page created in <b> %f </b> sec", $totaltime);
-    print(" with <b>".count($query_name)."</b> db queries, <b>".$Cache->getCacheReadTimes()."</b> reads and <b>".$Cache->getCacheWriteTimes()."</b> writes of memcached and <b>".mksize(memory_get_usage())."</b> ram]");
+    print(" with <b>".count(\NexusPHP\Components\Database::getQueryHistory())."</b> db queries, <b>".$Cache->getCacheReadTimes()."</b> reads and <b>".$Cache->getCacheWriteTimes()."</b> writes of memcached and <b>".mksize(memory_get_usage())."</b> ram]");
     print("</div>\n");
     if ($enablesqldebug_tweak == 'yes' && get_user_class() >= $sqldebug_tweak) {
         print("<div id=\"sql_debug\">SQL query list: <ul>");
-        foreach ($query_name as $query) {
+        foreach (\NexusPHP\Components\Database::getQueryHistory() as $query) {
             print("<li>".htmlspecialchars($query)."</li>");
         }
         print("</ul>");
@@ -2699,7 +2650,7 @@ function logincookie($id, $passhash, $updatedb = 1, $expires = 0x7fffffff, $secu
 
 
     if ($updatedb) {
-        sql_query("UPDATE users SET last_login = NOW(), lang=" . sqlesc(get_langid_from_langcookie()) . " WHERE id = ".sqlesc($id));
+        \NexusPHP\Components\Database::query("UPDATE users SET last_login = NOW(), lang=" . \NexusPHP\Components\Database::escape(get_langid_from_langcookie()) . " WHERE id = ".\NexusPHP\Components\Database::escape($id));
     }
 }
 
@@ -2731,7 +2682,7 @@ function get_protocol_prefix()
 function get_langid_from_langcookie()
 {
     global $CURLANGDIR;
-    $row = mysql_fetch_array(sql_query("SELECT id FROM language WHERE site_lang = 1 AND site_lang_folder = " . sqlesc($CURLANGDIR) . "ORDER BY id ASC")) or sqlerr(__FILE__, __LINE__);
+    $row = mysqli_fetch_array(\NexusPHP\Components\Database::query("SELECT id FROM language WHERE site_lang = 1 AND site_lang_folder = " . \NexusPHP\Components\Database::escape($CURLANGDIR) . "ORDER BY id ASC")) or sqlerr(__FILE__, __LINE__);
     return $row['id'];
 }
 
@@ -2781,10 +2732,10 @@ function loggedinorreturn($mainpage = false)
 function deletetorrent($id)
 {
     global $torrent_dir;
-    sql_query("DELETE FROM torrents WHERE id = ".mysql_real_escape_string($id));
-    sql_query("DELETE FROM snatched WHERE torrentid = ".mysql_real_escape_string($id));
+    \NexusPHP\Components\Database::query("DELETE FROM torrents WHERE id = ".\NexusPHP\Components\Database::real_escape_string($id));
+    \NexusPHP\Components\Database::query("DELETE FROM snatched WHERE torrentid = ".\NexusPHP\Components\Database::real_escape_string($id));
     foreach (array("peers", "files", "comments") as $x) {
-        sql_query("DELETE FROM $x WHERE torrent = ".mysql_real_escape_string($id));
+        \NexusPHP\Components\Database::query("DELETE FROM $x WHERE torrent = ".\NexusPHP\Components\Database::real_escape_string($id));
     }
     unlink("$torrent_dir/$id.torrent");
 }
@@ -2914,7 +2865,7 @@ function commenttable($rows, $type, $parent_id, $review = false)
 
         print("<table class=\"main\" width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"5\">\n");
         $secs = 900;
-        $dt = sqlesc(date("Y-m-d H:i:s", (TIMENOW - $secs))); // calculate date.
+        $dt = \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s", (TIMENOW - $secs))); // calculate date.
         print("<tr>\n");
         print("<td class=\"rowfollow\" width=\"150\" valign=\"top\" style=\"padding: 0px;\">".return_avatar_image($avatar)."</td>\n");
         print("<td class=\"rowfollow\" valign=\"top\"><br />".$text.$text_editby."</td>\n");
@@ -2940,8 +2891,8 @@ function genrelist($catmode = 1)
     global $Cache;
     if (!$ret = $Cache->get_value('category_list_mode_'.$catmode)) {
         $ret = array();
-        $res = sql_query("SELECT id, mode, name, image FROM categories WHERE mode = ".sqlesc($catmode)." ORDER BY sort_index, id");
-        while ($row = mysql_fetch_array($res)) {
+        $res = \NexusPHP\Components\Database::query("SELECT id, mode, name, image FROM categories WHERE mode = ".\NexusPHP\Components\Database::escape($catmode)." ORDER BY sort_index, id");
+        while ($row = mysqli_fetch_array($res)) {
             $ret[] = $row;
         }
         $Cache->cache_value('category_list_mode_'.$catmode, $ret, 152800);
@@ -2954,8 +2905,8 @@ function searchbox_item_list($table = "sources")
     global $Cache;
     if (!$ret = $Cache->get_value($table.'_list')) {
         $ret = array();
-        $res = sql_query("SELECT * FROM ".$table." ORDER BY sort_index, id");
-        while ($row = mysql_fetch_array($res)) {
+        $res = \NexusPHP\Components\Database::query("SELECT * FROM ".$table." ORDER BY sort_index, id");
+        while ($row = mysqli_fetch_array($res)) {
             $ret[] = $row;
         }
         $Cache->cache_value($table.'_list', $ret, 152800);
@@ -2968,8 +2919,8 @@ function langlist($type)
     global $Cache;
     if (!$ret = $Cache->get_value($type.'_lang_list')) {
         $ret = array();
-        $res = sql_query("SELECT id, lang_name, flagpic, site_lang_folder FROM language WHERE ". $type ."=1 ORDER BY site_lang DESC, id ASC");
-        while ($row = mysql_fetch_array($res)) {
+        $res = \NexusPHP\Components\Database::query("SELECT id, lang_name, flagpic, site_lang_folder FROM language WHERE ". $type ."=1 ORDER BY site_lang DESC, id ASC");
+        while ($row = mysqli_fetch_array($res)) {
             $ret[] = $row;
         }
         $Cache->cache_value($type.'_lang_list', $ret, 152800);
@@ -2989,13 +2940,13 @@ function linkcolor($num)
 
 function writecomment($userid, $comment)
 {
-    $res = sql_query("SELECT modcomment FROM users WHERE id = '$userid'") or sqlerr(__FILE__, __LINE__);
-    $arr = mysql_fetch_assoc($res);
+    $res = \NexusPHP\Components\Database::query("SELECT modcomment FROM users WHERE id = '$userid'") or sqlerr(__FILE__, __LINE__);
+    $arr = mysqli_fetch_assoc($res);
 
     $modcomment = date("d-m-Y") . " - " . $comment . "" . ($arr[modcomment] != "" ? "\n\n" : "") . "$arr[modcomment]";
-    $modcom = sqlesc($modcomment);
+    $modcom = \NexusPHP\Components\Database::escape($modcomment);
 
-    return sql_query("UPDATE users SET modcomment = $modcom WHERE id = '$userid'") or sqlerr(__FILE__, __LINE__);
+    return \NexusPHP\Components\Database::query("UPDATE users SET modcomment = $modcom WHERE id = '$userid'") or sqlerr(__FILE__, __LINE__);
 }
 
 function return_torrent_bookmark_array($userid)
@@ -3005,9 +2956,9 @@ function return_torrent_bookmark_array($userid)
     if (!$ret) {
         if (!$ret = $Cache->get_value('user_'.$userid.'_bookmark_array')) {
             $ret = array();
-            $res = sql_query("SELECT * FROM bookmarks WHERE userid=" . sqlesc($userid));
-            if (mysql_num_rows($res) != 0) {
-                while ($row = mysql_fetch_array($res)) {
+            $res = \NexusPHP\Components\Database::query("SELECT * FROM bookmarks WHERE userid=" . \NexusPHP\Components\Database::escape($userid));
+            if (mysqli_num_rows($res) != 0) {
+                while ($row = mysqli_fetch_array($res)) {
                     $ret[] = $row['torrentid'];
                 }
                 $Cache->cache_value('user_'.$userid.'_bookmark_array', $ret, 132800);
@@ -3083,8 +3034,8 @@ function torrenttable($res, $variant = "torrent")
 $count_get = 0;
     $oldlink = "";
     foreach ($_GET as $get_name => $get_value) {
-        $get_name = mysql_real_escape_string(strip_tags(str_replace(array("\"","'"), array("",""), $get_name)));
-        $get_value = mysql_real_escape_string(strip_tags(str_replace(array("\"","'"), array("",""), $get_value)));
+        $get_name = \NexusPHP\Components\Database::real_escape_string(strip_tags(str_replace(array("\"","'"), array("",""), $get_name)));
+        $get_value = \NexusPHP\Components\Database::real_escape_string(strip_tags(str_replace(array("\"","'"), array("",""), $get_value)));
 
         if ($get_name != "sort" && $get_name != "type") {
             if ($count_get > 0) {
@@ -3142,7 +3093,7 @@ $caticonrow = get_category_icon_row($CURUSER['caticon']);
     } else {
         $displaysmalldescr = true;
     }
-    while ($row = mysql_fetch_assoc($res)) {
+    while ($row = mysqli_fetch_assoc($res)) {
         $id = $row["id"];
         $sphighlight = get_torrent_bg_color($row['sp_state']);
         print("<tr" . $sphighlight . ">\n");
@@ -3283,8 +3234,8 @@ $caticonrow = get_category_icon_row($CURUSER['caticon']);
             } else {
                 if ($enabletooltip_tweak == 'yes' && $CURUSER['showlastcom'] != 'no') {
                     if (!$lastcom = $Cache->get_value('torrent_'.$id.'_last_comment_content')) {
-                        $res2 = sql_query("SELECT user, added, text FROM comments WHERE torrent = $id ORDER BY id DESC LIMIT 1");
-                        $lastcom = mysql_fetch_array($res2);
+                        $res2 = \NexusPHP\Components\Database::query("SELECT user, added, text FROM comments WHERE torrent = $id ORDER BY id DESC LIMIT 1");
+                        $lastcom = mysqli_fetch_array($res2);
                         $Cache->cache_value('torrent_'.$id.'_last_comment_content', $lastcom, 1855);
                     }
                     $timestamp = strtotime($lastcom["added"]);
@@ -3825,8 +3776,8 @@ function get_category_icon_row($typeid)
     }
     if (!$rows && !$rows = $Cache->get_value('category_icon_content')) {
         $rows = array();
-        $res = sql_query("SELECT * FROM caticons ORDER BY id ASC");
-        while ($row = mysql_fetch_array($res)) {
+        $res = \NexusPHP\Components\Database::query("SELECT * FROM caticons ORDER BY id ASC");
+        while ($row = mysqli_fetch_array($res)) {
             $rows[$row['id']] = $row;
         }
         $Cache->cache_value('category_icon_content', $rows, 156400);
@@ -3838,8 +3789,8 @@ function get_category_row($catid = null)
     global $Cache;
     static $rows;
     if (!$rows && !$rows = $Cache->get_value('category_content')) {
-        $res = sql_query("SELECT categories.*, searchbox.name AS catmodename FROM categories LEFT JOIN searchbox ON categories.mode=searchbox.id");
-        while ($row = mysql_fetch_array($res)) {
+        $res = \NexusPHP\Components\Database::query("SELECT categories.*, searchbox.name AS catmodename FROM categories LEFT JOIN searchbox ON categories.mode=searchbox.id");
+        while ($row = mysqli_fetch_array($res)) {
             $rows[$row['id']] = $row;
         }
         $Cache->cache_value('category_content', $rows, 126400);
@@ -3862,8 +3813,8 @@ function get_second_icon($row, $catimgurl) //for CHDBits
     $team=$row['team'];
     $audiocodec=$row['audiocodec'];
     if (!$sirow = $Cache->get_value('secondicon_'.$source.'_'.$medium.'_'.$codec.'_'.$standard.'_'.$processing.'_'.$team.'_'.$audiocodec.'_content')) {
-        $res = sql_query("SELECT * FROM secondicons WHERE (source = ".sqlesc($source)." OR source=0) AND (medium = ".sqlesc($medium)." OR medium=0) AND (codec = ".sqlesc($codec)." OR codec = 0) AND (standard = ".sqlesc($standard)." OR standard = 0) AND (processing = ".sqlesc($processing)." OR processing = 0) AND (team = ".sqlesc($team)." OR team = 0) AND (audiocodec = ".sqlesc($audiocodec)." OR audiocodec = 0) LIMIT 1");
-        $sirow = mysql_fetch_array($res);
+        $res = \NexusPHP\Components\Database::query("SELECT * FROM secondicons WHERE (source = ".\NexusPHP\Components\Database::escape($source)." OR source=0) AND (medium = ".\NexusPHP\Components\Database::escape($medium)." OR medium=0) AND (codec = ".\NexusPHP\Components\Database::escape($codec)." OR codec = 0) AND (standard = ".\NexusPHP\Components\Database::escape($standard)." OR standard = 0) AND (processing = ".\NexusPHP\Components\Database::escape($processing)." OR processing = 0) AND (team = ".\NexusPHP\Components\Database::escape($team)." OR team = 0) AND (audiocodec = ".\NexusPHP\Components\Database::escape($audiocodec)." OR audiocodec = 0) LIMIT 1");
+        $sirow = mysqli_fetch_array($res);
         if (!$sirow) {
             $sirow = 'not allowed';
         }
@@ -4070,8 +4021,8 @@ function get_torrent_promotion_append($promotion = 1, $forcemode = "", $showtime
 function get_user_id_from_name($username)
 {
     global $lang_functions;
-    $res = sql_query("SELECT id FROM users WHERE LOWER(username)=LOWER(" . sqlesc($username).")");
-    $arr = mysql_fetch_array($res);
+    $res = \NexusPHP\Components\Database::query("SELECT id FROM users WHERE LOWER(username)=LOWER(" . \NexusPHP\Components\Database::escape($username).")");
+    $arr = mysqli_fetch_array($res);
     if (!$arr) {
         stderr($lang_functions['std_error'], $lang_functions['std_no_user_named']."'".$username."'");
     } else {
@@ -4084,8 +4035,8 @@ function is_forum_moderator($id, $in = 'post')
     global $CURUSER;
     switch ($in) {
         case 'post':{
-            $res = sql_query("SELECT topicid FROM posts WHERE id=$id") or sqlerr(__FILE__, __LINE__);
-            if ($arr = mysql_fetch_array($res)) {
+            $res = \NexusPHP\Components\Database::query("SELECT topicid FROM posts WHERE id=$id") or sqlerr(__FILE__, __LINE__);
+            if ($arr = mysqli_fetch_array($res)) {
                 if (is_forum_moderator($arr['topicid'], 'topic')) {
                     return true;
                 }
@@ -4094,8 +4045,8 @@ function is_forum_moderator($id, $in = 'post')
             break;
         }
         case 'topic':{
-            $modcount = sql_query("SELECT COUNT(forummods.userid) FROM forummods LEFT JOIN topics ON forummods.forumid = topics.forumid WHERE topics.id=$id AND forummods.userid=".sqlesc($CURUSER['id'])) or sqlerr(__FILE__, __LINE__);
-            $arr = mysql_fetch_array($modcount);
+            $modcount = \NexusPHP\Components\Database::query("SELECT COUNT(forummods.userid) FROM forummods LEFT JOIN topics ON forummods.forumid = topics.forumid WHERE topics.id=$id AND forummods.userid=".\NexusPHP\Components\Database::escape($CURUSER['id'])) or sqlerr(__FILE__, __LINE__);
+            $arr = mysqli_fetch_array($modcount);
             if ($arr[0]) {
                 return true;
             } else {
@@ -4104,7 +4055,7 @@ function is_forum_moderator($id, $in = 'post')
             break;
         }
         case 'forum':{
-            $modcount = get_row_count("forummods", "WHERE forumid=$id AND userid=".sqlesc($CURUSER['id']));
+            $modcount = \NexusPHP\Components\Database::count("forummods", "WHERE forumid=$id AND userid=".\NexusPHP\Components\Database::escape($CURUSER['id']));
             if ($modcount) {
                 return true;
             } else {
@@ -4122,8 +4073,8 @@ function get_guest_lang_id()
 {
     global $CURLANGDIR;
     $langfolder=$CURLANGDIR;
-    $res = sql_query("SELECT id FROM language WHERE site_lang_folder=".sqlesc($langfolder)." AND site_lang=1");
-    $row = mysql_fetch_array($res);
+    $res = \NexusPHP\Components\Database::query("SELECT id FROM language WHERE site_lang_folder=".\NexusPHP\Components\Database::escape($langfolder)." AND site_lang=1");
+    $row = mysqli_fetch_array($res);
     if ($row) {
         return $row['id'];
     } else {
@@ -4140,9 +4091,9 @@ function set_forum_moderators($name, $forumid, $limit=3)
         $userids[]=get_user_id_from_name(trim($user));
     }
     $max = count($userids);
-    sql_query("DELETE FROM forummods WHERE forumid=".sqlesc($forumid)) or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("DELETE FROM forummods WHERE forumid=".\NexusPHP\Components\Database::escape($forumid)) or sqlerr(__FILE__, __LINE__);
     for ($i=0; $i < $limit && $i < $max; $i++) {
-        sql_query("INSERT INTO forummods (forumid, userid) VALUES (".sqlesc($forumid).",".sqlesc($userids[$i]).")") or sqlerr(__FILE__, __LINE__);
+        \NexusPHP\Components\Database::query("INSERT INTO forummods (forumid, userid) VALUES (".\NexusPHP\Components\Database::escape($forumid).",".\NexusPHP\Components\Database::escape($userids[$i]).")") or sqlerr(__FILE__, __LINE__);
     }
 }
 
@@ -4163,8 +4114,8 @@ function get_searchbox_value($mode = 1, $item = 'showsubcat')
     static $rows;
     if (!$rows && !$rows = $Cache->get_value('searchbox_content')) {
         $rows = array();
-        $res = sql_query("SELECT * FROM searchbox ORDER BY id ASC");
-        while ($row = mysql_fetch_array($res)) {
+        $res = \NexusPHP\Components\Database::query("SELECT * FROM searchbox ORDER BY id ASC");
+        while ($row = mysqli_fetch_array($res)) {
             $rows[$row['id']] = $row;
         }
         $Cache->cache_value('searchbox_content', $rows, 100500);
@@ -4340,8 +4291,8 @@ function get_forum_moderators($forumid, $plaintext = true)
 
     if (!$moderatorsArray && !$moderatorsArray = $Cache->get_value('forum_moderator_array')) {
         $moderatorsArray = array();
-        $res = sql_query("SELECT forumid, userid FROM forummods ORDER BY forumid ASC") or sqlerr(__FILE__, __LINE__);
-        while ($row = mysql_fetch_array($res)) {
+        $res = \NexusPHP\Components\Database::query("SELECT forumid, userid FROM forummods ORDER BY forumid ASC") or sqlerr(__FILE__, __LINE__);
+        while ($row = mysqli_fetch_array($res)) {
             $moderatorsArray[$row['forumid']][] = $row['userid'];
         }
         $Cache->cache_value('forum_moderator_array', $moderatorsArray, 86200);
@@ -4398,8 +4349,8 @@ function get_post_row($postid)
 {
     global $Cache;
     if (!$row = $Cache->get_value('post_'.$postid.'_content')) {
-        $res = sql_query("SELECT * FROM posts WHERE id=".sqlesc($postid)." LIMIT 1") or sqlerr(__FILE__, __LINE__);
-        $row = mysql_fetch_array($res);
+        $res = \NexusPHP\Components\Database::query("SELECT * FROM posts WHERE id=".\NexusPHP\Components\Database::escape($postid)." LIMIT 1") or sqlerr(__FILE__, __LINE__);
+        $row = mysqli_fetch_array($res);
         $Cache->cache_value('post_'.$postid.'_content', $row, 7200);
     }
     if (!$row) {
@@ -4413,8 +4364,8 @@ function get_country_row($id)
 {
     global $Cache;
     if (!$row = $Cache->get_value('country_'.$id.'_content')) {
-        $res = sql_query("SELECT * FROM countries WHERE id=".sqlesc($id)." LIMIT 1") or sqlerr(__FILE__, __LINE__);
-        $row = mysql_fetch_array($res);
+        $res = \NexusPHP\Components\Database::query("SELECT * FROM countries WHERE id=".\NexusPHP\Components\Database::escape($id)." LIMIT 1") or sqlerr(__FILE__, __LINE__);
+        $row = mysqli_fetch_array($res);
         $Cache->cache_value('country_'.$id.'_content', $row, 86400);
     }
     if (!$row) {
@@ -4428,8 +4379,8 @@ function get_downloadspeed_row($id)
 {
     global $Cache;
     if (!$row = $Cache->get_value('downloadspeed_'.$id.'_content')) {
-        $res = sql_query("SELECT * FROM downloadspeed WHERE id=".sqlesc($id)." LIMIT 1") or sqlerr(__FILE__, __LINE__);
-        $row = mysql_fetch_array($res);
+        $res = \NexusPHP\Components\Database::query("SELECT * FROM downloadspeed WHERE id=".\NexusPHP\Components\Database::escape($id)." LIMIT 1") or sqlerr(__FILE__, __LINE__);
+        $row = mysqli_fetch_array($res);
         $Cache->cache_value('downloadspeed_'.$id.'_content', $row, 86400);
     }
     if (!$row) {
@@ -4443,8 +4394,8 @@ function get_uploadspeed_row($id)
 {
     global $Cache;
     if (!$row = $Cache->get_value('uploadspeed_'.$id.'_content')) {
-        $res = sql_query("SELECT * FROM uploadspeed WHERE id=".sqlesc($id)." LIMIT 1") or sqlerr(__FILE__, __LINE__);
-        $row = mysql_fetch_array($res);
+        $res = \NexusPHP\Components\Database::query("SELECT * FROM uploadspeed WHERE id=".\NexusPHP\Components\Database::escape($id)." LIMIT 1") or sqlerr(__FILE__, __LINE__);
+        $row = mysqli_fetch_array($res);
         $Cache->cache_value('uploadspeed_'.$id.'_content', $row, 86400);
     }
     if (!$row) {
@@ -4458,8 +4409,8 @@ function get_isp_row($id)
 {
     global $Cache;
     if (!$row = $Cache->get_value('isp_'.$id.'_content')) {
-        $res = sql_query("SELECT * FROM isp WHERE id=".sqlesc($id)." LIMIT 1") or sqlerr(__FILE__, __LINE__);
-        $row = mysql_fetch_array($res);
+        $res = \NexusPHP\Components\Database::query("SELECT * FROM isp WHERE id=".\NexusPHP\Components\Database::escape($id)." LIMIT 1") or sqlerr(__FILE__, __LINE__);
+        $row = mysqli_fetch_array($res);
         $Cache->cache_value('isp_'.$id.'_content', $row, 86400);
     }
     if (!$row) {

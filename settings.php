@@ -55,7 +55,7 @@ if ($action == 'savesettings_main') {	// save main
     stdhead($lang_settings['head_save_basic_settings']);
     $validConfig = array('SITENAME', 'BASEURL', 'announce_url', 'mysql_host', 'mysql_user', 'mysql_pass', 'mysql_db');
     GetVar($validConfig);
-    if (!mysql_connect($mysql_host, $mysql_user, $mysql_pass)) {
+    if (!mysqli_connect($mysql_host, $mysql_user, $mysql_pass)) {
         stdmsg($lang_settings['std_error'], $lang_settings['std_mysql_connect_error'].$lang_settings['std_click']."<a class=\"altlink\" href=\"settings.php\">".$lang_settings['std_here']."</a>".$lang_settings['std_to_go_back']);
     } else {
         dbconn();
@@ -520,9 +520,9 @@ if ($action == 'savesettings_main') {	// save main
     }
     yesorno($lang_settings['row_use_external_forum'], 'extforum', $MAIN['extforum'], $lang_settings['text_use_external_forum_note']);
     tr($lang_settings['row_external_forum_url'], "<input type='text' style=\"width: 300px\" name=extforumurl value='".($MAIN["extforumurl"] ? $MAIN["extforumurl"] : "")."'> ".$lang_settings['text_external_forum_url_note'], 1);
-    $res = sql_query("SELECT id, name FROM searchbox") or sqlerr(__FILE__, __LINE__);
+    $res = \NexusPHP\Components\Database::query("SELECT id, name FROM searchbox") or sqlerr(__FILE__, __LINE__);
     $catlist = "";
-    while ($array = mysql_fetch_array($res)) {
+    while ($array = mysqli_fetch_array($res)) {
         $bcatlist .= "<input type=radio name=browsecat value='".$array['id']."'".($MAIN["browsecat"] == $array['id'] ? " checked" : "").">".$array['name']."&nbsp;";
         $scatlist .= "<input type=radio name=specialcat value='".$array['id']."'".($MAIN["specialcat"] == $array['id'] ? " checked" : "").">".$array['name']."&nbsp;";
     }
@@ -530,15 +530,15 @@ if ($action == 'savesettings_main') {	// save main
     if (THISTRACKER == "HDStar") {
         tr($lang_settings['row_special_category_mode'], $scatlist."<br />".$lang_settings['text_special_category_mode_note'], 1);
     }
-    $res = sql_query("SELECT * FROM language WHERE site_lang=1") or sqlerr(__FILE__, __LINE__);
+    $res = \NexusPHP\Components\Database::query("SELECT * FROM language WHERE site_lang=1") or sqlerr(__FILE__, __LINE__);
     $langlist = "";
-    while ($array = mysql_fetch_array($res)) {
+    while ($array = mysqli_fetch_array($res)) {
         $langlist .= "<input type=radio name=defaultlang value='".$array['site_lang_folder']."'".($MAIN["defaultlang"] == $array['site_lang_folder'] ? " checked" : "").">".$array['lang_name']."&nbsp;";
     }
     tr($lang_settings['row_default_site_language'], $langlist."<br />".$lang_settings['text_default_site_language_note'], 1);
-    $res = sql_query("SELECT * FROM stylesheets ORDER BY name") or sqlerr(__FILE__, __LINE__);
+    $res = \NexusPHP\Components\Database::query("SELECT * FROM stylesheets ORDER BY name") or sqlerr(__FILE__, __LINE__);
     $csslist = "<select name=defstylesheet>";
-    while ($array = mysql_fetch_array($res)) {
+    while ($array = mysqli_fetch_array($res)) {
         $csslist .= "<option value='".$array['id']."'".($MAIN["defstylesheet"] == $array['id'] ? " selected" : "").">".$array['name']."</option>";
     }
     $csslist .= "</select>";

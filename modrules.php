@@ -35,11 +35,11 @@ if ($_GET["act"] == "newsect") {
     $title = $_POST["title"];
     $text = $_POST["text"];
     $language = $_POST["language"];
-    sql_query("insert into rules (title, text, lang_id) values(".sqlesc($title).", ".sqlesc($text).", ".sqlesc($language).")") or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("insert into rules (title, text, lang_id) values(".\NexusPHP\Components\Database::escape($title).", ".\NexusPHP\Components\Database::escape($text).", ".\NexusPHP\Components\Database::escape($language).")") or sqlerr(__FILE__, __LINE__);
     header("Refresh: 0; url=modrules.php");
 } elseif ($_GET["act"] == "edit") {
     $id = $_GET["id"];
-    $res = @mysql_fetch_array(@sql_query("select * from rules where id='$id'"));
+    $res = @mysqli_fetch_array(@\NexusPHP\Components\Database::query("select * from rules where id='$id'"));
     stdhead("Edit rules");
     //print("<td valign=top style=\"padding: 10px;\" colspan=2 align=center>");
     //begin_main_frame();
@@ -69,7 +69,7 @@ if ($_GET["act"] == "newsect") {
     $title = $_POST["title"];
     $text = $_POST["text"];
     $language = $_POST["language"];
-    sql_query("update rules set title=".sqlesc($title).", text=".sqlesc($text).", lang_id = ".sqlesc($language)." where id=".sqlesc($id)) or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("update rules set title=".\NexusPHP\Components\Database::escape($title).", text=".\NexusPHP\Components\Database::escape($text).", lang_id = ".\NexusPHP\Components\Database::escape($language)." where id=".\NexusPHP\Components\Database::escape($id)) or sqlerr(__FILE__, __LINE__);
     header("Refresh: 0; url=modrules.php");
 } elseif ($_GET["act"]=="del") {
     $id = 0+$_GET["id"];
@@ -77,16 +77,16 @@ if ($_GET["act"] == "newsect") {
     if (!$sure) {
         stderr("Delete Rule", "You are about to delete a rule. Click <a class=altlink href=?act=del&id=$id&sure=1>here</a> if you are sure.", false);
     }
-    sql_query("DELETE FROM rules WHERE id=".sqlesc($id)) or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::query("DELETE FROM rules WHERE id=".\NexusPHP\Components\Database::escape($id)) or sqlerr(__FILE__, __LINE__);
     header("Refresh: 0; url=modrules.php");
 } else {
-    $res = sql_query("select rules.*, lang_name from rules left join language on rules.lang_id = language.id order by lang_name, id");
+    $res = \NexusPHP\Components\Database::query("select rules.*, lang_name from rules left join language on rules.lang_id = language.id order by lang_name, id");
     stdhead("Rules Manangement");
     //print("<td valign=top style=\"padding: 10px;\" colspan=2 align=center>");
     print("<h1 align=center>Rules Manangement</h1>");
     print("<br /><table width=940 border=0 cellspacing=0 cellpadding=5>");
     print("<tr><td align=center><a href=modrules.php?act=newsect>Add Section</a></td></tr></table>\n");
-    while ($arr=mysql_fetch_assoc($res)) {
+    while ($arr=mysqli_fetch_assoc($res)) {
         print("<br /><table width=940 border=1 cellspacing=0 cellpadding=5>");
         print("<tr><td class=colhead>$arr[title] - $arr[lang_name]</td></tr>\n");
         print("<tr><td align=left>" . format_comment($arr["text"])."</td></tr>");

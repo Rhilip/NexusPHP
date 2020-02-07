@@ -2,17 +2,21 @@
 if (!defined('IN_TRACKER')) {
     die('Hacking attempt!');
 }
-error_reporting(E_ERROR | E_PARSE);
-ini_set('display_errors', 0);
+
+# Product
+#error_reporting(E_ERROR | E_PARSE);
+#ini_set('display_errors', 0);
+
+# Dev
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
 include_once($rootpath . 'vendor/autoload.php');
 
-include_once($rootpath . 'classes/class_cache.php'); //Require the caching class
-$Cache = new CACHE(); //Load the caching class
+$Cache = new \NexusPHP\Components\Cache(); //Load the caching class
 $Cache->setLanguageFolderArray(get_langfolder_list());
 define('TIMENOW', time());
 $USERUPDATESET = array();
-$query_name=array();
 
 define("UC_PEASANT", 0);
 define("UC_USER", 1);
@@ -34,30 +38,6 @@ define("UC_SYSOP", 15);
 define("UC_STAFFLEADER", 16);
 ignore_user_abort(1);
 @set_time_limit(60);
-
-function strip_magic_quotes($arr)
-{
-    foreach ($arr as $k => $v) {
-        if (is_array($v)) {
-            $arr[$k] = strip_magic_quotes($v);
-        } else {
-            $arr[$k] = stripslashes($v);
-        }
-    }
-    return $arr;
-}
-
-if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) {
-    if (!empty($_GET)) {
-        $_GET = strip_magic_quotes($_GET);
-    }
-    if (!empty($_POST)) {
-        $_POST = strip_magic_quotes($_POST);
-    }
-    if (!empty($_COOKIE)) {
-        $_COOKIE = strip_magic_quotes($_COOKIE);
-    }
-}
 
 function get_langfolder_list()
 {

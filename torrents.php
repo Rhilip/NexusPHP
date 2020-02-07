@@ -46,7 +46,7 @@ if ($showsubcat) {
 }
 
 $searchstr_ori = htmlspecialchars(trim($_GET["search"]));
-$searchstr = mysql_real_escape_string(trim($_GET["search"]));
+$searchstr = \NexusPHP\Components\Database::real_escape_string(trim($_GET["search"]));
 if (empty($searchstr)) {
     unset($searchstr);
 }
@@ -801,9 +801,9 @@ if ($allsec == 1 || $enablespecial != 'yes') {
     $sql = "SELECT COUNT(*), categories.mode FROM torrents LEFT JOIN categories ON category = categories.id " . ($search_area == 3 || $column == "owner" ? "LEFT JOIN users ON torrents.owner = users.id " : "") . $where." GROUP BY categories.mode";
 }
 
-$res = sql_query($sql) or die(mysql_error());
+$res = \NexusPHP\Components\Database::query($sql) or die(\NexusPHP\Components\Database::error());
 $count = 0;
-while ($row = mysql_fetch_array($res)) {
+while ($row = mysqli_fetch_array($res)) {
     $count += $row[0];
 }
 
@@ -838,7 +838,7 @@ if ($count) {
         $query = "SELECT torrents.id, torrents.sp_state, torrents.promotion_time_type, torrents.promotion_until, torrents.banned, torrents.picktype, torrents.pos_state, torrents.category, torrents.source, torrents.medium, torrents.codec, torrents.standard, torrents.processing, torrents.team, torrents.audiocodec, torrents.leechers, torrents.seeders, torrents.name, torrents.small_descr, torrents.times_completed, torrents.size, torrents.added, torrents.comments,torrents.anonymous,torrents.owner,torrents.url,torrents.cache_stamp FROM torrents ".($search_area == 3 || $column == "owner" ? "LEFT JOIN users ON torrents.owner = users.id " : "")." LEFT JOIN categories ON torrents.category=categories.id $where $orderby $limit";
     }
 
-    $res = sql_query($query) or die(mysql_error());
+    $res = \NexusPHP\Components\Database::query($query) or die(\NexusPHP\Components\Database::error());
 } else {
     unset($res);
 }
@@ -1019,13 +1019,13 @@ if ($allsec != 1 || $enablespecial != 'yes') { //do not print searchbox if showi
 $Cache->new_page('hot_search', 3670, true);
 if (!$Cache->get_page()) {
     $secs = 3*24*60*60;
-    $dt = sqlesc(date("Y-m-d H:i:s", (TIMENOW - $secs)));
-    $dt2 = sqlesc(date("Y-m-d H:i:s", (TIMENOW - $secs*2)));
-    sql_query("DELETE FROM suggest WHERE adddate <" . $dt2) or sqlerr();
-    $searchres = sql_query("SELECT keywords, COUNT(DISTINCT userid) as count FROM suggest WHERE adddate >" . $dt . " GROUP BY keywords ORDER BY count DESC LIMIT 15") or sqlerr();
+    $dt = \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s", (TIMENOW - $secs)));
+    $dt2 = \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s", (TIMENOW - $secs*2)));
+    \NexusPHP\Components\Database::query("DELETE FROM suggest WHERE adddate <" . $dt2) or sqlerr();
+    $searchres = \NexusPHP\Components\Database::query("SELECT keywords, COUNT(DISTINCT userid) as count FROM suggest WHERE adddate >" . $dt . " GROUP BY keywords ORDER BY count DESC LIMIT 15") or sqlerr();
     $hotcount = 0;
     $hotsearch = "";
-    while ($searchrow = mysql_fetch_assoc($searchres)) {
+    while ($searchrow = mysqli_fetch_assoc($searchres)) {
         $hotsearch .= "<a href=\"".htmlspecialchars("?search=" . rawurlencode($searchrow["keywords"]) . "&notnewword=1")."\"><u>" . $searchrow["keywords"] . "</u></a>&nbsp;&nbsp;";
         $hotcount += mb_strlen($searchrow["keywords"], "UTF-8");
         if ($hotcount > 60) {

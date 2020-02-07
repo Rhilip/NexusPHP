@@ -8,12 +8,12 @@ if (get_user_class() < UC_MODERATOR) {
 }
 
 stdhead("Warned Users");
-$warned = number_format(get_row_count("users", "WHERE warned='yes'"));
+$warned = number_format(\NexusPHP\Components\Database::count("users", "WHERE warned='yes'"));
 begin_frame("Warned Users: ($warned)", true);
 begin_table();
 
-$res = sql_query("SELECT * FROM users WHERE warned=1 AND enabled='yes' ORDER BY (users.uploaded/users.downloaded)") or sqlerr();
-$num = mysql_num_rows($res);
+$res = \NexusPHP\Components\Database::query("SELECT * FROM users WHERE warned=1 AND enabled='yes' ORDER BY (users.uploaded/users.downloaded)") or sqlerr();
+$num = mysqli_num_rows($res);
 print("<table border=1 width=675 cellspacing=0 cellpadding=2><form action=\"nowarn.php\" method=post>\n");
 print("<tr align=center><td class=colhead width=90>User Name</td>
  <td class=colhead width=70>Registered</td>
@@ -26,7 +26,7 @@ print("<tr align=center><td class=colhead width=90>User Name</td>
  <td class=colhead width=65>Remove<br>Warning</td>
  <td class=colhead width=65>Disable<br>Account</td></tr>\n");
 for ($i = 1; $i <= $num; $i++) {
-    $arr = mysql_fetch_assoc($res);
+    $arr = mysqli_fetch_assoc($res);
     if ($arr['added'] == '0000-00-00 00:00:00') {
         $arr['added'] = '-';
     }

@@ -21,7 +21,7 @@ if (!is_valid_user_class($class)) {
 }
 
 if (($search != '' || $class != '-') && $letter == '') {
-    $query = "username LIKE " . sqlesc("%$search%") . " AND status='confirmed'";
+    $query = "username LIKE " . \NexusPHP\Components\Database::escape("%$search%") . " AND status='confirmed'";
     if ($search) {
         $q = "search=" . rawurlencode($search);
     }
@@ -58,8 +58,8 @@ for ($i = 0;;++$i) {
 }
 print("</select>\n");
 $countries = "<option value=0>".$lang_users['select_any_country']."</option>\n";
-$ct_r = sql_query("SELECT id,name FROM countries ORDER BY name") or die;
-while ($ct_a = mysql_fetch_array($ct_r)) {
+$ct_r = \NexusPHP\Components\Database::query("SELECT id,name FROM countries ORDER BY name") or die;
+while ($ct_a = mysqli_fetch_array($ct_r)) {
     $countries .= "<option value=".htmlspecialchars($ct_a[id]).">".htmlspecialchars($ct_a[name])."</option>\n";
 }
 print("<select name=country>".$countries."</select>");
@@ -87,8 +87,8 @@ print("</p>\n");
 
 $perpage = 50;
 
-$res = sql_query("SELECT COUNT(*) FROM users WHERE $query") or sqlerr();
-$arr = mysql_fetch_row($res);
+$res = \NexusPHP\Components\Database::query("SELECT COUNT(*) FROM users WHERE $query") or sqlerr();
+$arr = mysqli_fetch_row($res);
 $count = $arr[0];
 
 list($pagertop, $pagerbottom, $limit) = pager($perpage, $count, "users.php?".$q.($q ? "&" : ""));
@@ -122,15 +122,15 @@ $sql = sprintf(
 );
 
 
-$res = sql_query($sql) or sqlerr();
+$res = \NexusPHP\Components\Database::query($sql) or sqlerr();
 
 
-$num = mysql_num_rows($res);
+$num = mysqli_num_rows($res);
 
 print("<table border=1 cellspacing=0 cellpadding=5>\n");
 print("<tr><td class=colhead align=left>".$lang_users['col_user_name']."</td><td class=colhead>".$lang_users['col_registered']."</td><td class=colhead>".$lang_users['col_last_access']."</td><td class=colhead align=left>".$lang_users['col_class']."</td><td class=colhead>".$lang_users['col_country']."</td></tr>\n");
 for ($i = 0; $i < $num; ++$i) {
-    $arr = mysql_fetch_assoc($res);
+    $arr = mysqli_fetch_assoc($res);
 
     print("<tr><td align=left>".get_username($arr['id'])."</td><td>".gettime($arr['added'], true, false)."</td><td>".gettime($arr['last_access'], true, false)."</td><td align=left>". get_user_class_name($arr['class'], false, true, true) . "</td><td align=center>".$arr['country']."</td></tr>");
 }

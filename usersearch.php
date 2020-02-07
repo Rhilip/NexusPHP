@@ -274,10 +274,10 @@ if (count($_GET) > 0 && !$_GET['h']) {
             $where_is .= isset($where_is)?" AND (":"(";
             foreach ($names_inc as $name) {
                 if (!haswildcard($name)) {
-                    $name_is .= (isset($name_is)?" OR ":"")."u.username = ".sqlesc($name);
+                    $name_is .= (isset($name_is)?" OR ":"")."u.username = ".\NexusPHP\Components\Database::escape($name);
                 } else {
                     $name = str_replace(array('?','*'), array('_','%'), $name);
-                    $name_is .= (isset($name_is)?" OR ":"")."u.username LIKE ".sqlesc($name);
+                    $name_is .= (isset($name_is)?" OR ":"")."u.username LIKE ".\NexusPHP\Components\Database::escape($name);
                 }
             }
             $where_is .= $name_is.")";
@@ -288,10 +288,10 @@ if (count($_GET) > 0 && !$_GET['h']) {
             $where_is .= isset($where_is)?" AND NOT (":" NOT (";
             foreach ($names_exc as $name) {
                 if (!haswildcard($name)) {
-                    $name_is .= (isset($name_is)?" OR ":"")."u.username = ".sqlesc($name);
+                    $name_is .= (isset($name_is)?" OR ":"")."u.username = ".\NexusPHP\Components\Database::escape($name);
                 } else {
                     $name = str_replace(array('?','*'), array('_','%'), $name);
-                    $name_is .= (isset($name_is)?" OR ":"")."u.username LIKE ".sqlesc($name);
+                    $name_is .= (isset($name_is)?" OR ":"")."u.username LIKE ".\NexusPHP\Components\Database::escape($name);
                 }
             }
             $where_is .= $name_is.")";
@@ -311,10 +311,10 @@ if (count($_GET) > 0 && !$_GET['h']) {
                     stdfoot();
                     die();
                 }
-                $email_is .= (isset($email_is)?" OR ":"")."u.email =".sqlesc($email);
+                $email_is .= (isset($email_is)?" OR ":"")."u.email =".\NexusPHP\Components\Database::escape($email);
             } else {
                 $sql_email = str_replace(array('?','*'), array('_','%'), $email);
-                $email_is .= (isset($email_is)?" OR ":"")."u.email LIKE ".sqlesc($sql_email);
+                $email_is .= (isset($email_is)?" OR ":"")."u.email LIKE ".\NexusPHP\Components\Database::escape($sql_email);
             }
         }
         $where_is .= $email_is.")";
@@ -427,10 +427,10 @@ if (count($_GET) > 0 && !$_GET['h']) {
             $where_is .= isset($where_is)?" AND (":"(";
             foreach ($comments_inc as $comment) {
                 if (!haswildcard($comment)) {
-                    $comment_is .= (isset($comment_is)?" OR ":"")."u.modcomment LIKE ".sqlesc("%".$comment."%");
+                    $comment_is .= (isset($comment_is)?" OR ":"")."u.modcomment LIKE ".\NexusPHP\Components\Database::escape("%".$comment."%");
                 } else {
                     $comment = str_replace(array('?','*'), array('_','%'), $comment);
-                    $comment_is .= (isset($comment_is)?" OR ":"")."u.modcomment LIKE ".sqlesc($comment);
+                    $comment_is .= (isset($comment_is)?" OR ":"")."u.modcomment LIKE ".\NexusPHP\Components\Database::escape($comment);
                 }
             }
             $where_is .= $comment_is.")";
@@ -441,10 +441,10 @@ if (count($_GET) > 0 && !$_GET['h']) {
             $where_is .= isset($where_is)?" AND NOT (":" NOT (";
             foreach ($comments_exc as $comment) {
                 if (!haswildcard($comment)) {
-                    $comment_is .= (isset($comment_is)?" OR ":"")."u.modcomment LIKE ".sqlesc("%".$comment."%");
+                    $comment_is .= (isset($comment_is)?" OR ":"")."u.modcomment LIKE ".\NexusPHP\Components\Database::escape("%".$comment."%");
                 } else {
                     $comment = str_replace(array('?','*'), array('_','%'), $comment);
-                    $comment_is .= (isset($comment_is)?" OR ":"")."u.modcomment LIKE ".sqlesc($comment);
+                    $comment_is .= (isset($comment_is)?" OR ":"")."u.modcomment LIKE ".\NexusPHP\Components\Database::escape($comment);
                 }
             }
             $where_is .= $comment_is.")";
@@ -682,8 +682,8 @@ if (count($_GET) > 0 && !$_GET['h']) {
 
     $query = "SELECT ".$distinct." ".$select_is." ".$querypm;
 
-    $res = sql_query($queryc) or sqlerr();
-    $arr = mysql_fetch_row($res);
+    $res = \NexusPHP\Components\Database::query($queryc) or sqlerr();
+    $arr = mysqli_fetch_row($res);
     $count = $arr[0];
 
     $q = isset($q)?($q."&"):"";
@@ -694,9 +694,9 @@ if (count($_GET) > 0 && !$_GET['h']) {
 
     $query .= $limit;
 
-    $res = sql_query($query) or sqlerr();
+    $res = \NexusPHP\Components\Database::query($query) or sqlerr();
 
-    if (mysql_num_rows($res) == 0) {
+    if (mysqli_num_rows($res) == 0) {
         stdmsg("Warning", "No user was found.");
     } else {
         if ($count > $perpage) {
@@ -715,7 +715,7 @@ if (count($_GET) > 0 && !$_GET['h']) {
         "<td class=colhead>pUL</td>".
         "<td class=colhead>pDL</td>".
         "<td class=colhead>History</td></tr>";
-        while ($user = mysql_fetch_array($res)) {
+        while ($user = mysqli_fetch_array($res)) {
             if ($user['added'] == '0000-00-00 00:00:00') {
                 $user['added'] = '---';
             }
@@ -725,8 +725,8 @@ if (count($_GET) > 0 && !$_GET['h']) {
 
             if ($user['ip']) {
                 $nip = ip2long($user['ip']);
-                $auxres = sql_query("SELECT COUNT(*) FROM bans WHERE $nip >= first AND $nip <= last") or sqlerr(__FILE__, __LINE__);
-                $array = mysql_fetch_row($auxres);
+                $auxres = \NexusPHP\Components\Database::query("SELECT COUNT(*) FROM bans WHERE $nip >= first AND $nip <= last") or sqlerr(__FILE__, __LINE__);
+                $array = mysqli_fetch_row($auxres);
                 if ($array[0] == 0) {
                     $ipstr = $user['ip'];
                 } else {
@@ -736,23 +736,23 @@ if (count($_GET) > 0 && !$_GET['h']) {
                 $ipstr = "---";
             }
 
-            $auxres = sql_query("SELECT SUM(uploaded) AS pul, SUM(downloaded) AS pdl FROM peers WHERE userid = " . $user['id']) or sqlerr(__FILE__, __LINE__);
-            $array = mysql_fetch_array($auxres);
+            $auxres = \NexusPHP\Components\Database::query("SELECT SUM(uploaded) AS pul, SUM(downloaded) AS pdl FROM peers WHERE userid = " . $user['id']) or sqlerr(__FILE__, __LINE__);
+            $array = mysqli_fetch_array($auxres);
 
             $pul = $array['pul'];
             $pdl = $array['pdl'];
 
-            $auxres = sql_query("SELECT COUNT(DISTINCT p.id) FROM posts AS p LEFT JOIN topics as t ON p.topicid = t.id
+            $auxres = \NexusPHP\Components\Database::query("SELECT COUNT(DISTINCT p.id) FROM posts AS p LEFT JOIN topics as t ON p.topicid = t.id
       	LEFT JOIN forums AS f ON t.forumid = f.id WHERE p.userid = " . $user['id'] . " AND f.minclassread <= " .
           $CURUSER['class']) or sqlerr(__FILE__, __LINE__);
 
-            $n = mysql_fetch_row($auxres);
+            $n = mysqli_fetch_row($auxres);
             $n_posts = $n[0];
 
-            $auxres = sql_query("SELECT COUNT(id) FROM comments WHERE user = ".$user['id']) or sqlerr(__FILE__, __LINE__);
+            $auxres = \NexusPHP\Components\Database::query("SELECT COUNT(id) FROM comments WHERE user = ".$user['id']) or sqlerr(__FILE__, __LINE__);
             // Use LEFT JOIN to exclude orphan comments
-            // $auxres = sql_query("SELECT COUNT(c.id) FROM comments AS c LEFT JOIN torrents as t ON c.torrent = t.id WHERE c.user = '".$user['id']."'") or sqlerr(__FILE__, __LINE__);
-            $n = mysql_fetch_row($auxres);
+            // $auxres = \NexusPHP\Components\Database::query("SELECT COUNT(c.id) FROM comments AS c LEFT JOIN torrents as t ON c.torrent = t.id WHERE c.user = '".$user['id']."'") or sqlerr(__FILE__, __LINE__);
+            $n = mysqli_fetch_row($auxres);
             $n_comments = $n[0];
 
             echo "<tr><td>" .

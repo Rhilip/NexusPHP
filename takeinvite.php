@@ -41,24 +41,24 @@ if (!$body) {
 
 
 // check if email addy is already in use
-$a = (@mysql_fetch_row(@sql_query("select count(*) from users where email=".sqlesc($email)))) or die(mysql_error());
+$a = (@mysqli_fetch_row(@\NexusPHP\Components\Database::query("select count(*) from users where email=".\NexusPHP\Components\Database::escape($email)))) or die(\NexusPHP\Components\Database::error());
 if ($a[0] != 0) {
     bark($lang_takeinvite['std_email_address'].htmlspecialchars($email).$lang_takeinvite['std_is_in_use']);
 }
-$b = (@mysql_fetch_row(@sql_query("select count(*) from invites where invitee=".sqlesc($email)))) or die(mysql_error());
+$b = (@mysqli_fetch_row(@\NexusPHP\Components\Database::query("select count(*) from invites where invitee=".\NexusPHP\Components\Database::escape($email)))) or die(\NexusPHP\Components\Database::error());
 if ($b[0] != 0) {
     bark($lang_takeinvite['std_invitation_already_sent_to'].htmlspecialchars($email).$lang_takeinvite['std_await_user_registeration']);
 }
 
-$ret = sql_query("SELECT username FROM users WHERE id = ".sqlesc($id)) or sqlerr();
-$arr = mysql_fetch_assoc($ret);
+$ret = \NexusPHP\Components\Database::query("SELECT username FROM users WHERE id = ".\NexusPHP\Components\Database::escape($id)) or sqlerr();
+$arr = mysqli_fetch_assoc($ret);
 
 $hash  = md5(mt_rand(1, 10000).$CURUSER['username'].TIMENOW.$CURUSER['passhash']);
 
 $title = $SITENAME.$lang_takeinvite['mail_tilte'];
 
-sql_query("INSERT INTO invites (inviter, invitee, hash, time_invited) VALUES ('".mysql_real_escape_string($id)."', '".mysql_real_escape_string($email)."', '".mysql_real_escape_string($hash)."', " . sqlesc(date("Y-m-d H:i:s")) . ")");
-sql_query("UPDATE users SET invites = invites - 1 WHERE id = ".mysql_real_escape_string($id)."") or sqlerr(__FILE__, __LINE__);
+\NexusPHP\Components\Database::query("INSERT INTO invites (inviter, invitee, hash, time_invited) VALUES ('".\NexusPHP\Components\Database::real_escape_string($id)."', '".\NexusPHP\Components\Database::real_escape_string($email)."', '".\NexusPHP\Components\Database::real_escape_string($hash)."', " . \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s")) . ")");
+\NexusPHP\Components\Database::query("UPDATE users SET invites = invites - 1 WHERE id = ".\NexusPHP\Components\Database::real_escape_string($id)."") or sqlerr(__FILE__, __LINE__);
 
 $message = <<<EOD
 {$lang_takeinvite['mail_one']}{$arr[username]}{$lang_takeinvite['mail_two']}

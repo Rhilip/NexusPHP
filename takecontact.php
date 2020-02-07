@@ -21,8 +21,8 @@ if (!$subject) {
 
 $added = "'" . date("Y-m-d H:i:s") . "'";
 $userid = $CURUSER['id'];
-$message = sqlesc($msg);
-$subject = sqlesc($subject);
+$message = \NexusPHP\Components\Database::escape($msg);
+$subject = \NexusPHP\Components\Database::escape($subject);
 
 // Anti Flood Code
 // This code ensures that a member can only send one PM per minute.
@@ -32,9 +32,9 @@ if (get_user_class() < UC_MODERATOR) {
         stderr($lang_takecontact['std_error'], $lang_takecontact['std_message_flooding'].$secs.$lang_takecontact['std_second'].($secs == 1 ? '' : $lang_takecontact['std_s']).$lang_takecontact['std_before_sending_pm']);
     }
 }
-sql_query("INSERT INTO staffmessages (sender, added, msg, subject) VALUES($userid, $added, $message, $subject)") or sqlerr(__FILE__, __LINE__);
+\NexusPHP\Components\Database::query("INSERT INTO staffmessages (sender, added, msg, subject) VALUES($userid, $added, $message, $subject)") or sqlerr(__FILE__, __LINE__);
 // Update Last PM sent...
-sql_query("UPDATE users SET last_staffmsg = NOW() WHERE id = ".sqlesc($CURUSER['id'])) or sqlerr(__FILE__, __LINE__);
+\NexusPHP\Components\Database::query("UPDATE users SET last_staffmsg = NOW() WHERE id = ".\NexusPHP\Components\Database::escape($CURUSER['id'])) or sqlerr(__FILE__, __LINE__);
 $Cache->delete_value('staff_message_count');
 $Cache->delete_value('staff_new_message_count');
 if ($_POST["returnto"]) {

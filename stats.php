@@ -24,12 +24,12 @@ stdhead("Stats");
 <?php
 begin_main_frame();
 
-$res = sql_query("SELECT COUNT(*) FROM torrents") or sqlerr(__FILE__, __LINE__);
-$n = mysql_fetch_row($res);
+$res = \NexusPHP\Components\Database::query("SELECT COUNT(*) FROM torrents") or sqlerr(__FILE__, __LINE__);
+$n = mysqli_fetch_row($res);
 $n_tor = $n[0];
 
-$res = sql_query("SELECT COUNT(*) FROM peers") or sqlerr(__FILE__, __LINE__);
-$n = mysql_fetch_row($res);
+$res = \NexusPHP\Components\Database::query("SELECT COUNT(*) FROM peers") or sqlerr(__FILE__, __LINE__);
+$n = mysqli_fetch_row($res);
 $n_peers = $n[0];
 
 $uporder = $_GET['uporder'];
@@ -51,9 +51,9 @@ $query = "SELECT u.id, u.username AS name, MAX(t.added) AS last, COUNT(DISTINCT 
 	FROM users as u LEFT JOIN torrents as t ON u.id = t.owner LEFT JOIN peers as p ON t.id = p.torrent WHERE u.class > 3
 	GROUP BY u.id ORDER BY $orderby";
 
-$res = sql_query($query) or sqlerr(__FILE__, __LINE__);
+$res = \NexusPHP\Components\Database::query($query) or sqlerr(__FILE__, __LINE__);
 
-if (mysql_num_rows($res) == 0) {
+if (mysqli_num_rows($res) == 0) {
     stdmsg("Sorry...", "No uploaders.");
 } else {
     begin_frame("Uploader Activity", true);
@@ -66,7 +66,7 @@ if (mysql_num_rows($res) == 0) {
 	<td class=colhead><a href=\"" . $_SERVER['PHP_SELF'] . "?uporder=peers&catorder=$catorder\" class=colheadlink>Peers</a></td>\n
 	<td class=colhead>Perc.</td>\n
 	</tr>\n");
-    while ($uper = mysql_fetch_array($res)) {
+    while ($uper = mysqli_fetch_array($res)) {
         print("<tr><td>" . get_username($uper['id']) . "</td>\n");
         print("<td " . ($uper['last']?(">".$uper['last']." (".get_elapsed_time(strtotime($uper['last']))." ago)"):"align=center>---") . "</td>\n");
         print("<td align=right>" . $uper['n_t'] . "</td>\n");
@@ -91,7 +91,7 @@ if ($n_tor == 0) {
         $orderby = "c.name";
     }
 
-    $res = sql_query("SELECT c.name, MAX(t.added) AS last, COUNT(DISTINCT t.id) AS n_t, COUNT(p.id) AS n_p
+    $res = \NexusPHP\Components\Database::query("SELECT c.name, MAX(t.added) AS last, COUNT(DISTINCT t.id) AS n_t, COUNT(p.id) AS n_p
 	FROM categories as c LEFT JOIN torrents as t ON t.category = c.id LEFT JOIN peers as p
 	ON t.id = p.torrent GROUP BY c.id ORDER BY $orderby") or sqlerr(__FILE__, __LINE__);
 
@@ -103,7 +103,7 @@ if ($n_tor == 0) {
 	<td class=colhead>Perc.</td>
 	<td class=colhead><a href=\"" . $_SERVER['PHP_SELF'] . "?uporder=$uporder&catorder=peers\" class=colheadlink>Peers</a></td>
 	<td class=colhead>Perc.</td></tr>\n");
-    while ($cat = mysql_fetch_array($res)) {
+    while ($cat = mysqli_fetch_array($res)) {
         print("<tr><td class=rowhead>" . $cat['name'] . "</b></a></td>");
         print("<td " . ($cat['last']?(">".$cat['last']." (".get_elapsed_time(strtotime($cat['last']))." ago)"):"align = center>---") ."</td>");
         print("<td align=right>" . $cat['n_t'] . "</td>");

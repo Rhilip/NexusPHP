@@ -11,13 +11,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         die("error");
     } elseif ($type == 'firsttime') {
         if ($hidenotice) {
-            sql_query("UPDATE users SET showdlnotice=0 WHERE id=".sqlesc($CURUSER['id']));
+            \NexusPHP\Components\Database::query("UPDATE users SET showdlnotice=0 WHERE id=".\NexusPHP\Components\Database::escape($CURUSER['id']));
         }
         header("Location: " . get_protocol_prefix() . "$BASEURL/download.php?id=".$torrentid."&letdown=1");
         die;
     } elseif ($type == 'client') {
         if ($hidenotice) {
-            sql_query("UPDATE users SET showclienterror='no' WHERE id=".sqlesc($CURUSER['id']));
+            \NexusPHP\Components\Database::query("UPDATE users SET showclienterror='no' WHERE id=".\NexusPHP\Components\Database::escape($CURUSER['id']));
         }
         header("Location: " . get_protocol_prefix() . "$BASEURL/download.php?id=".$torrentid."&letdown=1");
         die;

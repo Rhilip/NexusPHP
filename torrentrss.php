@@ -9,8 +9,8 @@ $dllink = false;
 $passkey = $_GET['passkey'];
 $where = "";
 if ($passkey) {
-    $res = sql_query("SELECT id, enabled, parked FROM users WHERE passkey=". sqlesc($passkey)." LIMIT 1");
-    $user = mysql_fetch_array($res);
+    $res = \NexusPHP\Components\Database::query("SELECT id, enabled, parked FROM users WHERE passkey=". \NexusPHP\Components\Database::escape($passkey)." LIMIT 1");
+    $user = mysqli_fetch_array($res);
     if (!$user) {
         die("invalid passkey");
     } elseif ($user['enabled'] == 'no' || $user['parked'] == 'yes') {
@@ -27,7 +27,7 @@ if ($passkey) {
         }
     }
 }
-$searchstr = mysql_real_escape_string(trim($_GET["search"]));
+$searchstr = \NexusPHP\Components\Database::real_escape_string(trim($_GET["search"]));
 if (empty($searchstr)) {
     unset($searchstr);
 }
@@ -105,7 +105,7 @@ if ($where) {
 }
 $query = "SELECT torrents.id, torrents.category, torrents.name, torrents.small_descr, torrents.descr, torrents.info_hash, torrents.size, torrents.added, torrents.anonymous, users.username AS username, categories.id AS cat_id, categories.name AS cat_name FROM torrents LEFT JOIN categories ON category = categories.id LEFT JOIN users ON torrents.owner = users.id $where ORDER BY torrents.added DESC LIMIT $limit";
 
-$res = sql_query($query) or die(mysql_error());
+$res = \NexusPHP\Components\Database::query($query) or die(\NexusPHP\Components\Database::error());
 
 $url = get_protocol_prefix().$BASEURL;
 $year = substr($datefounded, 0, 4);
@@ -143,7 +143,7 @@ print('
         <atom:link href="'.$url.$_SERVER['REQUEST_URI'].'" rel="self" type="application/rss+xml" />');*/
 print('
 ');
-while ($row = mysql_fetch_array($res)) {
+while ($row = mysqli_fetch_array($res)) {
     $title = "";
     if ($row['anonymous'] == 'yes') {
         $author = 'anonymous';

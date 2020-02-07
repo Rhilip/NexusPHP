@@ -63,8 +63,8 @@ $monthselection.="</select>";
 </div>
 
 <?php
-$numres = sql_query("SELECT COUNT(users.id) FROM users WHERE class >= ".UC_UPLOADER) or sqlerr(__FILE__, __LINE__);
-$numrow = mysql_fetch_array($numres);
+$numres = \NexusPHP\Components\Database::query("SELECT COUNT(users.id) FROM users WHERE class >= ".UC_UPLOADER) or sqlerr(__FILE__, __LINE__);
+$numrow = mysqli_fetch_array($numres);
 $num=$numrow[0];
 if (!$num) {
     print("<p align=\"center\">".$lang_uploaders['text_no_uploaders_yet']."</p>");
@@ -79,11 +79,11 @@ if (!$num) {
     print("<td class=\"colhead\">".$lang_uploaders['col_last_upload_time']."</td>");
     print("<td class=\"colhead\">".$lang_uploaders['col_last_upload']."</td>");
     print("</tr>");
-    $res = sql_query("SELECT users.id AS userid, users.username AS username, COUNT(torrents.id) AS torrent_count, SUM(torrents.size) AS torrent_size FROM torrents LEFT JOIN users ON torrents.owner=users.id WHERE users.class >= ".UC_UPLOADER." AND torrents.added > ".sqlesc($sqlstarttime)." AND torrents.added < ".sqlesc($sqlendtime)." GROUP BY userid ORDER BY ".$order);
+    $res = \NexusPHP\Components\Database::query("SELECT users.id AS userid, users.username AS username, COUNT(torrents.id) AS torrent_count, SUM(torrents.size) AS torrent_size FROM torrents LEFT JOIN users ON torrents.owner=users.id WHERE users.class >= ".UC_UPLOADER." AND torrents.added > ".\NexusPHP\Components\Database::escape($sqlstarttime)." AND torrents.added < ".\NexusPHP\Components\Database::escape($sqlendtime)." GROUP BY userid ORDER BY ".$order);
     $hasupuserid=array();
-    while ($row = mysql_fetch_array($res)) {
-        $res2 = sql_query("SELECT torrents.id, torrents.name, torrents.added FROM torrents WHERE owner=".$row['userid']." ORDER BY id DESC LIMIT 1");
-        $row2 = mysql_fetch_array($res2);
+    while ($row = mysqli_fetch_array($res)) {
+        $res2 = \NexusPHP\Components\Database::query("SELECT torrents.id, torrents.name, torrents.added FROM torrents WHERE owner=".$row['userid']." ORDER BY id DESC LIMIT 1");
+        $row2 = mysqli_fetch_array($res2);
         print("<tr>");
         print("<td class=\"colfollow\">".get_username($row['userid'], false, true, true, false, false, true)."</td>");
         print("<td class=\"colfollow\">".($row['torrent_size'] ? mksize($row['torrent_size']) : "0")."</td>");
@@ -94,10 +94,10 @@ if (!$num) {
         $hasupuserid[]=$row['userid'];
         unset($row2);
     }
-    $res3=sql_query("SELECT users.id AS userid, users.username AS username, 0 AS torrent_count, 0 AS torrent_size FROM users WHERE class >= ".UC_UPLOADER.(count($hasupuserid) ? " AND users.id NOT IN (".implode(",", $hasupuserid).")" : "")." ORDER BY username ASC") or sqlerr(__FILE__, __LINE__);
-    while ($row = mysql_fetch_array($res3)) {
-        $res2 = sql_query("SELECT torrents.id, torrents.name, torrents.added FROM torrents WHERE owner=".$row['userid']." ORDER BY id DESC LIMIT 1");
-        $row2 = mysql_fetch_array($res2);
+    $res3=\NexusPHP\Components\Database::query("SELECT users.id AS userid, users.username AS username, 0 AS torrent_count, 0 AS torrent_size FROM users WHERE class >= ".UC_UPLOADER.(count($hasupuserid) ? " AND users.id NOT IN (".implode(",", $hasupuserid).")" : "")." ORDER BY username ASC") or sqlerr(__FILE__, __LINE__);
+    while ($row = mysqli_fetch_array($res3)) {
+        $res2 = \NexusPHP\Components\Database::query("SELECT torrents.id, torrents.name, torrents.added FROM torrents WHERE owner=".$row['userid']." ORDER BY id DESC LIMIT 1");
+        $row2 = mysqli_fetch_array($res2);
         print("<tr>");
         print("<td class=\"colfollow\">".get_username($row['userid'], false, true, true, false, false, true)."</td>");
         print("<td class=\"colfollow\">".($row['torrent_size'] ? mksize($row['torrent_size']) : "0")."</td>");

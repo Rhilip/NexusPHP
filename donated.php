@@ -9,12 +9,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($_POST["username"] == "" || $_POST["donated"] == "") {
         stderr("Error", "Missing form data.");
     }
-    $username = sqlesc($_POST["username"]);
-    $donated = sqlesc($_POST["donated"]);
+    $username = \NexusPHP\Components\Database::escape($_POST["username"]);
+    $donated = \NexusPHP\Components\Database::escape($_POST["donated"]);
 
-    sql_query("UPDATE users SET donated=$donated WHERE username=$username") or sqlerr(__FILE__, __LINE__);
-    $res = sql_query("SELECT id FROM users WHERE username=$username");
-    $arr = mysql_fetch_row($res);
+    \NexusPHP\Components\Database::query("UPDATE users SET donated=$donated WHERE username=$username") or sqlerr(__FILE__, __LINE__);
+    $res = \NexusPHP\Components\Database::query("SELECT id FROM users WHERE username=$username");
+    $arr = mysqli_fetch_row($res);
     if (!$arr) {
         stderr("Error", "Unable to update account.");
     }

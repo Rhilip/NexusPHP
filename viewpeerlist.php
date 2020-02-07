@@ -35,7 +35,7 @@ if (isset($CURUSER)) {
     "<td class=colhead align=center width=1%>".$lang_viewpeerlist['col_client']."</td></tr>\n";
         $now = time();
         foreach ($arr as $e) {
-            $privacy = get_single_value("users", "privacy", "WHERE id=".sqlesc($e['userid']));
+            $privacy = \NexusPHP\Components\Database::single("users", "privacy", "WHERE id=".\NexusPHP\Components\Database::escape($e['userid']));
             ++$num;
 
             $highlight = $CURUSER["id"] == $e['userid'] ? " bgcolor=#BBAF9B" : "";
@@ -93,8 +93,8 @@ if (isset($CURUSER)) {
 
     $downloaders = array();
     $seeders = array();
-    $subres = sql_query("SELECT seeder, finishedat, downloadoffset, uploadoffset, ip, port, uploaded, downloaded, to_go, UNIX_TIMESTAMP(started) AS st, connectable, agent, peer_id, UNIX_TIMESTAMP(last_action) AS la, userid FROM peers WHERE torrent = $id") or sqlerr();
-    while ($subrow = mysql_fetch_array($subres)) {
+    $subres = \NexusPHP\Components\Database::query("SELECT seeder, finishedat, downloadoffset, uploadoffset, ip, port, uploaded, downloaded, to_go, UNIX_TIMESTAMP(started) AS st, connectable, agent, peer_id, UNIX_TIMESTAMP(last_action) AS la, userid FROM peers WHERE torrent = $id") or sqlerr();
+    while ($subrow = mysqli_fetch_array($subres)) {
         if ($subrow["seeder"] == "yes") {
             $seeders[] = $subrow;
         } else {
@@ -126,8 +126,8 @@ if (isset($CURUSER)) {
         }
         return -1;
     }
-    $res = sql_query("SELECT torrents.id, torrents.owner, torrents.size, torrents.anonymous FROM torrents WHERE torrents.id = $id LIMIT 1") or sqlerr();
-    $row = mysql_fetch_array($res);
+    $res = \NexusPHP\Components\Database::query("SELECT torrents.id, torrents.owner, torrents.size, torrents.anonymous FROM torrents WHERE torrents.id = $id LIMIT 1") or sqlerr();
+    $row = mysqli_fetch_array($res);
     usort($seeders, "seed_sort");
     usort($downloaders, "leech_sort");
 

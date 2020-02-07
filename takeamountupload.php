@@ -11,7 +11,7 @@ if (get_user_class() < UC_SYSOP) {
 }
 
 $sender_id = ($_POST['sender'] == 'system' ? 0 : (int)$CURUSER['id']);
-$dt = sqlesc(date("Y-m-d H:i:s"));
+$dt = \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s"));
 $msg = trim($_POST['msg']);
 $amount = $_POST['amount'];
 if (!$msg || !$amount) {
@@ -33,13 +33,13 @@ if (is_array($updateset)) {
     }
 }
 $subject = trim($_POST['subject']);
-$query = sql_query("SELECT id FROM users WHERE class IN (".implode(",", $updateset).")");
+$query = \NexusPHP\Components\Database::query("SELECT id FROM users WHERE class IN (".implode(",", $updateset).")");
 
-$amount = sqlesc(getsize_int($amount, "G"));
-sql_query("UPDATE users SET uploaded=uploaded + $amount WHERE class IN (".implode(",", $updateset).")") or sqlerr(__FILE__, __LINE__);
+$amount = \NexusPHP\Components\Database::escape(getsize_int($amount, "G"));
+\NexusPHP\Components\Database::query("UPDATE users SET uploaded=uploaded + $amount WHERE class IN (".implode(",", $updateset).")") or sqlerr(__FILE__, __LINE__);
 
-while ($dat=mysql_fetch_assoc($query)) {
-    sql_query("INSERT INTO messages (sender, receiver, added,  subject, msg) VALUES ($sender_id, $dat[id], $dt, " . sqlesc($subject) .", " . sqlesc($msg) .")") or sqlerr(__FILE__, __LINE__);
+while ($dat=mysqli_fetch_assoc($query)) {
+    \NexusPHP\Components\Database::query("INSERT INTO messages (sender, receiver, added,  subject, msg) VALUES ($sender_id, $dat[id], $dt, " . \NexusPHP\Components\Database::escape($subject) .", " . \NexusPHP\Components\Database::escape($msg) .")") or sqlerr(__FILE__, __LINE__);
 }
 
 header("Refresh: 0; url=amountupload.php?sent=1");

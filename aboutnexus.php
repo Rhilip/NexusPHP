@@ -24,8 +24,8 @@ print($lang_aboutnexus['text_authorization_note']);
 print("<br /><br />");
 end_frame();
 unset($ppl);
-$res = sql_query("SELECT * FROM language ORDER BY trans_state") or sqlerr();
-while ($arr = mysql_fetch_assoc($res)) {
+$res = \NexusPHP\Components\Database::query("SELECT * FROM language ORDER BY trans_state") or sqlerr();
+while ($arr = mysqli_fetch_assoc($res)) {
     $ppl .= "<tr><td class=\"rowfollow\"><img width=\"24\" height=\"15\" src=\"pic/flag/".$arr[flagpic]."\" alt=\"".$arr[lang_name]."\" title=\"".$arr[lang_name]."\" style=\"padding-bottom:1px;\" /></td>
  <td class=\"rowfollow\">".$arr['lang_name']."</td>".
  "<td class=\"rowfollow\">".$arr['trans_state']."</td></tr>\n";
@@ -38,8 +38,8 @@ print("</table>");
 print("<br /><br />");
 end_frame();
 unset($ppl);
-$res = sql_query("SELECT * FROM stylesheets ORDER BY id") or sqlerr();
-while ($arr = mysql_fetch_assoc($res)) {
+$res = \NexusPHP\Components\Database::query("SELECT * FROM stylesheets ORDER BY id") or sqlerr();
+while ($arr = mysqli_fetch_assoc($res)) {
     $ppl .= "<tr><td class=\"rowfollow\">".$arr['name']."</td>
  <td class=\"rowfollow\">".$arr['designer']."</td>".
  "<td class=\"rowfollow\">".$arr['comment']."</td></tr>\n";

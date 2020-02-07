@@ -1,6 +1,8 @@
 {
   "require": {
+    "php" : ">7.0",
     "ext-redis": "*",
+    "ext-mysqli": "*",
     "rhilip/bencode": "^1.0"
   },
   "autoload": {

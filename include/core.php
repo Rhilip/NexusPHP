@@ -7,8 +7,7 @@ ini_set('display_errors', 0);
 
 include_once($rootpath . 'vendor/autoload.php');
 
-include_once($rootpath . 'classes/class_cache.php'); //Require the caching class
-$Cache = new CACHE(); //Load the caching class
+$Cache = new \NexusPHP\Components\Cache(); //Load the caching class
 $Cache->setLanguageFolderArray(get_langfolder_list());
 define('TIMENOW', time());
 $USERUPDATESET = array();

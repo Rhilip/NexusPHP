@@ -3,9 +3,8 @@ require_once("include/bittorrent.php");
 dbconn();
 require_once(get_langfile_path());
 loggedinorreturn();
-include_once($rootpath . 'classes/class_attachment.php');
 
-$Attach = new ATTACHMENT($CURUSER['id']);
+$Attach = new \NexusPHP\Attachment($CURUSER['id']);
 $count_limit = $Attach->get_count_limit();
 $count_limit = (int)$count_limit;
 $count_left = $Attach->get_count_left();

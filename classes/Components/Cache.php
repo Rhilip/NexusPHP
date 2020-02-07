@@ -1,7 +1,9 @@
 <?php
 //Caching class (Based on file From ProjectGazelle)
 
-class CACHE extends Memcache
+namespace NexusPHP\Components;
+
+class Cache extends Memcache
 {
     public $isEnabled;
     public $clearCache = 0;

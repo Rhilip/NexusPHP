@@ -1,5 +1,7 @@
 <?php
-class ATTACHMENT
+namespace NexusPHP;
+
+class Attachment
 {
     public $userid;
     public $class;

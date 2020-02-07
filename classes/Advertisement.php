@@ -1,5 +1,8 @@
 <?php
-class ADVERTISEMENT
+
+namespace NexusPHP;
+
+class Advertisement
 {
     public $userid;
     public $showad;

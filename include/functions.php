@@ -5,7 +5,6 @@ if (!defined('IN_TRACKER')) {
 }
 include_once($rootpath . 'include/globalfunctions.php');
 include_once($rootpath . 'include/config.php');
-include_once($rootpath . 'classes/class_advertisement.php');
 require_once($rootpath . get_langfile_path("functions.php"));
 
 function get_langfolder_cookie()
@@ -2272,7 +2271,7 @@ function stdhead($title = "", $msgalert = true, $script = "", $place = "")
 
     $Cache->setLanguage($CURLANGDIR);
     
-    $Advertisement = new ADVERTISEMENT($CURUSER['id']);
+    $Advertisement = new NexusPHP\Advertisement($CURUSER['id']);
     $cssupdatedate = $cssdate_tweak;
     // Variable for Start Time
     $tstart = getmicrotime(); // Start time

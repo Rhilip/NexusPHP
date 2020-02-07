@@ -1,22 +1,21 @@
 <?php
 require "include/bittorrent.php";
 dbconn();
-function data_url($file, $mime) 
-{  
-  $contents = file_get_contents($file);
-  $base64   = base64_encode($contents); 
-  return ('data:' . $mime . ';base64,' . $base64);
+function data_url($file, $mime)
+{
+    $contents = file_get_contents($file);
+    $base64   = base64_encode($contents);
+    return ('data:' . $mime . ';base64,' . $base64);
 }
 $url = get_protocol_prefix().$BASEURL;
 $year = substr($datefounded, 0, 4);
 $yearfounded = ($year ? $year : 2007);
 $attribution = "Copyright (c) ".$SITENAME." ".(date("Y") != $yearfounded ? $yearfounded."-" : "").date("Y").", all rights reserved";
-header ("Content-type: text/xml");
+header("Content-type: text/xml");
 $Cache->new_page('opensearch_description', 86400);
-if (!$Cache->get_page()){
-	$Cache->add_whole_row();
-	print("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
-?>
+if (!$Cache->get_page()) {
+    $Cache->add_whole_row();
+    print("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"); ?>
 <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/"
 	xmlns:moz="http://www.mozilla.org/2006/browser/search/">
 	<ShortName><?php echo $SITENAME?> Torrents</ShortName>
@@ -50,8 +49,8 @@ if (!$Cache->get_page()){
 	<OutputEncoding>UTF-8</OutputEncoding>
 </OpenSearchDescription>
 <?php
-	$Cache->end_whole_row();
-	$Cache->cache_page();
+    $Cache->end_whole_row();
+    $Cache->cache_page();
 }
 echo $Cache->next_row();
 ?>

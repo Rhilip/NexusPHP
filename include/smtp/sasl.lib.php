@@ -6,7 +6,7 @@
 * @author Fredrik Haugbergsmyr <smtp.lib@lagnut.net>
 */
 $rootpath = './';
-require_once ($rootpath . 'include/smtp/net.const.php');
+require_once($rootpath . 'include/smtp/net.const.php');
 
 /**
 * @version 0.0.1
@@ -15,44 +15,40 @@ require_once ($rootpath . 'include/smtp/net.const.php');
 */
 class sasl
 {
+    public function _hmac_md5($key, $data)
+    {
+        if (strlen($key) > 64) {
+            $key = pack('H32', md5($key));
+        }
 
+        if (strlen($key) < 64) {
+            $key = str_pad($key, 64, chr(0));
+        }
 
-	function _hmac_md5($key, $data)
-	{
-		if (strlen($key) > 64) {
-			$key = pack('H32', md5($key));
-        	}
+        $k_ipad = substr($key, 0, 64) ^ str_repeat(chr(0x36), 64);
+        $k_opad = substr($key, 0, 64) ^ str_repeat(chr(0x5C), 64);
 
-		if (strlen($key) < 64) {
-			$key = str_pad($key, 64, chr(0));
-		}
+        $inner = pack('H32', md5($k_ipad . $data));
+        $digest = md5($k_opad . $inner);
 
-		$k_ipad = substr($key, 0, 64) ^ str_repeat(chr(0x36), 64);
-		$k_opad = substr($key, 0, 64) ^ str_repeat(chr(0x5C), 64);
+        return $digest;
+    }
 
-		$inner = pack('H32', md5($k_ipad . $data));
-		$digest = md5($k_opad . $inner);
+    public function cram_md5($user, $pass, $challenge)
+    {
+        var_dump($challenge);
+        $chall = base64_decode($challenge);
+        var_dump($chall);
+        return base64_encode(sprintf('%s %s', $user, $this->_hmac_md5($pass, $chall)));
+    }
 
-		return $digest;
-	}
+    public function plain($username, $password)
+    {
+        return base64_encode(sprintf('%c%s%c%s', 0, $username, 0, $password));
+    }
 
-	function cram_md5($user, $pass, $challenge)
-	{
-		var_dump($challenge);
-		$chall = base64_decode($challenge);
-		var_dump($chall);
-		return base64_encode(sprintf('%s %s', $user, $this->_hmac_md5($pass, $chall)));
-	}
-
-	function plain($username, $password)
-	{
-		return base64_encode(sprintf('%c%s%c%s', 0, $username, 0, $password));
-	}
-
-	function login($input)
-	{
-		return base64_encode(sprintf('%s', $input));
-	}
+    public function login($input)
+    {
+        return base64_encode(sprintf('%s', $input));
+    }
 }
-
-?>

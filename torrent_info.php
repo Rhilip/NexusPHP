@@ -41,23 +41,24 @@ dbconn();
 
 loggedinorreturn();
 
-if (get_user_class() < $torrentstructure_class)
-{
-	permissiondenied();
+if (get_user_class() < $torrentstructure_class) {
+    permissiondenied();
 }
 
 $id = (int)$_GET["id"];
 
-if (!$id)
-	httperr();
+if (!$id) {
+    httperr();
+}
 
 $res = sql_query("SELECT name FROM torrents WHERE id = ".sqlesc($id)) or sqlerr(__FILE__, __LINE__);
 $row = mysql_fetch_assoc($res);
 
 $fn = "$torrent_dir/$id.torrent";
 
-if (!$row || !is_file($fn) || !is_readable($fn))
-	httperr();
+if (!$row || !is_file($fn) || !is_readable($fn)) {
+    httperr();
+}
 
 // Standard html headers
 stdhead("Torrent Info");

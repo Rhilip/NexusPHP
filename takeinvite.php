@@ -3,47 +3,57 @@ require_once("include/bittorrent.php");
 dbconn();
 require_once(get_langfile_path());
 registration_check('invitesystem', true, false);
-if (get_user_class() < $sendinvite_class)
-stderr($lang_takeinvite['std_error'],$lang_takeinvite['std_invite_denied']);
-if ($CURUSER['invites'] < 1)
-	stderr($lang_takeinvite['std_error'],$lang_takeinvite['std_no_invite']);
-function bark($msg) {
-  stdhead();
-	stdmsg($lang_takeinvite['head_invitation_failed'], $msg);
-  stdfoot();
-  exit;
+if (get_user_class() < $sendinvite_class) {
+    stderr($lang_takeinvite['std_error'], $lang_takeinvite['std_invite_denied']);
+}
+if ($CURUSER['invites'] < 1) {
+    stderr($lang_takeinvite['std_error'], $lang_takeinvite['std_no_invite']);
+}
+function bark($msg)
+{
+    stdhead();
+    stdmsg($lang_takeinvite['head_invitation_failed'], $msg);
+    stdfoot();
+    exit;
 }
 
 $id = $CURUSER[id];
 $email = unesc(htmlspecialchars(trim($_POST["email"])));
 $email = safe_email($email);
-if (!$email)
+if (!$email) {
     bark($lang_takeinvite['std_must_enter_email']);
-if (!check_email($email))
-	bark($lang_takeinvite['std_invalid_email_address']);
-if(EmailBanned($email))
+}
+if (!check_email($email)) {
+    bark($lang_takeinvite['std_invalid_email_address']);
+}
+if (EmailBanned($email)) {
     bark($lang_takeinvite['std_email_address_banned']);
+}
 
-if(!EmailAllowed($email))
+if (!EmailAllowed($email)) {
     bark($lang_takeinvite['std_wrong_email_address_domains'].allowedemails());
+}
 
 $body = str_replace("<br />", "<br />", nl2br(trim(strip_tags($_POST["body"]))));
-if(!$body)
-	bark($lang_takeinvite['std_must_enter_personal_message']);
+if (!$body) {
+    bark($lang_takeinvite['std_must_enter_personal_message']);
+}
 
 
 // check if email addy is already in use
 $a = (@mysql_fetch_row(@sql_query("select count(*) from users where email=".sqlesc($email)))) or die(mysql_error());
-if ($a[0] != 0)
-  bark($lang_takeinvite['std_email_address'].htmlspecialchars($email).$lang_takeinvite['std_is_in_use']);
+if ($a[0] != 0) {
+    bark($lang_takeinvite['std_email_address'].htmlspecialchars($email).$lang_takeinvite['std_is_in_use']);
+}
 $b = (@mysql_fetch_row(@sql_query("select count(*) from invites where invitee=".sqlesc($email)))) or die(mysql_error());
-if ($b[0] != 0)
-  bark($lang_takeinvite['std_invitation_already_sent_to'].htmlspecialchars($email).$lang_takeinvite['std_await_user_registeration']);
+if ($b[0] != 0) {
+    bark($lang_takeinvite['std_invitation_already_sent_to'].htmlspecialchars($email).$lang_takeinvite['std_await_user_registeration']);
+}
 
 $ret = sql_query("SELECT username FROM users WHERE id = ".sqlesc($id)) or sqlerr();
-$arr = mysql_fetch_assoc($ret); 
+$arr = mysql_fetch_assoc($ret);
 
-$hash  = md5(mt_rand(1,10000).$CURUSER['username'].TIMENOW.$CURUSER['passhash']);
+$hash  = md5(mt_rand(1, 10000).$CURUSER['username'].TIMENOW.$CURUSER['passhash']);
 
 $title = $SITENAME.$lang_takeinvite['mail_tilte'];
 
@@ -59,7 +69,7 @@ $body
 <br /><br />{$lang_takeinvite['mail_six']}
 EOD;
 
-sent_mail($email,$SITENAME,$SITEEMAIL,change_email_encode(get_langfolder_cookie(), $title),change_email_encode(get_langfolder_cookie(),$message),"invitesignup",false,false,'',get_email_encode(get_langfolder_cookie()));
+sent_mail($email, $SITENAME, $SITEEMAIL, change_email_encode(get_langfolder_cookie(), $title), change_email_encode(get_langfolder_cookie(), $message), "invitesignup", false, false, '', get_email_encode(get_langfolder_cookie()));
 //this email is sent only when someone give out an invitation
 
 header("Refresh: 0; url=invite.php?id=".htmlspecialchars($id)."&sent=1");

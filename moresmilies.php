@@ -25,15 +25,17 @@ function SmileIT(smile,form,text){
 <table class="lista" width="100%" cellpadding="1" cellspacing="1">
 <?php
 $count = 0;
-for($i=1; $i<192; $i++) {
-  if ($count % 3==0)
-     print("\n<tr>");
+for ($i=1; $i<192; $i++) {
+    if ($count % 3==0) {
+        print("\n<tr>");
+    }
 
-     print("\n\t<td class=\"lista\" align=\"center\"><a href=\"javascript: SmileIT('[em$i]','".$_GET["form"]."','".$_GET["text"]."')\"><img src=\"pic/smilies/$i.gif\" alt=\"\" ></a></td>");
-     $count++;
+    print("\n\t<td class=\"lista\" align=\"center\"><a href=\"javascript: SmileIT('[em$i]','".$_GET["form"]."','".$_GET["text"]."')\"><img src=\"pic/smilies/$i.gif\" alt=\"\" ></a></td>");
+    $count++;
 
-  if ($count % 3==0)
-     print("\n</tr>");
+    if ($count % 3==0) {
+        print("\n</tr>");
+    }
 }
 
 ?>

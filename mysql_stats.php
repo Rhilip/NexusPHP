@@ -9,8 +9,9 @@ loggedinorreturn();
 /**
  * Checks if the user is allowed to do what he tries to...
  */
-if (get_user_class() < UC_SYSOP)
-	stderr("Error", "Permission denied.");
+if (get_user_class() < UC_SYSOP) {
+    stderr("Error", "Permission denied.");
+}
 
 $GLOBALS["byteUnits"] = array('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB');
 
@@ -42,9 +43,9 @@ $timespanfmt = '%s days, %s hours, %s minutes and %s seconds';
         $return_value = $value;
         $unit         = $GLOBALS['byteUnits'][0];
 
-        for ( $d = 6, $ex = 15; $d >= 1; $d--, $ex-=3 ) {
+        for ($d = 6, $ex = 15; $d >= 1; $d--, $ex-=3) {
             if (isset($GLOBALS['byteUnits'][$d]) && $value >= $li * pow(10, $ex)) {
-                $value = round($value / ( pow(1024, $d) / $dh) ) /$dh;
+                $value = round($value / (pow(1024, $d) / $dh)) /$dh;
                 $unit = $GLOBALS['byteUnits'][$d];
                 break 1;
             } // end if
@@ -131,10 +132,10 @@ echo '<h1 align=center>' . "\n"
 /**
  * Sends the query and buffers the result
  */
-$res = @sql_query('SHOW STATUS') or Die(mysql_error());
-	while ($row = mysql_fetch_row($res)) {
-		$serverStatus[$row[0]] = $row[1];
-	}
+$res = @sql_query('SHOW STATUS') or die(mysql_error());
+    while ($row = mysql_fetch_row($res)) {
+        $serverStatus[$row[0]] = $row[1];
+    }
 @mysql_free_result($res);
 unset($res);
 unset($row);
@@ -164,12 +165,12 @@ unset($row);
 //Get query statistics
 $queryStats = array();
 $tmp_array = $serverStatus;
-	foreach($tmp_array AS $name => $value) {
-		if (substr($name, 0, 4) == 'Com_') {
-			$queryStats[str_replace('_', ' ', substr($name, 4))] = $value;
-			unset($serverStatus[$name]);
-		}
-	}
+    foreach ($tmp_array as $name => $value) {
+        if (substr($name, 0, 4) == 'Com_') {
+            $queryStats[str_replace('_', ' ', substr($name, 4))] = $value;
+            unset($serverStatus[$name]);
+        }
+    }
 unset($tmp_array);
 ?>
 
@@ -213,13 +214,13 @@ unset($tmp_array);
                             <td bgcolor="#EFF3FF">&nbsp;Failed Attempts&nbsp;</td>
                             <td bgcolor="#EFF3FF" align="right">&nbsp;<?php echo number_format($serverStatus['Aborted_connects'], 0, '.', ','); ?>&nbsp;</td>
                             <td bgcolor="#EFF3FF" align="right">&nbsp;<?php echo number_format(($serverStatus['Aborted_connects'] * 3600 / $serverStatus['Uptime']), 2, '.', ','); ?>&nbsp;</td>
-                            <td bgcolor="#EFF3FF" align="right">&nbsp;<?php echo ($serverStatus['Connections'] > 0 ) ? number_format(($serverStatus['Aborted_connects'] * 100 / $serverStatus['Connections']), 2, '.', ',') . '&nbsp;%' : '---'; ?>&nbsp;</td>
+                            <td bgcolor="#EFF3FF" align="right">&nbsp;<?php echo ($serverStatus['Connections'] > 0) ? number_format(($serverStatus['Aborted_connects'] * 100 / $serverStatus['Connections']), 2, '.', ',') . '&nbsp;%' : '---'; ?>&nbsp;</td>
                         </tr>
                         <tr>
                             <td bgcolor="#EFF3FF">&nbsp;Aborted Clients&nbsp;</td>
                             <td bgcolor="#EFF3FF" align="right">&nbsp;<?php echo number_format($serverStatus['Aborted_clients'], 0, '.', ','); ?>&nbsp;</td>
                             <td bgcolor="#EFF3FF" align="right">&nbsp;<?php echo number_format(($serverStatus['Aborted_clients'] * 3600 / $serverStatus['Uptime']), 2, '.', ','); ?>&nbsp;</td>
-                            <td bgcolor="#EFF3FF" align="right">&nbsp;<?php echo ($serverStatus['Connections'] > 0 ) ? number_format(($serverStatus['Aborted_clients'] * 100 / $serverStatus['Connections']), 2 , '.', ',') . '&nbsp;%' : '---'; ?>&nbsp;</td>
+                            <td bgcolor="#EFF3FF" align="right">&nbsp;<?php echo ($serverStatus['Connections'] > 0) ? number_format(($serverStatus['Aborted_clients'] * 100 / $serverStatus['Connections']), 2, '.', ',') . '&nbsp;%' : '---'; ?>&nbsp;</td>
                         </tr>
                         <tr>
                             <td bgcolor="lightgrey">&nbsp;Total&nbsp;</td>
@@ -265,14 +266,13 @@ unset($tmp_array);
                         </tr>
 <?php
 
-$useBgcolorOne = TRUE;
+$useBgcolorOne = true;
 $countRows = 0;
 foreach ($queryStats as $name => $value) {
 
 // For the percentage column, use Questions - Connections, because
-// the number of connections is not an item of the Query types
-// but is included in Questions. Then the total of the percentages is 100.
-?>
+    // the number of connections is not an item of the Query types
+    // but is included in Questions. Then the total of the percentages is 100. ?>
                         <tr>
                             <td bgcolor="#EFF3FF">&nbsp;<?php echo htmlspecialchars($name); ?>&nbsp;</td>
                             <td bgcolor="#EFF3FF" align="right">&nbsp;<?php echo number_format($value, 0, '.', ','); ?>&nbsp;</td>
@@ -282,8 +282,7 @@ foreach ($queryStats as $name => $value) {
 <?php
     $useBgcolorOne = !$useBgcolorOne;
     if (++$countRows == ceil(count($queryStats) / 2)) {
-        $useBgcolorOne = TRUE;
-?>
+        $useBgcolorOne = true; ?>
                     </table>
                 </td>
                 <td valign="top">
@@ -315,7 +314,7 @@ unset($serverStatus['Questions']);
 unset($serverStatus['Uptime']);
 
 if (!empty($serverStatus)) {
-?>
+    ?>
     <br />
     <li>
         <b>More status variables</b><br />
@@ -328,10 +327,10 @@ if (!empty($serverStatus)) {
                             <th bgcolor="lightgrey">&nbsp;Value&nbsp;</th>
                         </tr>
 <?php
-    $useBgcolorOne = TRUE;
+    $useBgcolorOne = true;
     $countRows = 0;
-    foreach($serverStatus AS $name => $value) {
-?>
+    foreach ($serverStatus as $name => $value) {
+        ?>
                         <tr>
                             <td bgcolor="#EFF3FF">&nbsp;<?php echo htmlspecialchars(str_replace('_', ' ', $name)); ?>&nbsp;</td>
                             <td bgcolor="#EFF3FF" align="right">&nbsp;<?php echo htmlspecialchars($value); ?>&nbsp;</td>
@@ -339,8 +338,7 @@ if (!empty($serverStatus)) {
 <?php
         $useBgcolorOne = !$useBgcolorOne;
         if (++$countRows == ceil(count($serverStatus) / 3) || $countRows == ceil(count($serverStatus) * 2 / 3)) {
-            $useBgcolorOne = TRUE;
-?>
+            $useBgcolorOne = true; ?>
                     </table>
                 </td>
                 <td valign="top">
@@ -352,8 +350,7 @@ if (!empty($serverStatus)) {
 <?php
         }
     }
-    unset($useBgcolorOne);
-?>
+    unset($useBgcolorOne); ?>
                     </table>
                 </td>
             </tr>

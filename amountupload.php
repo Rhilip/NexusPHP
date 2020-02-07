@@ -2,8 +2,9 @@
 require "include/bittorrent.php";
 dbconn();
 loggedinorreturn();
-if (get_user_class() < UC_SYSOP)
-stderr("Sorry", "Access denied.");
+if (get_user_class() < UC_SYSOP) {
+    stderr("Sorry", "Access denied.");
+}
 stdhead("Add Upload", false);
 ?>
 <table class=main width=737 border=0 cellspacing=0 cellpadding=0><tr><td class=embedded>
@@ -12,9 +13,8 @@ stdhead("Add Upload", false);
 <form method=post action=takeamountupload.php>
 <?php
 
-if ($_GET["returnto"] || $_SERVER["HTTP_REFERER"])
-{
-?>
+if ($_GET["returnto"] || $_SERVER["HTTP_REFERER"]) {
+    ?>
 <input type=hidden name=returnto value="<?php echo htmlspecialchars($_GET["returnto"]) ? htmlspecialchars($_GET["returnto"]) : htmlspecialchars($_SERVER["HTTP_REFERER"])?>">
 <?php
 }
@@ -22,7 +22,7 @@ if ($_GET["returnto"] || $_SERVER["HTTP_REFERER"])
 <table cellspacing=0 cellpadding=5>
 <?php
 if ($_GET["sent"] == 1) {
-?>
+    ?>
 <tr><td colspan=2 class="text" align="center"><font color=red><b>Upload amount has been added and inform message has been sent.</font></b></tr></td>
 <?php
 }

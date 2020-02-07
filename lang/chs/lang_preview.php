@@ -1,8 +1,5 @@
 <?php
 
-$lang_preview = array
-(
-	'text_preview' => "预览"
+$lang_preview = array(
+    'text_preview' => "预览"
 );
-
-?>

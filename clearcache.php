@@ -2,26 +2,29 @@
 require "include/bittorrent.php";
 dbconn();
 loggedinorreturn();
-if (get_user_class() < UC_MODERATOR)
-stderr("Error", "Permission denied.");
+if (get_user_class() < UC_MODERATOR) {
+    stderr("Error", "Permission denied.");
+}
 $done = false;
-if ($_SERVER["REQUEST_METHOD"] == "POST")
-{
-$cachename = $_POST["cachename"];
-if ($cachename == "")
-stderr("Error", "You must fill in cache name.");
-if ($_POST['multilang'] == 'yes')
-$Cache->delete_value($cachename, true);
-else 
-$Cache->delete_value($cachename);
-$done = true;
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $cachename = $_POST["cachename"];
+    if ($cachename == "") {
+        stderr("Error", "You must fill in cache name.");
+    }
+    if ($_POST['multilang'] == 'yes') {
+        $Cache->delete_value($cachename, true);
+    } else {
+        $Cache->delete_value($cachename);
+    }
+    $done = true;
 }
 stdhead("Clear cache");
 ?>
 <h1>Clear cache</h1>
 <?php
-if ($done)
-print ("<p align=center><font class=striking>Cache cleared</font></p>");
+if ($done) {
+    print("<p align=center><font class=striking>Cache cleared</font></p>");
+}
 ?>
 <form method=post action=clearcache.php>
 <table border=1 cellspacing=0 cellpadding=5>

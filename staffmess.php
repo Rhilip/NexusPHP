@@ -2,8 +2,9 @@
 require "include/bittorrent.php";
 dbconn();
 loggedinorreturn();
-if (get_user_class() < UC_ADMINISTRATOR)
-stderr("Sorry", "Access denied.");
+if (get_user_class() < UC_ADMINISTRATOR) {
+    stderr("Sorry", "Access denied.");
+}
 stdhead("Mass PM", false);
 ?>
 <table class=main width=737 border=0 cellspacing=0 cellpadding=0><tr><td class=embedded>
@@ -12,9 +13,8 @@ stdhead("Mass PM", false);
 <form method=post action=takestaffmess.php>
 <?php
 
-if ($_GET["returnto"] || $_SERVER["HTTP_REFERER"])
-{
-?>
+if ($_GET["returnto"] || $_SERVER["HTTP_REFERER"]) {
+    ?>
 <input type=hidden name=returnto value="<?php echo htmlspecialchars($_GET["returnto"]) ? htmlspecialchars($_GET["returnto"]) : htmlspecialchars($_SERVER["HTTP_REFERER"])?>">
 <?php
 }
@@ -22,7 +22,7 @@ if ($_GET["returnto"] || $_SERVER["HTTP_REFERER"])
 <table cellspacing=0 cellpadding=5>
 <?php
 if ($_GET["sent"] == 1) {
-?>
+    ?>
 <tr><td colspan=2><font color=red><b>The message has ben sent.</font></b></tr></td>
 <?php
 }

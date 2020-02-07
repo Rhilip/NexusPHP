@@ -2,48 +2,59 @@
 require "include/bittorrent.php";
 dbconn();
 $id = 0 + $_GET["id"];
-int_check($id,true);
+int_check($id, true);
 
 $res = sql_query("SELECT username, class, email FROM users WHERE id=".mysql_real_escape_string($id));
 $arr = mysql_fetch_assoc($res) or stderr("Error", "No such user.");
 $username = $arr["username"];
-if ($arr["class"] < UC_MODERATOR)
-	stderr("Error", "The gateway can only be used to e-mail staff members.");
+if ($arr["class"] < UC_MODERATOR) {
+    stderr("Error", "The gateway can only be used to e-mail staff members.");
+}
 
-if ($_SERVER["REQUEST_METHOD"] == "POST")
-{
-	$to = $arr["email"];
-	$from = substr(htmlspecialchars(trim($_POST["from"])), 0, 80);
-	if ($from == "") $from = "Anonymous";
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $to = $arr["email"];
+    $from = substr(htmlspecialchars(trim($_POST["from"])), 0, 80);
+    if ($from == "") {
+        $from = "Anonymous";
+    }
 
-	$from_email = substr(htmlspecialchars(trim($_POST["from_email"])), 0, 80);
-	if ($from_email == "") $from_email = "".$SITEEMAIL."";
-	$from_email =  safe_email($from_email);
-	if (!$from_email)
-    	stderr("Error","You must enter an email address!");	
-	if (!check_email($from_email))
-  	stderr("Error","Invalid email address!");
-	$from = "$from <$from_email>";
+    $from_email = substr(htmlspecialchars(trim($_POST["from_email"])), 0, 80);
+    if ($from_email == "") {
+        $from_email = "".$SITEEMAIL."";
+    }
+    $from_email =  safe_email($from_email);
+    if (!$from_email) {
+        stderr("Error", "You must enter an email address!");
+    }
+    if (!check_email($from_email)) {
+        stderr("Error", "Invalid email address!");
+    }
+    $from = "$from <$from_email>";
 
-	$subject = substr(htmlspecialchars(trim($_POST["subject"])), 0, 80);
-	if ($subject == "") $subject = "(No subject)";
-	$subject = "Fw: $subject";
-	
-	$message = htmlspecialchars(trim($_POST["message"]));
-	if ($message == "") stderr("Error", "No message text!");
+    $subject = substr(htmlspecialchars(trim($_POST["subject"])), 0, 80);
+    if ($subject == "") {
+        $subject = "(No subject)";
+    }
+    $subject = "Fw: $subject";
+    
+    $message = htmlspecialchars(trim($_POST["message"]));
+    if ($message == "") {
+        stderr("Error", "No message text!");
+    }
 
-	$message = "Message submitted from ".getip()." at " . date("Y-m-d H:i:s") . ".\n" .
-		"Note: By replying to this e-mail you will reveal your e-mail address.\n" .
-		"---------------------------------------------------------------------\n\n" .
-		$message . "\n\n" .
-		"---------------------------------------------------------------------\n$SITENAME E-Mail Gateway\n";
+    $message = "Message submitted from ".getip()." at " . date("Y-m-d H:i:s") . ".\n" .
+        "Note: By replying to this e-mail you will reveal your e-mail address.\n" .
+        "---------------------------------------------------------------------\n\n" .
+        $message . "\n\n" .
+        "---------------------------------------------------------------------\n$SITENAME E-Mail Gateway\n";
 
-	$success = sent_mail($to,$from,$from_email,$subject,$message,"E-Mail Gateway",false);	
+    $success = sent_mail($to, $from, $from_email, $subject, $message, "E-Mail Gateway", false);
 
-	if ($success)
-		stderr("Success", "E-mail successfully queued for delivery.");
-	else
-		stderr("Error", "The mail could not be sent. Please try again later.");
+    if ($success) {
+        stderr("Success", "E-mail successfully queued for delivery.");
+    } else {
+        stderr("Error", "The mail could not be sent. Please try again later.");
+    }
 }
 
 stdhead("E-mail gateway");

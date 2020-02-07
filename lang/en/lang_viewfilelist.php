@@ -1,8 +1,5 @@
 <?php
 
-$lang_viewfilelist = array
-(
-	'col_path' => "Path",
+$lang_viewfilelist = array(
+    'col_path' => "Path",
 );
-
-?>

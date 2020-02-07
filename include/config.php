@@ -1,62 +1,65 @@
 <?php
 # IMPORTANT: Do not edit below unless you know what you are doing!
-if(!defined('IN_TRACKER'))
-die('Hacking attempt!');
-
-$CONFIGURATIONS = array('ACCOUNT', 'ADVERTISEMENT', 'ATTACHMENT', 'AUTHORITY', 'BASIC', 'BONUS', 'CODE', 'MAIN', 'SECURITY', 'SMTP', 'TORRENT', 'TWEAK');
-function ReadConfig ($configname = NULL) {
-	global $CONFIGURATIONS;
-	if ($configname) {
-		$configname = basename($configname);
-		$tmp = oldReadConfig($configname);
-		WriteConfig($configname, $tmp);
-		@unlink('./config/'.$configname);
-		return $tmp;
-	} else {
-		foreach ($CONFIGURATIONS as $CONFIGURATION) {
-			$GLOBALS[$CONFIGURATION] = ReadConfig($CONFIGURATION);
-		}
-	}
+if (!defined('IN_TRACKER')) {
+    die('Hacking attempt!');
 }
 
-function oldReadConfig ($configname) {
-	if (strstr($configname, ',')) {
-		$configlist = explode(',', $configname);
-		foreach ($configlist as $key=>$configname) {
-			ReadConfig(trim($configname));
-		}
-	} else {
-		$configname = basename($configname);
-		$path = './config/'.$configname;
-		if (!file_exists($path)) {
-				die("Error! File <b>".htmlspecialchars($configname)."</b> doesn't exist!</font><br /><font color=blue>Before the setup starts, please ensure that you have properly configured file and directory access permissions. Please see below.</font><br /><br />chmod 777 config/<br />chmod 777 config/".$configname);
-		}
+$CONFIGURATIONS = array('ACCOUNT', 'ADVERTISEMENT', 'ATTACHMENT', 'AUTHORITY', 'BASIC', 'BONUS', 'CODE', 'MAIN', 'SECURITY', 'SMTP', 'TORRENT', 'TWEAK');
+function ReadConfig($configname = null)
+{
+    global $CONFIGURATIONS;
+    if ($configname) {
+        $configname = basename($configname);
+        $tmp = oldReadConfig($configname);
+        WriteConfig($configname, $tmp);
+        @unlink('./config/'.$configname);
+        return $tmp;
+    } else {
+        foreach ($CONFIGURATIONS as $CONFIGURATION) {
+            $GLOBALS[$CONFIGURATION] = ReadConfig($CONFIGURATION);
+        }
+    }
+}
 
-		$fp = fopen($path, 'r');
-		$content = '';
-		while (!feof($fp)) {
-			$content .= fread($fp, 102400);
-		}
-		fclose($fp);
+function oldReadConfig($configname)
+{
+    if (strstr($configname, ',')) {
+        $configlist = explode(',', $configname);
+        foreach ($configlist as $key=>$configname) {
+            ReadConfig(trim($configname));
+        }
+    } else {
+        $configname = basename($configname);
+        $path = './config/'.$configname;
+        if (!file_exists($path)) {
+            die("Error! File <b>".htmlspecialchars($configname)."</b> doesn't exist!</font><br /><font color=blue>Before the setup starts, please ensure that you have properly configured file and directory access permissions. Please see below.</font><br /><br />chmod 777 config/<br />chmod 777 config/".$configname);
+        }
 
-		if (empty($content)) {
-			return array();
-		}
-		$tmp = @unserialize($content);
+        $fp = fopen($path, 'r');
+        $content = '';
+        while (!feof($fp)) {
+            $content .= fread($fp, 102400);
+        }
+        fclose($fp);
 
-		if (empty($tmp)) {
-			die("Error! <font color=red>Cannot read configuration file <b>".htmlspecialchars($configname)."</b></font><br /><font color=blue>Before the setup starts, please ensure that you have properly configured file and directory access permissions. For *nix system, please see below.</font><br />chmod 777 config <br />chmod 777 config/".$configname."<br /><br /> If access permission is alright, perhaps there's some misconfiguration or the configuration file is corrupted. Please check config/".$configname);
-		}
-		$GLOBALS[$configname] = $tmp;
-		return $tmp;
-	}
+        if (empty($content)) {
+            return array();
+        }
+        $tmp = @unserialize($content);
+
+        if (empty($tmp)) {
+            die("Error! <font color=red>Cannot read configuration file <b>".htmlspecialchars($configname)."</b></font><br /><font color=blue>Before the setup starts, please ensure that you have properly configured file and directory access permissions. For *nix system, please see below.</font><br />chmod 777 config <br />chmod 777 config/".$configname."<br /><br /> If access permission is alright, perhaps there's some misconfiguration or the configuration file is corrupted. Please check config/".$configname);
+        }
+        $GLOBALS[$configname] = $tmp;
+        return $tmp;
+    }
 }
 
 
 if (file_exists('config/allconfig.php')) {
-	require('config/allconfig.php');
+    require('config/allconfig.php');
 } else {
-	ReadConfig();
+    ReadConfig();
 }
 
 $SITENAME = $BASIC['SITENAME'];
@@ -146,8 +149,9 @@ $emailnotify_smtp = $SMTP['emailnotify'];
 $smtptype = $SMTP['smtptype'];
 $smtp_host = $SMTP['smtp_host'];
 $smtp_port = $SMTP['smtp_port'];
-if (strtoupper(substr(PHP_OS,0,3)=='WIN'))
-$smtp_from = $SMTP['smtp_from'];
+if (strtoupper(substr(PHP_OS, 0, 3)=='WIN')) {
+    $smtp_from = $SMTP['smtp_from'];
+}
 $smtpaddress = $SMTP['smtpaddress'];
 $smtpport = $SMTP['smtpport'];
 $accountname = $SMTP['accountname'];
@@ -383,7 +387,7 @@ $uploaderdouble_torrent = $TORRENT['uploaderdouble'];
 $deldeadtorrent_torrent = $TORRENT['deldeadtorrent'];
 
 foreach ($CONFIGURATIONS as $CONFIGURATION) {
-	unset($GLOBALS[$CONFIGURATION]);
+    unset($GLOBALS[$CONFIGURATION]);
 }
 
 //Directory for subs
@@ -400,4 +404,3 @@ $useCronTriggerCleanUp = true;
 //some promotion rules
 //$promotionrules_torrent = array(0 => array("mediumid" => array(1), "promotion" => 5), 1 => array("mediumid" => array(3), "promotion" => 5), 2 => array("catid" => array(402), "standardid" => array(3), "promotion" => 4), 3 => array("catid" => array(403), "standardid" => array(3), "promotion" => 4));
 $promotionrules_torrent = array();
-?>

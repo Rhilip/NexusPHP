@@ -8,7 +8,8 @@ if (PHP_SAPI != 'cli') {
 require_once("include/bittorrent.php");
 dbconn();
 
-function autoclean() {
+function autoclean()
+{
     global $argv;
     global $autoclean_interval_one, $rootpath;
     $now = TIMENOW;
@@ -35,12 +36,12 @@ function autoclean() {
 }
 
 if ($useCronTriggerCleanUp) {
-	$return = autoclean();
-	if ($return) {
-		echo $return."\n";
-	} else {
-		echo "Clean-up not triggered.\n";
-	}
+    $return = autoclean();
+    if ($return) {
+        echo $return."\n";
+    } else {
+        echo "Clean-up not triggered.\n";
+    }
 } else {
-	echo "Forbidden. Clean-up is set to be browser-triggered.\n";
+    echo "Forbidden. Clean-up is set to be browser-triggered.\n";
 }

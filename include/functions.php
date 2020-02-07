@@ -2547,7 +2547,7 @@ if ($logo_main == "") {
 
 function stdfoot()
 {
-    global $SITENAME,$BASEURL,$Cache,$datefounded,$tstart,$icplicense_main,$add_key_shortcut,$query_name, $USERUPDATESET, $CURUSER, $enablesqldebug_tweak, $sqldebug_tweak, $Advertisement, $analyticscode_tweak;
+    global $SITENAME,$BASEURL,$Cache,$datefounded,$tstart,$icplicense_main,$add_key_shortcut, $USERUPDATESET, $CURUSER, $enablesqldebug_tweak, $sqldebug_tweak, $Advertisement, $analyticscode_tweak;
     print("</td></tr></table>");
     print("<div id=\"footer\">");
     if ($Advertisement->enable_ad()) {
@@ -2567,11 +2567,11 @@ function stdfoot()
     $yearfounded = ($year ? $year : 2007);
     print(" (c) "." <a href=\"" . get_protocol_prefix() . $BASEURL."\" target=\"_self\">".$SITENAME."</a> ".($icplicense_main ? " ".$icplicense_main." " : "").(date("Y") != $yearfounded ? $yearfounded."-" : "").date("Y")." ".VERSION."<br /><br />");
     printf("[page created in <b> %f </b> sec", $totaltime);
-    print(" with <b>".count($query_name)."</b> db queries, <b>".$Cache->getCacheReadTimes()."</b> reads and <b>".$Cache->getCacheWriteTimes()."</b> writes of memcached and <b>".mksize(memory_get_usage())."</b> ram]");
+    print(" with <b>".count(\NexusPHP\Components\Database::getQueryHistory())."</b> db queries, <b>".$Cache->getCacheReadTimes()."</b> reads and <b>".$Cache->getCacheWriteTimes()."</b> writes of memcached and <b>".mksize(memory_get_usage())."</b> ram]");
     print("</div>\n");
     if ($enablesqldebug_tweak == 'yes' && get_user_class() >= $sqldebug_tweak) {
         print("<div id=\"sql_debug\">SQL query list: <ul>");
-        foreach ($query_name as $query) {
+        foreach (\NexusPHP\Components\Database::getQueryHistory() as $query) {
             print("<li>".htmlspecialchars($query)."</li>");
         }
         print("</ul>");

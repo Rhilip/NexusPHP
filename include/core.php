@@ -11,7 +11,6 @@ $Cache = new \NexusPHP\Components\Cache(); //Load the caching class
 $Cache->setLanguageFolderArray(get_langfolder_list());
 define('TIMENOW', time());
 $USERUPDATESET = array();
-$query_name=array();
 
 define("UC_PEASANT", 0);
 define("UC_USER", 1);

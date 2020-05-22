@@ -31,6 +31,7 @@ class Database
             if (!self::$_mysqli) {
                 die('dbconn: mysql_connect: ' . self::$_mysqli->connect_errno);
             }
+            self::$_mysqli->autocommit(true);
             self::$_mysqli->set_charset('utf8');
             self::$_mysqli->query("SET collation_connection = 'utf8_general_ci', sql_mode=''");
         }
@@ -67,7 +68,7 @@ class Database
             return $value;
         }
 
-        return is_string($value) ? "'" . self::real_escape_string($value) . "'" : $value;
+        return "'" . self::real_escape_string($value) . "'";
     }
 
     public static function insert_id()
@@ -95,26 +96,54 @@ class Database
         return self::getMysqli()->real_escape_string($value);
     }
 
+    /**
+     * @param string $sql
+     * @param array $values
+     * @param string $types
+     * @return false|\mysqli_stmt
+     */
+    public static function exec(string $sql, $values = [], $types = '')
+    {
+        self::addQueryHistory($sql, $values);
+        $stmt = self::getMysqli()->prepare($sql);
+
+        if (!is_array($values)) {
+            $values = [$values];
+        }
+
+        if (!$types || strlen($types) !== count($values)) {
+            $types = str_repeat('s', count($values));
+        }
+        $stmt->bind_param($types, ...$values);
+        $stmt->execute();
+
+        return $stmt;
+    }
+
+    /**
+     * @param $sql
+     * @return bool|\mysqli_result
+     */
+    public static function raw_query($sql)
+    {
+        self::addQueryHistory($sql);
+        return self::getMysqli()->query($sql);
+    }
+
+    /**
+     * 如果使用STMT形式，请只在SELECT情况下使用，其他情况（DELETE，UPDATE，INSERT）请用 exec()
+     *
+     * @param string $sql
+     * @param array $values
+     * @param string $types
+     * @return bool|false|\mysqli_result
+     */
     public static function query(string $sql, $values = [], $types = '')
     {
         if (!$values) {
-            self::addQueryHistory($sql);
-            return self::getMysqli()->query($sql);
+            return self::raw_query($sql);
         } else {
-            $stmt = self::getMysqli()->prepare($sql);
-
-            if (!is_array($values)) {
-                $values = [$values];
-            }
-
-            if (!$types) {
-                $types = str_repeat('s', count($values));
-            }
-
-            $stmt->bind_param($types, ...$values);
-            $stmt->execute();
-
-            self::addQueryHistory($sql, $values);
+            $stmt = self::exec($sql, $values, $types);
             return $stmt->get_result();
         }
     }
@@ -126,10 +155,15 @@ class Database
         return $row[$field];
     }
 
+    public static function one(string $sql, $values = [], $types = '')
+    {
+        $r = self::query($sql, $values, $types);
+        return mysqli_fetch_array($r);
+    }
+
     public static function scalar(string $sql, $default = false, $values = [], $types = '')
     {
-        $r = self::query($sql, $values, $types) or sqlerr(__FILE__, __LINE__);
-        $a = mysqli_fetch_row($r) or die(self::error());
+        $a = self::one($sql, $values, $types);
         return $a ? $a[0] : $default;
     }
 
@@ -140,11 +174,11 @@ class Database
 
     public static function count($table, $suffix = "", $values = [], $types = '')
     {
-        return self::scalar("SELECT COUNT(*) FROM $table $suffix", $values, $types);
+        return self::scalar("SELECT COUNT(*) FROM $table $suffix", 0, $values, $types);
     }
 
     public static function sum($table, $field, $suffix = "", $values = [], $types = '')
     {
-        return self::scalar("SELECT SUM($field) FROM $table $suffix", $values, $types);
+        return self::scalar("SELECT SUM($field) FROM $table $suffix", 0, $values, $types);
     }
 }

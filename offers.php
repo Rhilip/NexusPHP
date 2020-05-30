@@ -91,13 +91,13 @@ if ($_GET["new_offer"]) {
         bark($lang_offers['std_must_select_category']);
     }
 
-    $descrmain = unesc($_POST["body"]);
+    $descrmain = $_POST["body"];
     if (!$descrmain) {
         bark($lang_offers['std_must_enter_description']);
     }
 
     if (!empty($_POST['picture'])) {
-        $picture = unesc($_POST["picture"]);
+        $picture = $_POST["picture"];
         if (!preg_match("/^http:\/\/[^\s'\"<>]+\.(jpg|gif|png)$/i", $picture)) {
             stderr($lang_offers['std_error'], $lang_offers['std_wrong_image_format']);
         }
@@ -372,7 +372,7 @@ if ($_GET["edit_offer"]) {
         stderr($lang_offers['std_error'], $lang_offers['std_cannot_edit_others_offer']);
     }
 
-    $body = htmlspecialchars(unesc($num["descr"]));
+    $body = htmlspecialchars($num["descr"]);
     $s2 = "<select name=\"category\">\n";
 
     $cats = genrelist($browsecatmode);
@@ -418,14 +418,14 @@ if ($_GET["take_off_edit"]) {
     $name = $_POST["name"];
 
     if (!empty($_POST['picture'])) {
-        $picture = unesc($_POST["picture"]);
+        $picture = $_POST["picture"];
         if (!preg_match("/^http:\/\/[^\s'\"<>]+\.(jpg|gif|png)$/i", $picture)) {
             stderr($lang_offers['std_error'], $lang_offers['std_wrong_image_format']);
         }
         $pic = "[img]".$picture."[/img]\n";
     }
     $descr = "$pic";
-    $descr .= unesc($_POST["body"]);
+    $descr .= $_POST["body"];
     if (!$name) {
         bark($lang_offers['std_must_enter_name']);
     }

@@ -1068,7 +1068,7 @@ function get_torrent_extinfo_identifier($torrentid)
 
 function parse_imdb_id($url)
 {
-    if ($url != "" && preg_match("/[0-9]{7}/i", $url, $matches)) {
+    if ($url != "" && preg_match("/[0-9]{7,8}/i", $url, $matches)) {
         return $matches[0];
     } elseif ($url && is_numeric($url) && strlen($url) < 7) {
         return str_pad($url, 7, '0', STR_PAD_LEFT);
@@ -1080,46 +1080,6 @@ function parse_imdb_id($url)
 function build_imdb_url($imdb_id)
 {
     return $imdb_id == "" ? "" : "http://www.imdb.com/title/tt" . $imdb_id . "/";
-}
-
-// it's a stub implemetation here, we need more acurate regression analysis to complete our algorithm
-function get_torrent_2_user_value($user_snatched_arr)
-{
-    // check if it's current user's torrent
-    $torrent_2_user_value = 1.0;
-
-    $torrent_res = \NexusPHP\Components\Database::query("SELECT * FROM torrents WHERE id = " . $user_snatched_arr['torrentid']) or sqlerr(__FILE__, __LINE__);
-    if (mysqli_num_rows($torrent_res) == 1) {	// torrent still exists
-        $torrent_arr = mysqli_fetch_array($torrent_res) or sqlerr(__FILE__, __LINE__);
-        if ($torrent_arr['owner'] == $user_snatched_arr['userid']) {	// owner's torrent
-            $torrent_2_user_value *= 0.7;	// owner's torrent
-            $torrent_2_user_value += ($user_snatched_arr['uploaded'] / $torrent_arr['size']) -1 > 0 ? 0.2 - exp(-(($user_snatched_arr['uploaded'] / $torrent_arr['size']) -1)) : ($user_snatched_arr['uploaded'] / $torrent_arr['size']) -1;
-            $torrent_2_user_value += min(0.1, ($user_snatched_arr['seedtime'] / 37*60*60) * 0.1);
-        } else {
-            if ($user_snatched_arr['finished'] == 'yes') {
-                $torrent_2_user_value *= 0.5;
-                $torrent_2_user_value += ($user_snatched_arr['uploaded'] / $torrent_arr['size']) -1 > 0 ? 0.4 - exp(-(($user_snatched_arr['uploaded'] / $torrent_arr['size']) -1)) : ($user_snatched_arr['uploaded'] / $torrent_arr['size']) -1;
-                $torrent_2_user_value += min(0.1, ($user_snatched_arr['seedtime'] / 22*60*60) * 0.1);
-            } else {
-                $torrent_2_user_value *= 0.2;
-                $torrent_2_user_value += min(0.05, ($user_snatched_arr['leechtime'] / 24*60*60) * 0.1);	// usually leechtime could not explain much
-            }
-        }
-    } else {	// torrent already deleted, half blind guess, be conservative
-        if ($user_snatched_arr['finished'] == 'no' && $user_snatched_arr['uploaded'] > 0 && $user_snatched_arr['downloaded'] == 0) {	// possibly owner
-            $torrent_2_user_value *= 0.55;	//conservative
-            $torrent_2_user_value += min(0.05, ($user_snatched_arr['leechtime'] / 31*60*60) * 0.1);
-            $torrent_2_user_value += min(0.1, ($user_snatched_arr['seedtime'] / 31*60*60) * 0.1);
-        } elseif ($user_snatched_arr['downloaded'] > 0) {	// possibly leecher
-            $torrent_2_user_value *= 0.38;	//conservative
-            $torrent_2_user_value *= min(0.22, 0.1 * $user_snatched_arr['uploaded'] / $user_snatched_arr['downloaded']);	// 0.3 for conservative
-            $torrent_2_user_value += min(0.05, ($user_snatched_arr['leechtime'] / 22*60*60) * 0.1);
-            $torrent_2_user_value += min(0.12, ($user_snatched_arr['seedtime'] / 22*60*60) * 0.1);
-        } else {
-            $torrent_2_user_value *= 0.0;
-        }
-    }
-    return $torrent_2_user_value;
 }
 
 function cur_user_check()
@@ -1248,72 +1208,19 @@ function reset_cachetimestamp($id, $field = "cache_stamp")
     \NexusPHP\Components\Database::query("UPDATE torrents SET $field = 0 WHERE id = " . \NexusPHP\Components\Database::escape($id)) or sqlerr(__FILE__, __LINE__);
 }
 
-function cache_check($file = 'cachefile', $endpage = true, $cachetime = 600)
-{
-    global $lang_functions;
-    global $rootpath,$cache,$CURLANGDIR;
-    $cachefile = $rootpath.$cache ."/" . $CURLANGDIR .'/'.$file.'.html';
-    // Serve from the cache if it is younger than $cachetime
-    if (file_exists($cachefile) && (time() - $cachetime < filemtime($cachefile))) {
-        include($cachefile);
-        if ($endpage) {
-            print("<p align=\"center\"><font class=\"small\">".$lang_functions['text_page_last_updated'].date('Y-m-d H:i:s', filemtime($cachefile))."</font></p>");
-            end_main_frame();
-            stdfoot();
-            exit;
-        }
-        return false;
-    }
-    ob_start();
-    return true;
-}
-
-function cache_save($file = 'cachefile')
-{
-    global $rootpath,$cache;
-    global $CURLANGDIR;
-    $cachefile = $rootpath.$cache ."/" . $CURLANGDIR . '/'.$file.'.html';
-    $fp = fopen($cachefile, 'w');
-    // save the contents of output buffer to the file
-    fwrite($fp, ob_get_contents());
-    // close the file
-    fclose($fp);
-    // Send the output to the browser
-    ob_end_flush();
-}
-
 function get_email_encode($lang)
 {
-    if ($lang == 'chs' || $lang == 'cht') {
-        return "gbk";
-    } else {
-        return "utf-8";
-    }
-}
-
-function change_email_encode($lang, $content)
-{
-    return iconv("utf-8", get_email_encode($lang) . "//IGNORE", $content);
+    return "utf-8";
 }
 
 function safe_email($email)
 {
-    $email = str_replace("<", "", $email);
-    $email = str_replace(">", "", $email);
-    $email = str_replace("\'", "", $email);
-    $email = str_replace('\"', "", $email);
-    $email = str_replace("\\\\", "", $email);
-
-    return $email;
+    return filter_var($email, FILTER_SANITIZE_EMAIL);
 }
 
 function check_email($email)
 {
-    if (preg_match('/^[A-Za-z0-9][A-Za-z0-9_.+\-]*@[A-Za-z0-9][A-Za-z0-9_+\-]*(\.[A-Za-z0-9][A-Za-z0-9_+\-]*)+$/', $email)) {
-        return true;
-    } else {
-        return false;
-    }
+    return filter_var($email, FILTER_VALIDATE_EMAIL);
 }
 
 function sent_mail($to, $fromname, $fromemail, $subject, $body, $type = "confirmation", $showmsg=true, $multiple=false, $multiplemail='', $hdr_encoding = 'UTF-8', $specialcase = '')
@@ -1322,36 +1229,31 @@ function sent_mail($to, $fromname, $fromemail, $subject, $body, $type = "confirm
     global $rootpath,$SITENAME,$SITEEMAIL,$smtptype,$smtp,$smtp_host,$smtp_port,$smtp_from,$smtpaddress,$smtpport,$accountname,$accountpassword;
     # Is the OS Windows or Mac or Linux?
     if (strtoupper(substr(PHP_OS, 0, 3)=='WIN')) {
-        $eol="\r\n";
         $windows = true;
-    } elseif (strtoupper(substr(PHP_OS, 0, 3)=='MAC')) {
-        $eol="\r";
-    } else {
-        $eol="\n";
     }
     if ($smtptype == 'none') {
         return false;
     }
     if ($smtptype == 'default') {
-        @mail($to, "=?".$hdr_encoding."?B?".base64_encode($subject)."?=", $body, "From: ".$SITEEMAIL.$eol."Content-type: text/html; charset=".$hdr_encoding.$eol, "-f$SITEEMAIL") or stderr($lang_functions['std_error'], $lang_functions['text_unable_to_send_mail']);
+        @mail($to, "=?".$hdr_encoding."?B?".base64_encode($subject)."?=", $body, "From: ".$SITEEMAIL.PHP_EOL."Content-type: text/html; charset=".$hdr_encoding.PHP_EOL, "-f$SITEEMAIL") or stderr($lang_functions['std_error'], $lang_functions['text_unable_to_send_mail']);
     } elseif ($smtptype == 'advanced') {
         $mid = md5(getip() . $fromname);
         $name = $_SERVER["SERVER_NAME"];
-        $headers .= "From: $fromname <$fromemail>".$eol;
-        $headers .= "Reply-To: $fromname <$fromemail>".$eol;
-        $headers .= "Return-Path: $fromname <$fromemail>".$eol;
-        $headers .= "Message-ID: <$mid thesystem@$name>".$eol;
-        $headers .= "X-Mailer: PHP v".phpversion().$eol;
-        $headers .= "MIME-Version: 1.0".$eol;
-        $headers .= "Content-type: text/html; charset=".$hdr_encoding.$eol;
-        $headers .= "X-Sender: PHP".$eol;
+        $headers .= "From: $fromname <$fromemail>".PHP_EOL;
+        $headers .= "Reply-To: $fromname <$fromemail>".PHP_EOL;
+        $headers .= "Return-Path: $fromname <$fromemail>".PHP_EOL;
+        $headers .= "Message-ID: <$mid thesystem@$name>".PHP_EOL;
+        $headers .= "X-Mailer: PHP v".phpversion().PHP_EOL;
+        $headers .= "MIME-Version: 1.0".PHP_EOL;
+        $headers .= "Content-type: text/html; charset=".$hdr_encoding.PHP_EOL;
+        $headers .= "X-Sender: PHP".PHP_EOL;
         if ($multiple) {
             $bcc_multiplemail = "";
             foreach ($multiplemail as $toemail) {
                 $bcc_multiplemail = $bcc_multiplemail . ($bcc_multiplemail != "" ? "," : "") . $toemail;
             }
 
-            $headers .= "Bcc: $multiplemail.$eol";
+            $headers .= "Bcc: $multiplemail" . PHP_EOL;
         }
         if ($smtp == "yes") {
             ini_set('SMTP', $smtp_host);
@@ -1369,27 +1271,37 @@ function sent_mail($to, $fromname, $fromemail, $subject, $body, $type = "confirm
             ini_restore(sendmail_from);
         }
     } elseif ($smtptype == 'external') {
-        require_once($rootpath . 'include/smtp/smtp.lib.php');
-        $mail = new smtp($hdr_encoding, 'eYou');
-        $mail->debug(false);
-        $mail->open($smtpaddress, $smtpport);
-        $mail->auth($accountname, $accountpassword);
-        //	$mail->bcc($multiplemail);
-        $mail->from($SITEEMAIL);
-        if ($multiple) {
-            $mail->multi_to_head($to);
-            foreach ($multiplemail as $toemail) {
-                $mail->multi_to($toemail);
+        $debug = get_user_class() >= UC_SYSOP;
+        $mail = new \PHPMailer\PHPMailer\PHPMailer($debug);
+        try {
+            $mail->SMTPDebug = \PHPMailer\PHPMailer\SMTP::DEBUG_OFF;
+            $mail->isSMTP();
+            $mail->Host = $smtpaddress;
+            $mail->SMTPAuth = true;
+            $mail->Username = $accountname;
+            $mail->Password = $accountpassword;
+            $mail->SMTPSecure = 'tls';
+            $mail->Port = $smtpport;
+
+            $mail->CharSet = \PHPMailer\PHPMailer\PHPMailer::CHARSET_UTF8;  // 强制utf-8编码
+
+            $mail->setFrom($accountname, $SITENAME);
+            if ($multiple) {
+                foreach ($multiplemail as $toemail) {
+                    $mail->addAddress($toemail);
+                }
+            } else {
+                $mail->addAddress($to);
             }
-        } else {
-            $mail->to($to);
+
+            $mail->isHTML(true);
+            $mail->Subject = $subject;
+            $mail->Body = $body;
+
+            $mail->send();
+        } catch (\PHPMailer\PHPMailer\Exception $e) {
+            return false;
         }
-        $mail->mime_content_transfer_encoding();
-        $mail->mime_charset('text/html', $hdr_encoding);
-        $mail->subject($subject);
-        $mail->body($body);
-        $mail->send() or stderr($lang_functions['std_error'], $lang_functions['text_unable_to_send_mail']);
-        $mail->close();
     }
     if ($showmsg) {
         if ($type == "confirmation") {
@@ -1524,6 +1436,7 @@ function random_str($length="6")
     }
     return $str;
 }
+
 function image_code()
 {
     $randomstr = random_str();
@@ -1621,7 +1534,6 @@ function in_ip_range($long, $targetip, $ip_one, $ip_two=false)
     return $ip;
 }
 
-
 function validip_format($ip)
 {
     $ipPattern =
@@ -1681,7 +1593,7 @@ function WriteConfig($configname = null, $config = null)
     }
     $data = "<?php\n";
     foreach ($CONFIGURATIONS as $CONFIGURATION) {
-        $data .= "\$$CONFIGURATION=".getExportedValue($$CONFIGURATION).";\n";
+        $data .= "\$$CONFIGURATION=".var_export($$CONFIGURATION).";\n";
     }
     $fp = @fopen($path, 'w');
     if (!$fp) {
@@ -1693,31 +1605,6 @@ function WriteConfig($configname = null, $config = null)
     }
     fclose($fp);
     return true;
-}
-
-function getExportedValue($input, $t = null)
-{
-    switch (gettype($input)) {
-        case 'string':
-            return "'".str_replace(array("\\","'"), array("\\\\","\'"), $input)."'";
-        case 'array':
-            $output = "array(\r";
-            foreach ($input as $key => $value) {
-                $output .= $t."\t".getExportedValue($key, $t."\t").' => '.getExportedValue($value, $t."\t");
-                $output .= ",\n";
-            }
-            $output .= $t.')';
-            return $output;
-        case 'boolean':
-            return $input ? 'true' : 'false';
-        case 'NULL':
-            return 'NULL';
-        case 'integer':
-        case 'double':
-        case 'float':
-            return "'".(string)$input."'";
-     }
-    return 'NULL';
 }
 
 function dbconn($autoclean = false)
@@ -1831,12 +1718,6 @@ function userlogin()
     }
 }
 
-function unesc($x)
-{
-    return $x;
-}
-
-
 function getsize_int($amount, $unit = "G")
 {
     if ($unit == "B") {
@@ -1856,65 +1737,26 @@ function getsize_int($amount, $unit = "G")
 
 function mksize_compact($bytes)
 {
-    if ($bytes < 1000 * 1024) {
-        return number_format($bytes / 1024, 2) . "<br />KB";
-    } elseif ($bytes < 1000 * 1048576) {
-        return number_format($bytes / 1048576, 2) . "<br />MB";
-    } elseif ($bytes < 1000 * 1073741824) {
-        return number_format($bytes / 1073741824, 2) . "<br />GB";
-    } elseif ($bytes < 1000 * 1099511627776) {
-        return number_format($bytes / 1099511627776, 3) . "<br />TB";
-    } else {
-        return number_format($bytes / 1125899906842624, 3) . "<br />PB";
-    }
+    return mksize($bytes,'<br />');
 }
 
 function mksize_loose($bytes)
 {
-    if ($bytes < 1000 * 1024) {
-        return number_format($bytes / 1024, 2) . "&nbsp;KB";
-    } elseif ($bytes < 1000 * 1048576) {
-        return number_format($bytes / 1048576, 2) . "&nbsp;MB";
-    } elseif ($bytes < 1000 * 1073741824) {
-        return number_format($bytes / 1073741824, 2) . "&nbsp;GB";
-    } elseif ($bytes < 1000 * 1099511627776) {
-        return number_format($bytes / 1099511627776, 3) . "&nbsp;TB";
-    } else {
-        return number_format($bytes / 1125899906842624, 3) . "&nbsp;PB";
-    }
+    return mksize($bytes, '&nbsp;');
 }
 
-function mksize($bytes)
+function mksize($bytes, $sep = ' ')
 {
     if ($bytes < 1000 * 1024) {
-        return number_format($bytes / 1024, 2) . " KB";
+        return number_format($bytes / 1024, 2) .  $sep . "KB";
     } elseif ($bytes < 1000 * 1048576) {
-        return number_format($bytes / 1048576, 2) . " MB";
+        return number_format($bytes / 1048576, 2) .$sep .  "MB";
     } elseif ($bytes < 1000 * 1073741824) {
-        return number_format($bytes / 1073741824, 2) . " GB";
+        return number_format($bytes / 1073741824, 2) . $sep . "GB";
     } elseif ($bytes < 1000 * 1099511627776) {
-        return number_format($bytes / 1099511627776, 3) . " TB";
+        return number_format($bytes / 1099511627776, 3) .$sep .  "TB";
     } else {
-        return number_format($bytes / 1125899906842624, 3) . " PB";
-    }
-}
-
-
-function mksizeint($bytes)
-{
-    $bytes = max(0, $bytes);
-    if ($bytes < 1000) {
-        return floor($bytes) . " B";
-    } elseif ($bytes < 1000 * 1024) {
-        return floor($bytes / 1024) . " kB";
-    } elseif ($bytes < 1000 * 1048576) {
-        return floor($bytes / 1048576) . " MB";
-    } elseif ($bytes < 1000 * 1073741824) {
-        return floor($bytes / 1073741824) . " GB";
-    } elseif ($bytes < 1000 * 1099511627776) {
-        return floor($bytes / 1099511627776) . " TB";
-    } else {
-        return floor($bytes / 1125899906842624) . " PB";
+        return number_format($bytes / 1125899906842624, 3) . $sep . "PB";
     }
 }
 
@@ -1960,9 +1802,9 @@ function mkglobal($vars)
     }
     foreach ($vars as $v) {
         if (isset($_GET[$v])) {
-            $GLOBALS[$v] = unesc($_GET[$v]);
+            $GLOBALS[$v] = $_GET[$v];
         } elseif (isset($_POST[$v])) {
-            $GLOBALS[$v] = unesc($_POST[$v]);
+            $GLOBALS[$v] = $_POST[$v];
         } else {
             return 0;
         }
@@ -1992,7 +1834,7 @@ function tr_small($x, $y, $noesc=0, $relation='')
     print("<tr".($relation ? " relation = \"$relation\"" : "")."><td width=\"1%\" class=\"rowhead nowrap\" valign=\"top\" align=\"right\">".$x."</td><td width=\"99%\" class=\"rowfollow\" valign=\"top\" align=\"left\">".$a."</td></tr>\n");
 }
 
-function twotd($x, $y, $nosec=0)
+function twotd($x, $y, $noesc=0)
 {
     if ($noesc) {
         $a = $y;

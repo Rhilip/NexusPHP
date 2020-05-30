@@ -29,9 +29,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($iv == "yes") {
         check_code($_POST['imagehash'], $_POST['imagestring'], "confirm_resend.php", true);
     }
-    $email = unesc(htmlspecialchars(trim($_POST["email"])));
-    $wantpassword = unesc(htmlspecialchars(trim($_POST["wantpassword"])));
-    $passagain = unesc(htmlspecialchars(trim($_POST["passagain"])));
+    $email = htmlspecialchars(trim($_POST["email"]));
+    $wantpassword = htmlspecialchars(trim($_POST["wantpassword"]));
+    $passagain = htmlspecialchars(trim($_POST["passagain"]));
     
     $email = safe_email($email);
     if (empty($wantpassword) || empty($passagain) || empty($email)) {
@@ -91,7 +91,7 @@ http://$BASEURL/confirm_resend.php
 {$lang_confirm_resend['mail_five']}
 EOD;
         
-    sent_mail($email, $SITENAME, $SITEEMAIL, change_email_encode(get_langfolder_cookie(), $title), change_email_encode(get_langfolder_cookie(), $body), "signup", false, false, '', get_email_encode(get_langfolder_cookie()));
+    sent_mail($email, $SITENAME, $SITEEMAIL, $title, $body, "signup", false, false, '', get_email_encode(get_langfolder_cookie()));
     header("Location: " . get_protocol_prefix() . "$BASEURL/ok.php?type=signup&email=" . rawurlencode($email));
 } else {
     stdhead();

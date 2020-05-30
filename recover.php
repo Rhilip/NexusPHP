@@ -27,7 +27,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($iv == "yes") {
         check_code($_POST['imagehash'], $_POST['imagestring'], "recover.php", true);
     }
-    $email = unesc(htmlspecialchars(trim($_POST["email"])));
+    $email = htmlspecialchars(trim($_POST["email"]));
     $email = safe_email($email);
     if (!$email) {
         failedlogins($lang_recover['std_missing_email_address'], true);
@@ -61,7 +61,7 @@ http://$BASEURL/recover.php?id={$arr["id"]}&secret=$hash
 {$lang_recover['mail_four']}
 EOD;
 
-    sent_mail($arr["email"], $SITENAME, $SITEEMAIL, change_email_encode(get_langfolder_cookie(), $title), change_email_encode(get_langfolder_cookie(), $body), "confirmation", true, false, '', get_email_encode(get_langfolder_cookie()));
+    sent_mail($arr["email"], $SITENAME, $SITEEMAIL, $title, $body, "confirmation", true, false, '', get_email_encode(get_langfolder_cookie()));
 } elseif ($_SERVER["REQUEST_METHOD"] == "GET" && $take_recover && isset($_GET["id"]) && isset($_GET["secret"])) {
     $id = 0 + $_GET["id"];
     $md5 = $_GET["secret"];
@@ -113,7 +113,7 @@ EOD;
 
 EOD;
 
-    sent_mail($email, $SITENAME, $SITEEMAIL, change_email_encode(get_langfolder_cookie(), $title), change_email_encode(get_langfolder_cookie(), $body), "details", true, false, '', get_email_encode(get_langfolder_cookie()));
+    sent_mail($email, $SITENAME, $SITEEMAIL, $title, $body, "details", true, false, '', get_email_encode(get_langfolder_cookie()));
 } else {
     stdhead();
     $s = "<select name=\"sitelanguage\" onchange='submit()'>\n";

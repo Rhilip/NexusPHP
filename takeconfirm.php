@@ -4,7 +4,7 @@ dbconn();
 require_once(get_langfile_path());
 $id =  isset($_POST['id']) ? 0+$_POST['id'] : (isset($_GET['id']) ? 0+$_GET['id'] : die());
 int_check($id, true);
-$email = unesc(htmlspecialchars(trim($_POST["email"])));
+$email = htmlspecialchars(trim($_POST["email"]));
 if (isset($_POST[conusr])) {
     \NexusPHP\Components\Database::query("UPDATE users SET status = 'confirmed', editsecret = '' WHERE id IN (" . implode(", ", $_POST[conusr]) . ") AND status='pending'");
 } else {
@@ -21,6 +21,6 @@ http://$BASEURL/login.php
 EOD;
 
 //this mail is sent when the site is using admin(open/closed)/inviter(closed) confirmation and the admin/inviter confirmed the pending user
-sent_mail($email, $SITENAME, $SITEEMAIL, change_email_encode(get_langfolder_cookie(), $title), change_email_encode(get_langfolder_cookie(), $body), "invite confirm", false, false, '', get_email_encode(get_langfolder_cookie()));
+sent_mail($email, $SITENAME, $SITEEMAIL, $title, $body, "invite confirm", false, false, '', get_email_encode(get_langfolder_cookie()));
 
 header("Refresh: 0; url=invite.php?id=".htmlspecialchars($CURUSER[id]));

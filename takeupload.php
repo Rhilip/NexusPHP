@@ -32,7 +32,7 @@ if (!isset($_FILES["file"])) {
 }
 
 $f = $_FILES["file"];
-$fname = unesc($f["name"]);
+$fname = $f["name"];
 if (empty($fname)) {
     bark($lang_takeupload['std_empty_filename']);
 }
@@ -68,9 +68,9 @@ if ($enablenfo_main=='yes') {
 }
 
 
-$small_descr = unesc($_POST["small_descr"]);
+$small_descr = $_POST["small_descr"];
 
-$descr = unesc($_POST["descr"]);
+$descr = $_POST["descr"];
 if (!$descr) {
     bark($lang_takeupload['std_blank_description']);
 }
@@ -96,7 +96,7 @@ if (!preg_match('/^(.+)\.torrent$/si', $fname, $matches)) {
 }
 $shortfname = $torrent = $matches[1];
 if (!empty($_POST["name"])) {
-    $torrent = unesc($_POST["name"]);
+    $torrent = $_POST["name"];
 }
 if ($f['size'] > $max_torrent_size) {
     bark($lang_takeupload['std_torrent_file_too_big'].number_format($max_torrent_size).$lang_takeupload['std_remake_torrent_note']);
@@ -288,7 +288,7 @@ if ($largesize_torrent && $totallen > ($largesize_torrent * 1073741824)) { //Lar
 }
 
 if ($altname_main == 'yes') {
-    $cnname_part = unesc(trim($_POST["cnname"]));
+    $cnname_part = trim($_POST["cnname"]);
     $size_part = str_replace(" ", "", mksize($totallen));
     $date_part = date("m.d.y");
     $category_part = \NexusPHP\Components\Database::single("categories", "name", "WHERE id = ".\NexusPHP\Components\Database::escape($catid));
@@ -420,7 +420,7 @@ EOD;
         $current_lang = $arr["lang"];
         $to = $arr["email"];
 
-        sent_mail($to, $SITENAME, $SITEEMAIL, change_email_encode(validlang($current_lang), $lang_takeupload_target[validlang($current_lang)]['mail_title'].$torrent), change_email_encode(validlang($current_lang), $body_arr[validlang($current_lang)]), "torrent upload", false, false, '', get_email_encode(validlang($current_lang)), "eYou");
+        sent_mail($to, $SITENAME, $SITEEMAIL, $lang_takeupload_target[validlang($current_lang)]['mail_title'].$torrent, $body_arr[validlang($current_lang)], "torrent upload", false, false, '', get_email_encode(validlang($current_lang)), "eYou");
     }
 }
 

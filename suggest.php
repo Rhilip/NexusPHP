@@ -10,7 +10,7 @@ header("Pragma: no-cache");
 header("Content-Type: text/xml; charset=utf-8");
 
 if (isset($_GET['q']) && $_GET['q'] != '') {
-    $searchstr = unesc(trim($_GET['q']));
+    $searchstr = trim($_GET['q']);
     
     $suggest_query = \NexusPHP\Components\Database::query("SELECT keywords AS suggest, COUNT(*) AS count FROM suggest WHERE keywords LIKE " . \NexusPHP\Components\Database::escape($searchstr . "%")." GROUP BY keywords ORDER BY count DESC, keywords DESC LIMIT 10") or sqlerr(__FILE__, __LINE__);
     $result = "";

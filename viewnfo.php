@@ -17,7 +17,7 @@ $a = mysqli_fetch_assoc($r) or die($lang_viewnfo['std_puke']);
 // view might be one of: "magic", "latin-1", "strict" or "fonthack"
 $view = "";
 if (isset($_GET["view"])) {
-    $view = unesc($_GET["view"]);
+    $view = $_GET["view"];
 } else {
     $view = "magic"; // default behavior
 }

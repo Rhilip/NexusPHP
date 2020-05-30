@@ -38,13 +38,13 @@ if ($_GET['action'] == "apply") {
     }
 } elseif ($_POST['action'] == "newapply") {
     if (get_user_class() >= $applylink_class) {
-        $sitename = unesc($_POST["linkname"]);
-        $url = unesc($_POST["url"]);
-        $title = unesc($_POST["title"]);
-        $admin = unesc($_POST["admin"]);
+        $sitename = $_POST["linkname"];
+        $url = $_POST["url"];
+        $title = $_POST["title"];
+        $admin = $_POST["admin"];
         $email = htmlspecialchars(trim($_POST['email']));
         $email = safe_email($email);
-        $reason = unesc($_POST["reason"]);
+        $reason = $_POST["reason"];
         if (!$sitename) {
             stderr($lang_linksmanage['std_error'], $lang_linksmanage['std_no_sitename']);
         } elseif (!$url) {

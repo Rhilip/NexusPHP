@@ -221,34 +221,13 @@ function formatImg($src, $enableImageResizer, $image_max_width, $image_max_heigh
     return addTempCode("<img alt=\"image\" src=\"$src\"" .($enableImageResizer ?  " onload=\"Scale(this,$image_max_width,$image_max_height);\" onclick=\"Preview(this);\"" : "") .  " />");
 }
 
-function formatFlash($src, $width, $height)
-{
-    if (!$width) {
-        $width = 500;
-    }
-    if (!$height) {
-        $height = 300;
-    }
-    return addTempCode("<object width=\"$width\" height=\"$height\"><param name=\"movie\" value=\"$src\" /><embed src=\"$src\" width=\"$width\" height=\"$height\" type=\"application/x-shockwave-flash\"></embed></object>");
-}
-function formatFlv($src, $width, $height)
-{
-    if (!$width) {
-        $width = 320;
-    }
-    if (!$height) {
-        $height = 240;
-    }
-    return addTempCode("<object width=\"$width\" height=\"$height\"><param name=\"movie\" value=\"flvplayer.swf?file=$src\" /><param name=\"allowFullScreen\" value=\"true\" /><embed src=\"flvplayer.swf?file=$src\" type=\"application/x-shockwave-flash\" allowfullscreen=\"true\" width=\"$width\" height=\"$height\"></embed></object>");
-}
 function format_urls($text, $newWindow = false)
 {
-    return preg_replace(
-        "/((https?|ftp|gopher|news|telnet|mms|rtsp):\/\/[^()\[\]<>\s]+)/ei",
-        "formatUrl('\\1', ".($newWindow==true ? 1 : 0).", '', 'faqlink')",
-        $text
-    );
+    return preg_replace_callback("/((https?|ftp|gopher|news|telnet|mms|rtsp):\/\/[^()\[\]<>\s]+)/i", function ($matches) use ($newWindow) {
+        return formatUrl($matches[1], ($newWindow == true ? 1 : 0), '', 'faqlink');
+    }, $text);
 }
+
 function format_comment($text, $strip_html = true, $xssclean = false, $newtab = false, $imageresizer = true, $image_max_width = 700, $enableimage = true, $enableflash = true, $imagenum = -1, $image_max_height = 0, $adid = 0)
 {
     global $lang_functions;
@@ -266,7 +245,9 @@ function format_comment($text, $strip_html = true, $xssclean = false, $newtab = 
     $s = nl2br($s);
 
     if (strpos($s, "[code]") !== false && strpos($s, "[/code]") !== false) {
-        $s = preg_replace("/\[code\](.+?)\[\/code\]/eis", "formatCode('\\1')", $s);
+        $s = preg_replace_callback("/\[code\](.+?)\[\/code\]/is", function ($matches) {
+            return formatCode($matches[1]);
+        }, $s);
     }
 
     $originalBbTagArray = array('[siteurl]', '[site]','[*]', '[b]', '[/b]', '[i]', '[/i]', '[u]', '[/u]', '[pre]', '[/pre]', '[/color]', '[/font]', '[/size]', "  ");
@@ -279,47 +260,30 @@ function format_comment($text, $strip_html = true, $xssclean = false, $newtab = 
 
     if ($enableattach_attachment == 'yes' && $imagenum != 1) {
         $limit = 20;
-        $s = preg_replace("/\[attach\]([0-9a-zA-z][0-9a-zA-z]*)\[\/attach\]/ies", "print_attachment('\\1', ".($enableimage ? 1 : 0).", ".($imageresizer ? 1 : 0).")", $s, $limit);
-    }
+        $s = preg_replace_callback("/\[attach\]([0-9a-zA-z][0-9a-zA-z]*)\[\/attach\]/is", function ($matches) use ($enableimage, $imageresizer) {
+            return print_attachment($matches[1], ($enableimage ? 1 : 0), ($imageresizer ? 1 : 0));
+        }, $s, $limit);    }
 
     if ($enableimage) {
-        $s = preg_replace("/\[img\]([^\<\r\n\"']+?)\[\/img\]/ei", "formatImg('\\1',".$imageresizer.",".$image_max_width.",".$image_max_height.")", $s, $imagenum, $imgReplaceCount);
-        $s = preg_replace("/\[img=([^\<\r\n\"']+?)\]/ei", "formatImg('\\1',".$imageresizer.",".$image_max_width.",".$image_max_height.")", $s, ($imagenum != -1 ? max($imagenum-$imgReplaceCount, 0) : -1));
+        $anon_formatImg_Callback = function ($matches) use ($imageresizer, $image_max_width, $image_max_height) {
+            return formatImg($matches[1], $imageresizer, $image_max_width, $image_max_height);
+        };
+        $s = preg_replace_callback("/\[img\]([^\s\r\n\"'\<\>]+?)\[\/img\]/i", $anon_formatImg_Callback, $s, $imagenum, $imgReplaceCount);
+        $s = preg_replace_callback("/\[img=([^\s\r\n\"'\<\>]+?)\]/i", $anon_formatImg_Callback, $s, ($imagenum != -1 ? max($imagenum-$imgReplaceCount, 0) : -1));
     } else {
         $s = preg_replace("/\[img\]([^\<\r\n\"']+?)\[\/img\]/i", '', $s, -1);
         $s = preg_replace("/\[img=([^\<\r\n\"']+?)\]/i", '', $s, -1);
     }
 
-    // [flash,500,400]http://www/image.swf[/flash]
-    if (strpos($s, "[flash") !== false) { //flash is not often used. Better check if it exist before hand
-        if ($enableflash) {
-            $s = preg_replace("/\[flash(\,([1-9][0-9]*)\,([1-9][0-9]*))?\]((http|ftp):\/\/[^\s'\"<>]+(\.(swf)))\[\/flash\]/ei", "formatFlash('\\4', '\\2', '\\3')", $s);
-        } else {
-            $s = preg_replace("/\[flash(\,([1-9][0-9]*)\,([1-9][0-9]*))?\]((http|ftp):\/\/[^\s'\"<>]+(\.(swf)))\[\/flash\]/i", '', $s);
-        }
-    }
-    //[flv,320,240]http://www/a.flv[/flv]
-    if (strpos($s, "[flv") !== false) { //flv is not often used. Better check if it exist before hand
-        if ($enableflash) {
-            $s = preg_replace("/\[flv(\,([1-9][0-9]*)\,([1-9][0-9]*))?\]((http|ftp):\/\/[^\s'\"<>]+(\.(flv)))\[\/flv\]/ei", "formatFlv('\\4', '\\2', '\\3')", $s);
-        } else {
-            $s = preg_replace("/\[flv(\,([1-9][0-9]*)\,([1-9][0-9]*))?\]((http|ftp):\/\/[^\s'\"<>]+(\.(flv)))\[\/flv\]/i", '', $s);
-        }
-    }
-
     // [url=http://www.example.com]Text[/url]
-    if ($adid) {
-        $s = preg_replace("/\[url=([^\[\s]+?)\](.+?)\[\/url\]/ei", "formatAdUrl(".$adid." ,'\\1', '\\2', ".($newtab==true ? 1 : 0).", 'faqlink')", $s);
-    } else {
-        $s = preg_replace("/\[url=([^\[\s]+?)\](.+?)\[\/url\]/ei", "formatUrl('\\1', ".($newtab==true ? 1 : 0).", '\\2', 'faqlink')", $s);
-    }
-
-    // [url]http://www.example.com[/url]
-    $s = preg_replace(
-        "/\[url\]([^\[\s]+?)\[\/url\]/ei",
-        "formatUrl('\\1', ".($newtab==true ? 1 : 0).", '', 'faqlink')",
-        $s
-    );
+    $anon_formatUrl_Callback_with_adid = function ($matches) use ($adid, $newtab) {
+        if ($adid) {
+            return formatAdUrl($adid, $matches[1], $matches[2], ($newtab == true ? 1 : 0));
+        } else {
+            return formatUrl($matches[1], ($newtab == true ? 1 : 0), $matches[2], 'faqlink');
+        }
+    };
+    $s = preg_replace_callback("/\[url=([^\[\s]+?)\](.+?)\[\/url\]/i", $anon_formatUrl_Callback_with_adid, $s);
 
     $s = format_urls($s, $newtab);
     // Quotes
@@ -327,7 +291,14 @@ function format_comment($text, $strip_html = true, $xssclean = false, $newtab = 
         $s = format_quotes($s);
     }
 
-    $s = preg_replace("/\[em([1-9][0-9]*)\]/ie", "(\\1 < 192 ? '<img src=\"pic/smilies/\\1.gif\" alt=\"[em\\1]\" />' : '[em\\1]')", $s);
+    $s = preg_replace_callback("/\[em([0-9][0-9]*)\]/i", function ($matches) {
+        if ($matches[1] <= 192) {
+            return "<img src=\"pic/smilies/$matches[1].gif\" alt=\"[em$matches[1]]\" />";
+        } else {
+            return "[em$matches[1]]";
+        }
+    }, $s);
+
     reset($tempCode);
     $j = 0;
     while (count($tempCode) || $j > 5) {
@@ -633,7 +604,7 @@ function get_slr_color($ratio)
 
 function write_log($text, $security = "normal")
 {
-    \NexusPHP\Components\Database::query("INSERT INTO sitelog (added, txt, security_level) VALUES(NOW(), ?, ?)", [$text, $security]) or sqlerr(__FILE__, __LINE__);
+    \NexusPHP\Components\Database::exec("INSERT INTO sitelog (added, txt, security_level) VALUES(NOW(), ?, ?)", [$text, $security]) or sqlerr(__FILE__, __LINE__);
 }
 
 function get_elapsed_time($ts, $shortunit = false)
@@ -1097,7 +1068,7 @@ function get_torrent_extinfo_identifier($torrentid)
 
 function parse_imdb_id($url)
 {
-    if ($url != "" && preg_match("/[0-9]{7}/i", $url, $matches)) {
+    if ($url != "" && preg_match("/[0-9]{7,8}/i", $url, $matches)) {
         return $matches[0];
     } elseif ($url && is_numeric($url) && strlen($url) < 7) {
         return str_pad($url, 7, '0', STR_PAD_LEFT);
@@ -1109,46 +1080,6 @@ function parse_imdb_id($url)
 function build_imdb_url($imdb_id)
 {
     return $imdb_id == "" ? "" : "http://www.imdb.com/title/tt" . $imdb_id . "/";
-}
-
-// it's a stub implemetation here, we need more acurate regression analysis to complete our algorithm
-function get_torrent_2_user_value($user_snatched_arr)
-{
-    // check if it's current user's torrent
-    $torrent_2_user_value = 1.0;
-
-    $torrent_res = \NexusPHP\Components\Database::query("SELECT * FROM torrents WHERE id = " . $user_snatched_arr['torrentid']) or sqlerr(__FILE__, __LINE__);
-    if (mysqli_num_rows($torrent_res) == 1) {	// torrent still exists
-        $torrent_arr = mysqli_fetch_array($torrent_res) or sqlerr(__FILE__, __LINE__);
-        if ($torrent_arr['owner'] == $user_snatched_arr['userid']) {	// owner's torrent
-            $torrent_2_user_value *= 0.7;	// owner's torrent
-            $torrent_2_user_value += ($user_snatched_arr['uploaded'] / $torrent_arr['size']) -1 > 0 ? 0.2 - exp(-(($user_snatched_arr['uploaded'] / $torrent_arr['size']) -1)) : ($user_snatched_arr['uploaded'] / $torrent_arr['size']) -1;
-            $torrent_2_user_value += min(0.1, ($user_snatched_arr['seedtime'] / 37*60*60) * 0.1);
-        } else {
-            if ($user_snatched_arr['finished'] == 'yes') {
-                $torrent_2_user_value *= 0.5;
-                $torrent_2_user_value += ($user_snatched_arr['uploaded'] / $torrent_arr['size']) -1 > 0 ? 0.4 - exp(-(($user_snatched_arr['uploaded'] / $torrent_arr['size']) -1)) : ($user_snatched_arr['uploaded'] / $torrent_arr['size']) -1;
-                $torrent_2_user_value += min(0.1, ($user_snatched_arr['seedtime'] / 22*60*60) * 0.1);
-            } else {
-                $torrent_2_user_value *= 0.2;
-                $torrent_2_user_value += min(0.05, ($user_snatched_arr['leechtime'] / 24*60*60) * 0.1);	// usually leechtime could not explain much
-            }
-        }
-    } else {	// torrent already deleted, half blind guess, be conservative
-        if ($user_snatched_arr['finished'] == 'no' && $user_snatched_arr['uploaded'] > 0 && $user_snatched_arr['downloaded'] == 0) {	// possibly owner
-            $torrent_2_user_value *= 0.55;	//conservative
-            $torrent_2_user_value += min(0.05, ($user_snatched_arr['leechtime'] / 31*60*60) * 0.1);
-            $torrent_2_user_value += min(0.1, ($user_snatched_arr['seedtime'] / 31*60*60) * 0.1);
-        } elseif ($user_snatched_arr['downloaded'] > 0) {	// possibly leecher
-            $torrent_2_user_value *= 0.38;	//conservative
-            $torrent_2_user_value *= min(0.22, 0.1 * $user_snatched_arr['uploaded'] / $user_snatched_arr['downloaded']);	// 0.3 for conservative
-            $torrent_2_user_value += min(0.05, ($user_snatched_arr['leechtime'] / 22*60*60) * 0.1);
-            $torrent_2_user_value += min(0.12, ($user_snatched_arr['seedtime'] / 22*60*60) * 0.1);
-        } else {
-            $torrent_2_user_value *= 0.0;
-        }
-    }
-    return $torrent_2_user_value;
 }
 
 function cur_user_check()
@@ -1277,72 +1208,19 @@ function reset_cachetimestamp($id, $field = "cache_stamp")
     \NexusPHP\Components\Database::query("UPDATE torrents SET $field = 0 WHERE id = " . \NexusPHP\Components\Database::escape($id)) or sqlerr(__FILE__, __LINE__);
 }
 
-function cache_check($file = 'cachefile', $endpage = true, $cachetime = 600)
-{
-    global $lang_functions;
-    global $rootpath,$cache,$CURLANGDIR;
-    $cachefile = $rootpath.$cache ."/" . $CURLANGDIR .'/'.$file.'.html';
-    // Serve from the cache if it is younger than $cachetime
-    if (file_exists($cachefile) && (time() - $cachetime < filemtime($cachefile))) {
-        include($cachefile);
-        if ($endpage) {
-            print("<p align=\"center\"><font class=\"small\">".$lang_functions['text_page_last_updated'].date('Y-m-d H:i:s', filemtime($cachefile))."</font></p>");
-            end_main_frame();
-            stdfoot();
-            exit;
-        }
-        return false;
-    }
-    ob_start();
-    return true;
-}
-
-function cache_save($file = 'cachefile')
-{
-    global $rootpath,$cache;
-    global $CURLANGDIR;
-    $cachefile = $rootpath.$cache ."/" . $CURLANGDIR . '/'.$file.'.html';
-    $fp = fopen($cachefile, 'w');
-    // save the contents of output buffer to the file
-    fwrite($fp, ob_get_contents());
-    // close the file
-    fclose($fp);
-    // Send the output to the browser
-    ob_end_flush();
-}
-
 function get_email_encode($lang)
 {
-    if ($lang == 'chs' || $lang == 'cht') {
-        return "gbk";
-    } else {
-        return "utf-8";
-    }
-}
-
-function change_email_encode($lang, $content)
-{
-    return iconv("utf-8", get_email_encode($lang) . "//IGNORE", $content);
+    return "utf-8";
 }
 
 function safe_email($email)
 {
-    $email = str_replace("<", "", $email);
-    $email = str_replace(">", "", $email);
-    $email = str_replace("\'", "", $email);
-    $email = str_replace('\"', "", $email);
-    $email = str_replace("\\\\", "", $email);
-
-    return $email;
+    return filter_var($email, FILTER_SANITIZE_EMAIL);
 }
 
 function check_email($email)
 {
-    if (preg_match('/^[A-Za-z0-9][A-Za-z0-9_.+\-]*@[A-Za-z0-9][A-Za-z0-9_+\-]*(\.[A-Za-z0-9][A-Za-z0-9_+\-]*)+$/', $email)) {
-        return true;
-    } else {
-        return false;
-    }
+    return filter_var($email, FILTER_VALIDATE_EMAIL);
 }
 
 function sent_mail($to, $fromname, $fromemail, $subject, $body, $type = "confirmation", $showmsg=true, $multiple=false, $multiplemail='', $hdr_encoding = 'UTF-8', $specialcase = '')
@@ -1351,36 +1229,31 @@ function sent_mail($to, $fromname, $fromemail, $subject, $body, $type = "confirm
     global $rootpath,$SITENAME,$SITEEMAIL,$smtptype,$smtp,$smtp_host,$smtp_port,$smtp_from,$smtpaddress,$smtpport,$accountname,$accountpassword;
     # Is the OS Windows or Mac or Linux?
     if (strtoupper(substr(PHP_OS, 0, 3)=='WIN')) {
-        $eol="\r\n";
         $windows = true;
-    } elseif (strtoupper(substr(PHP_OS, 0, 3)=='MAC')) {
-        $eol="\r";
-    } else {
-        $eol="\n";
     }
     if ($smtptype == 'none') {
         return false;
     }
     if ($smtptype == 'default') {
-        @mail($to, "=?".$hdr_encoding."?B?".base64_encode($subject)."?=", $body, "From: ".$SITEEMAIL.$eol."Content-type: text/html; charset=".$hdr_encoding.$eol, "-f$SITEEMAIL") or stderr($lang_functions['std_error'], $lang_functions['text_unable_to_send_mail']);
+        @mail($to, "=?".$hdr_encoding."?B?".base64_encode($subject)."?=", $body, "From: ".$SITEEMAIL.PHP_EOL."Content-type: text/html; charset=".$hdr_encoding.PHP_EOL, "-f$SITEEMAIL") or stderr($lang_functions['std_error'], $lang_functions['text_unable_to_send_mail']);
     } elseif ($smtptype == 'advanced') {
         $mid = md5(getip() . $fromname);
         $name = $_SERVER["SERVER_NAME"];
-        $headers .= "From: $fromname <$fromemail>".$eol;
-        $headers .= "Reply-To: $fromname <$fromemail>".$eol;
-        $headers .= "Return-Path: $fromname <$fromemail>".$eol;
-        $headers .= "Message-ID: <$mid thesystem@$name>".$eol;
-        $headers .= "X-Mailer: PHP v".phpversion().$eol;
-        $headers .= "MIME-Version: 1.0".$eol;
-        $headers .= "Content-type: text/html; charset=".$hdr_encoding.$eol;
-        $headers .= "X-Sender: PHP".$eol;
+        $headers .= "From: $fromname <$fromemail>".PHP_EOL;
+        $headers .= "Reply-To: $fromname <$fromemail>".PHP_EOL;
+        $headers .= "Return-Path: $fromname <$fromemail>".PHP_EOL;
+        $headers .= "Message-ID: <$mid thesystem@$name>".PHP_EOL;
+        $headers .= "X-Mailer: PHP v".phpversion().PHP_EOL;
+        $headers .= "MIME-Version: 1.0".PHP_EOL;
+        $headers .= "Content-type: text/html; charset=".$hdr_encoding.PHP_EOL;
+        $headers .= "X-Sender: PHP".PHP_EOL;
         if ($multiple) {
             $bcc_multiplemail = "";
             foreach ($multiplemail as $toemail) {
                 $bcc_multiplemail = $bcc_multiplemail . ($bcc_multiplemail != "" ? "," : "") . $toemail;
             }
 
-            $headers .= "Bcc: $multiplemail.$eol";
+            $headers .= "Bcc: $multiplemail" . PHP_EOL;
         }
         if ($smtp == "yes") {
             ini_set('SMTP', $smtp_host);
@@ -1398,27 +1271,37 @@ function sent_mail($to, $fromname, $fromemail, $subject, $body, $type = "confirm
             ini_restore(sendmail_from);
         }
     } elseif ($smtptype == 'external') {
-        require_once($rootpath . 'include/smtp/smtp.lib.php');
-        $mail = new smtp($hdr_encoding, 'eYou');
-        $mail->debug(false);
-        $mail->open($smtpaddress, $smtpport);
-        $mail->auth($accountname, $accountpassword);
-        //	$mail->bcc($multiplemail);
-        $mail->from($SITEEMAIL);
-        if ($multiple) {
-            $mail->multi_to_head($to);
-            foreach ($multiplemail as $toemail) {
-                $mail->multi_to($toemail);
+        $debug = get_user_class() >= UC_SYSOP;
+        $mail = new \PHPMailer\PHPMailer\PHPMailer($debug);
+        try {
+            $mail->SMTPDebug = \PHPMailer\PHPMailer\SMTP::DEBUG_OFF;
+            $mail->isSMTP();
+            $mail->Host = $smtpaddress;
+            $mail->SMTPAuth = true;
+            $mail->Username = $accountname;
+            $mail->Password = $accountpassword;
+            $mail->SMTPSecure = 'tls';
+            $mail->Port = $smtpport;
+
+            $mail->CharSet = \PHPMailer\PHPMailer\PHPMailer::CHARSET_UTF8;  // 强制utf-8编码
+
+            $mail->setFrom($accountname, $SITENAME);
+            if ($multiple) {
+                foreach ($multiplemail as $toemail) {
+                    $mail->addAddress($toemail);
+                }
+            } else {
+                $mail->addAddress($to);
             }
-        } else {
-            $mail->to($to);
+
+            $mail->isHTML(true);
+            $mail->Subject = $subject;
+            $mail->Body = $body;
+
+            $mail->send();
+        } catch (\PHPMailer\PHPMailer\Exception $e) {
+            return false;
         }
-        $mail->mime_content_transfer_encoding();
-        $mail->mime_charset('text/html', $hdr_encoding);
-        $mail->subject($subject);
-        $mail->body($body);
-        $mail->send() or stderr($lang_functions['std_error'], $lang_functions['text_unable_to_send_mail']);
-        $mail->close();
     }
     if ($showmsg) {
         if ($type == "confirmation") {
@@ -1553,6 +1436,7 @@ function random_str($length="6")
     }
     return $str;
 }
+
 function image_code()
 {
     $randomstr = random_str();
@@ -1650,7 +1534,6 @@ function in_ip_range($long, $targetip, $ip_one, $ip_two=false)
     return $ip;
 }
 
-
 function validip_format($ip)
 {
     $ipPattern =
@@ -1710,7 +1593,7 @@ function WriteConfig($configname = null, $config = null)
     }
     $data = "<?php\n";
     foreach ($CONFIGURATIONS as $CONFIGURATION) {
-        $data .= "\$$CONFIGURATION=".getExportedValue($$CONFIGURATION).";\n";
+        $data .= "\$$CONFIGURATION=".var_export($$CONFIGURATION).";\n";
     }
     $fp = @fopen($path, 'w');
     if (!$fp) {
@@ -1722,31 +1605,6 @@ function WriteConfig($configname = null, $config = null)
     }
     fclose($fp);
     return true;
-}
-
-function getExportedValue($input, $t = null)
-{
-    switch (gettype($input)) {
-        case 'string':
-            return "'".str_replace(array("\\","'"), array("\\\\","\'"), $input)."'";
-        case 'array':
-            $output = "array(\r";
-            foreach ($input as $key => $value) {
-                $output .= $t."\t".getExportedValue($key, $t."\t").' => '.getExportedValue($value, $t."\t");
-                $output .= ",\n";
-            }
-            $output .= $t.')';
-            return $output;
-        case 'boolean':
-            return $input ? 'true' : 'false';
-        case 'NULL':
-            return 'NULL';
-        case 'integer':
-        case 'double':
-        case 'float':
-            return "'".(string)$input."'";
-     }
-    return 'NULL';
 }
 
 function dbconn($autoclean = false)
@@ -1860,12 +1718,6 @@ function userlogin()
     }
 }
 
-function unesc($x)
-{
-    return $x;
-}
-
-
 function getsize_int($amount, $unit = "G")
 {
     if ($unit == "B") {
@@ -1885,65 +1737,26 @@ function getsize_int($amount, $unit = "G")
 
 function mksize_compact($bytes)
 {
-    if ($bytes < 1000 * 1024) {
-        return number_format($bytes / 1024, 2) . "<br />KB";
-    } elseif ($bytes < 1000 * 1048576) {
-        return number_format($bytes / 1048576, 2) . "<br />MB";
-    } elseif ($bytes < 1000 * 1073741824) {
-        return number_format($bytes / 1073741824, 2) . "<br />GB";
-    } elseif ($bytes < 1000 * 1099511627776) {
-        return number_format($bytes / 1099511627776, 3) . "<br />TB";
-    } else {
-        return number_format($bytes / 1125899906842624, 3) . "<br />PB";
-    }
+    return mksize($bytes,'<br />');
 }
 
 function mksize_loose($bytes)
 {
-    if ($bytes < 1000 * 1024) {
-        return number_format($bytes / 1024, 2) . "&nbsp;KB";
-    } elseif ($bytes < 1000 * 1048576) {
-        return number_format($bytes / 1048576, 2) . "&nbsp;MB";
-    } elseif ($bytes < 1000 * 1073741824) {
-        return number_format($bytes / 1073741824, 2) . "&nbsp;GB";
-    } elseif ($bytes < 1000 * 1099511627776) {
-        return number_format($bytes / 1099511627776, 3) . "&nbsp;TB";
-    } else {
-        return number_format($bytes / 1125899906842624, 3) . "&nbsp;PB";
-    }
+    return mksize($bytes, '&nbsp;');
 }
 
-function mksize($bytes)
+function mksize($bytes, $sep = ' ')
 {
     if ($bytes < 1000 * 1024) {
-        return number_format($bytes / 1024, 2) . " KB";
+        return number_format($bytes / 1024, 2) .  $sep . "KB";
     } elseif ($bytes < 1000 * 1048576) {
-        return number_format($bytes / 1048576, 2) . " MB";
+        return number_format($bytes / 1048576, 2) .$sep .  "MB";
     } elseif ($bytes < 1000 * 1073741824) {
-        return number_format($bytes / 1073741824, 2) . " GB";
+        return number_format($bytes / 1073741824, 2) . $sep . "GB";
     } elseif ($bytes < 1000 * 1099511627776) {
-        return number_format($bytes / 1099511627776, 3) . " TB";
+        return number_format($bytes / 1099511627776, 3) .$sep .  "TB";
     } else {
-        return number_format($bytes / 1125899906842624, 3) . " PB";
-    }
-}
-
-
-function mksizeint($bytes)
-{
-    $bytes = max(0, $bytes);
-    if ($bytes < 1000) {
-        return floor($bytes) . " B";
-    } elseif ($bytes < 1000 * 1024) {
-        return floor($bytes / 1024) . " kB";
-    } elseif ($bytes < 1000 * 1048576) {
-        return floor($bytes / 1048576) . " MB";
-    } elseif ($bytes < 1000 * 1073741824) {
-        return floor($bytes / 1073741824) . " GB";
-    } elseif ($bytes < 1000 * 1099511627776) {
-        return floor($bytes / 1099511627776) . " TB";
-    } else {
-        return floor($bytes / 1125899906842624) . " PB";
+        return number_format($bytes / 1125899906842624, 3) . $sep . "PB";
     }
 }
 
@@ -1989,9 +1802,9 @@ function mkglobal($vars)
     }
     foreach ($vars as $v) {
         if (isset($_GET[$v])) {
-            $GLOBALS[$v] = unesc($_GET[$v]);
+            $GLOBALS[$v] = $_GET[$v];
         } elseif (isset($_POST[$v])) {
-            $GLOBALS[$v] = unesc($_POST[$v]);
+            $GLOBALS[$v] = $_POST[$v];
         } else {
             return 0;
         }
@@ -2021,7 +1834,7 @@ function tr_small($x, $y, $noesc=0, $relation='')
     print("<tr".($relation ? " relation = \"$relation\"" : "")."><td width=\"1%\" class=\"rowhead nowrap\" valign=\"top\" align=\"right\">".$x."</td><td width=\"99%\" class=\"rowfollow\" valign=\"top\" align=\"left\">".$a."</td></tr>\n");
 }
 
-function twotd($x, $y, $nosec=0)
+function twotd($x, $y, $noesc=0)
 {
     if ($noesc) {
         $a = $y;
@@ -3470,88 +3283,30 @@ function validusername($username)
 // treated like the Swedish letters, otherwise like the DOS glyphs.
 function code($ibm_437, $swedishmagic = false)
 {
-    $table437 = array("\200", "\201", "\202", "\203", "\204", "\205", "\206", "\207",
-"\210", "\211", "\212", "\213", "\214", "\215", "\216", "\217", "\220",
-"\221", "\222", "\223", "\224", "\225", "\226", "\227", "\230", "\231",
-"\232", "\233", "\234", "\235", "\236", "\237", "\240", "\241", "\242",
-"\243", "\244", "\245", "\246", "\247", "\250", "\251", "\252", "\253",
-"\254", "\255", "\256", "\257", "\260", "\261", "\262", "\263", "\264",
-"\265", "\266", "\267", "\270", "\271", "\272", "\273", "\274", "\275",
-"\276", "\277", "\300", "\301", "\302", "\303", "\304", "\305", "\306",
-"\307", "\310", "\311", "\312", "\313", "\314", "\315", "\316", "\317",
-"\320", "\321", "\322", "\323", "\324", "\325", "\326", "\327", "\330",
-"\331", "\332", "\333", "\334", "\335", "\336", "\337", "\340", "\341",
-"\342", "\343", "\344", "\345", "\346", "\347", "\350", "\351", "\352",
-"\353", "\354", "\355", "\356", "\357", "\360", "\361", "\362", "\363",
-"\364", "\365", "\366", "\367", "\370", "\371", "\372", "\373", "\374",
-"\375", "\376", "\377");
-
-    $tablehtml = array("&#x00c7;", "&#x00fc;", "&#x00e9;", "&#x00e2;", "&#x00e4;",
-"&#x00e0;", "&#x00e5;", "&#x00e7;", "&#x00ea;", "&#x00eb;", "&#x00e8;",
-"&#x00ef;", "&#x00ee;", "&#x00ec;", "&#x00c4;", "&#x00c5;", "&#x00c9;",
-"&#x00e6;", "&#x00c6;", "&#x00f4;", "&#x00f6;", "&#x00f2;", "&#x00fb;",
-"&#x00f9;", "&#x00ff;", "&#x00d6;", "&#x00dc;", "&#x00a2;", "&#x00a3;",
-"&#x00a5;", "&#x20a7;", "&#x0192;", "&#x00e1;", "&#x00ed;", "&#x00f3;",
-"&#x00fa;", "&#x00f1;", "&#x00d1;", "&#x00aa;", "&#x00ba;", "&#x00bf;",
-"&#x2310;", "&#x00ac;", "&#x00bd;", "&#x00bc;", "&#x00a1;", "&#x00ab;",
-"&#x00bb;", "&#x2591;", "&#x2592;", "&#x2593;", "&#x2502;", "&#x2524;",
-"&#x2561;", "&#x2562;", "&#x2556;", "&#x2555;", "&#x2563;", "&#x2551;",
-"&#x2557;", "&#x255d;", "&#x255c;", "&#x255b;", "&#x2510;", "&#x2514;",
-"&#x2534;", "&#x252c;", "&#x251c;", "&#x2500;", "&#x253c;", "&#x255e;",
-"&#x255f;", "&#x255a;", "&#x2554;", "&#x2569;", "&#x2566;", "&#x2560;",
-"&#x2550;", "&#x256c;", "&#x2567;", "&#x2568;", "&#x2564;", "&#x2565;",
-"&#x2559;", "&#x2558;", "&#x2552;", "&#x2553;", "&#x256b;", "&#x256a;",
-"&#x2518;", "&#x250c;", "&#x2588;", "&#x2584;", "&#x258c;", "&#x2590;",
-"&#x2580;", "&#x03b1;", "&#x00df;", "&#x0393;", "&#x03c0;", "&#x03a3;",
-"&#x03c3;", "&#x03bc;", "&#x03c4;", "&#x03a6;", "&#x0398;", "&#x03a9;",
-"&#x03b4;", "&#x221e;", "&#x03c6;", "&#x03b5;", "&#x2229;", "&#x2261;",
-"&#x00b1;", "&#x2265;", "&#x2264;", "&#x2320;", "&#x2321;", "&#x00f7;",
-"&#x2248;", "&#x00b0;", "&#x2219;", "&#x00b7;", "&#x221a;", "&#x207f;",
-"&#x00b2;", "&#x25a0;", "&#x00a0;");
-    $s = htmlspecialchars($ibm_437);
-
-
-    // 0-9, 11-12, 14-31, 127 (decimalt)
-    $control =
-array("\000", "\001", "\002", "\003", "\004", "\005", "\006", "\007",
-"\010", "\011", /*"\012",*/ "\013", "\014", /*"\015",*/ "\016", "\017",
-"\020", "\021", "\022", "\023", "\024", "\025", "\026", "\027",
-"\030", "\031", "\032", "\033", "\034", "\035", "\036", "\037",
-"\177");
-
-    /* Code control characters to control pictures.
-    http://www.unicode.org/charts/PDF/U2400.pdf
-    (This is somewhat the Right Thing, but looks crappy with Courier New.)
-    $controlpict = array("&#x2423;","&#x2404;");
-    $s = str_replace($control,$controlpict,$s); */
-
-    // replace control chars with space - feel free to fix the regexp smile.gif
-    /*echo "[a\\x00-\\x1F]";
-    //$s = preg_replace("/[ \\x00-\\x1F]/", " ", $s);
-    $s = preg_replace("/[ \000-\037]/", " ", $s); */
-    $s = str_replace($control, " ", $s);
-
-
-
-
+    $cf = array(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 8962, 199, 252, 233, 226, 228, 224, 229, 231, 234, 235, 232, 239, 238, 236, 196, 197, 201, 230, 198, 244, 246, 242, 251, 249, 255, 214, 220, 162, 163, 165, 8359, 402, 225, 237, 243, 250, 241, 209, 170, 186, 191, 8976, 172, 189, 188, 161, 171, 187, 9617, 9618, 9619, 9474, 9508, 9569, 9570, 9558, 9557, 9571, 9553, 9559, 9565, 9564, 9563, 9488, 9492, 9524, 9516, 9500, 9472, 9532, 9566, 9567, 9562, 9556, 9577, 9574, 9568, 9552, 9580, 9575, 9576, 9572, 9573, 9561, 9560, 9554, 9555, 9579, 9578, 9496, 9484, 9608, 9604, 9612, 9616, 9600, 945, 223, 915, 960, 931, 963, 181, 964, 934, 920, 937, 948, 8734, 966, 949, 8745, 8801, 177, 8805, 8804, 8992, 8993, 247, 8776, 176, 8729, 183, 8730, 8319, 178, 9632, 160);
+    $s = "";
+    for ($c = 0; $c < strlen($ibm_437); $c++) {  // cyctle through the whole file doing a byte at a time.
+        $byte = $ibm_437[$c];
+        $ob = ord($byte);
+        if ($ob >= 127) {  // is it in the normal ascii range
+            $s .= '&#' . $cf[$ob] . ';';
+        } else {
+            $s .= $byte;
+        }
+    }
     if ($swedishmagic) {
         $s = str_replace("\345", "\206", $s);
         $s = str_replace("\344", "\204", $s);
         $s = str_replace("\366", "\224", $s);
-        // $s = str_replace("\304","\216",$s);
-        //$s = "[ -~]\\xC4[a-za-z]";
 
         // couldn't get ^ and $ to work, even through I read the man-pages,
         // i'm probably too tired and too unfamiliar with posix regexps right now.
         $s = preg_replace("/([ -~])\305([ -~])/", "\\1\217\\2", $s);
         $s = preg_replace("/([ -~])\304([ -~])/", "\\1\216\\2", $s);
         $s = preg_replace("/([ -~])\326([ -~])/", "\\1\231\\2", $s);
-
         $s = str_replace("\311", "\220", $s); //
-$s = str_replace("\351", "\202", $s); //
+        $s = str_replace("\351", "\202", $s); //
     }
-
-    $s = str_replace($table437, $tablehtml, $s);
     return $s;
 }
 

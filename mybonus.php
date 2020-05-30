@@ -478,7 +478,7 @@ if ($action == "exchange") {
                 }
                 $msg = \NexusPHP\Components\Database::escape($msg);
                 \NexusPHP\Components\Database::query("INSERT INTO messages (sender, subject, receiver, msg, added) VALUES(0, $subject, $useridgift, $msg, $added)") or sqlerr(__FILE__, __LINE__);
-                $usernamegift = unesc($_POST["username"]);
+                $usernamegift = $_POST["username"];
                 redirect("" . get_protocol_prefix() . "$BASEURL/mybonus.php?do=transfer");
             } else {
                 print("<table width=\"940\"><tr><td class=\"colhead\" align=\"left\" colspan=\"2\"><h1>".$lang_mybonus['text_oups']."</h1></td></tr>");

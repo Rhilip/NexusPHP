@@ -218,7 +218,7 @@ function insert_compose_frame($id, $type = 'new')
                 stderr($lang_forums['std_error'], $lang_forums['std_no_post_id']);
             }
             $arr = mysqli_fetch_assoc($res);
-            $body = "[quote=".htmlspecialchars($arr["username"])."]".htmlspecialchars(unesc($arr["body"]))."[/quote]";
+            $body = "[quote=".htmlspecialchars($arr["username"])."]".htmlspecialchars($arr["body"])."[/quote]";
             $id = $topicid;
             $type = 'reply';
             break;
@@ -233,7 +233,7 @@ function insert_compose_frame($id, $type = 'new')
                 $subject = \NexusPHP\Components\Database::single("topics", "subject", "WHERE id=".\NexusPHP\Components\Database::escape($topicid));
                 $hassubject = true;
             }
-            $body = htmlspecialchars(unesc($row["body"]));
+            $body = htmlspecialchars($row["body"]);
             $title = $lang_forums['text_edit_post'];
             break;
         }

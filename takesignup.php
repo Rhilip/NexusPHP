@@ -53,7 +53,7 @@ function isproxy()
 if ($type=='invite') {
     $inviter =  $_POST["inviter"];
     int_check($inviter);
-    $code = unesc($_POST["hash"]);
+    $code = $_POST["hash"];
 
     //check invite code
     $sq = sprintf("SELECT inviter FROM invites WHERE hash ='%s'", \NexusPHP\Components\Database::real_escape_string($code));
@@ -224,6 +224,6 @@ if ($verification == 'admin') {
 } elseif ($verification == 'automatic' || $smtptype == 'none') {
     header("Location: " . get_protocol_prefix() . "$BASEURL/confirm.php?id=$id&secret=$psecret");
 } else {
-    sent_mail($send_email, $SITENAME, $SITEEMAIL, change_email_encode(get_langfolder_cookie(), $title), change_email_encode(get_langfolder_cookie(), $body), "signup", false, false, '', get_email_encode(get_langfolder_cookie()));
+    sent_mail($send_email, $SITENAME, $SITEEMAIL, $title, $body, "signup", false, false, '', get_email_encode(get_langfolder_cookie()));
     header("Location: " . get_protocol_prefix() . "$BASEURL/ok.php?type=signup&email=" . rawurlencode($send_email));
 }

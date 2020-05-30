@@ -144,7 +144,7 @@ if ($action == "add") {
     $title = $lang_comment['text_add_comment_to']."<a href=$url>". htmlspecialchars($arr["name"]) . "</a>";
     print("<form id=compose method=post name=\"compose\" action=\"comment.php?action=add&type=$type\">\n");
     print("<input type=\"hidden\" name=\"pid\" value=\"$parent_id\"/>\n");
-    begin_compose($title, ($sub == "quote" ? "quote" : "reply"), ($sub == "quote" ? htmlspecialchars("[quote=".htmlspecialchars($arr2["username"])."]".unesc($arr2["text"])."[/quote]") : ""), false);
+    begin_compose($title, ($sub == "quote" ? "quote" : "reply"), ($sub == "quote" ? htmlspecialchars("[quote=".htmlspecialchars($arr2["username"])."]".$arr2["text"]."[/quote]") : ""), false);
     end_compose();
     print("</form>");
     end_main_frame();
@@ -204,7 +204,7 @@ if ($action == "add") {
     $title = $lang_comment['head_edit_comment_to']."<a href=$url>". htmlspecialchars($arr["name"]) . "</a>";
     print("<form id=compose method=post name=\"compose\" action=\"comment.php?action=edit&cid=$commentid&type=$type\">\n");
     print("<input type=\"hidden\" name=\"returnto\" value=\"" . htmlspecialchars($_SERVER["HTTP_REFERER"]) . "\" />\n");
-    begin_compose($title, "edit", htmlspecialchars(unesc($arr["text"])), false);
+    begin_compose($title, "edit", htmlspecialchars($arr["text"]), false);
     end_compose();
     print("</form>");
     end_main_frame();

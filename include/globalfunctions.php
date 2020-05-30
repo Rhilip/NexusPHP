@@ -21,29 +21,14 @@ function get_global_sp_state()
 // IP Validation
 function validip($ip)
 {
-    if (!ip2long($ip)) { //IPv6
-        return true;
-    }
-    if (!empty($ip) && $ip == long2ip(ip2long($ip))) {
-        // reserved IANA IPv4 addresses
-        // http://www.iana.org/assignments/ipv4-address-space
-        $reserved_ips = array(
-        array('192.0.2.0','192.0.2.255'),
-        array('192.168.0.0','192.168.255.255'),
-        array('255.255.255.0','255.255.255.255')
-        );
-
-        foreach ($reserved_ips as $r) {
-            $min = ip2long($r[0]);
-            $max = ip2long($r[1]);
-            if ((ip2long($ip) >= $min) && (ip2long($ip) <= $max)) {
-                return false;
-            }
-        }
-        return true;
-    } else {
-        return false;
-    }
+    /**
+     * FILTER_FLAG_NO_PRIV_RANGE :  private IPv4 ranges: 10.0.0.0/8, 172.16.0.0/12 and 192.168.0.0/16
+     *                              the IPv6 addresses starting with FD or FC.
+     *
+     * FILTER_FLAG_NO_RES_RANGE : reserved IPv4 ranges: 0.0.0.0/8, 169.254.0.0/16, 127.0.0.0/8 and 240.0.0.0/4.
+     *                            reserved IPv6 ranges: ::1/128, ::/128, ::ffff:0:0/96 and fe80::/10
+     */
+    return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
 }
 
 function getip()

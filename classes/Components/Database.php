@@ -144,9 +144,7 @@ class Database
             return self::raw_query($sql);
         } else {
             $stmt = self::exec($sql, $values, $types);
-            $result = $stmt->get_result();
-            $stmt->close();
-            return $result;
+            return $stmt->get_result();
         }
     }
 

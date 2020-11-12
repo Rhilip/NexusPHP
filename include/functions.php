@@ -1593,7 +1593,7 @@ function WriteConfig($configname = null, $config = null)
     }
     $data = "<?php\n";
     foreach ($CONFIGURATIONS as $CONFIGURATION) {
-        $data .= "\$$CONFIGURATION=".var_export($$CONFIGURATION).";\n";
+        $data .= "\$$CONFIGURATION=".var_export($$CONFIGURATION, true).";\n";
     }
     $fp = @fopen($path, 'w');
     if (!$fp) {

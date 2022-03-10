@@ -153,7 +153,7 @@ if (strlen($pieces) % 20 != 0) {
 $filelist = array();
 $totallen = $info['length'];
 if (isset($totallen)) {
-    $filelist[] = array($dname, $totallen);
+    $filelist[$dname] = $totallen;
     $type = "single";
 } else {
     $flist = checkTorrentDict($info, 'files', 'array');
@@ -184,7 +184,7 @@ if (isset($totallen)) {
             bark($lang_takeupload['std_filename_errors']);
         }
         $ffe = implode("/", $ffa);
-        $filelist[] = array($ffe, $ll);
+        $filelist[$ffe] = $ll;
     }
     $type = "multi";
 }
@@ -340,10 +340,45 @@ if (!$ret) {
 }
 $id = \NexusPHP\Components\Database::insert_id();
 
-@\NexusPHP\Components\Database::query("DELETE FROM files WHERE torrent = $id");
-foreach ($filelist as $file) {
-    @\NexusPHP\Components\Database::query("INSERT INTO files (torrent, filename, size) VALUES ($id, ".\NexusPHP\Components\Database::escape($file[0]).",".$file[1].")");
+function getFileTree($array, $delimiter = '/')
+{
+    if (!is_array($array)) {
+        return [];
+    }
+
+    $splitRE = '/' . preg_quote($delimiter, '/') . '/';
+    $returnArr = [];
+    foreach ($array as $key => $val) {
+        // Get parent parts and the current leaf
+        $parts = preg_split($splitRE, $key, -1, PREG_SPLIT_NO_EMPTY);
+        $leafPart = array_pop($parts);
+
+        // Build parent structure
+        // Might be slow for really deep and large structures
+        $parentArr = &$returnArr;
+        foreach ($parts as $part) {
+            if (!isset($parentArr[$part])) {
+                $parentArr[$part] = [];
+            } elseif (!is_array($parentArr[$part])) {
+                $parentArr[$part] = [];
+            }
+            $parentArr = &$parentArr[$part];
+        }
+
+        // Add the final part to the structure
+        if (empty($parentArr[$leafPart])) {
+            $parentArr[$leafPart] = $val;
+        }
+    }
+    return $returnArr;
 }
+
+$fileTreeJson = getFileTree($filelist);
+if ($type === "multi") {
+    $fileTreeJson = [$dname => $fileTreeJson];
+}
+
+\NexusPHP\Components\Database::query("INSERT INTO files (torrent, files) VALUES ($id, " . sqlesc(json_encode($fileTreeJson)) . ")");
 
 Bencode\Bencode::dump("$torrent_dir/$id.torrent", $dict);
 

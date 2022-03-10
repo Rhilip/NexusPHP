@@ -16,18 +16,76 @@ function confirm_delete(id, note, addon)
 }
 
 //viewfilelist.js
+/**
+ * 将字节转为易读的文件大小
+ * https://github.com/xiaomlove/nexusphp/issues/27
+ * https://ourbits.club/assets/js/common.js
+ * @param bytes
+ * @param fix
+ * @param si
+ * @returns {string}
+ */
+ function humanFileSize(bytes, fix, si) {
+    var thresh = si ? 1000 : 1024;
+    if (Math.abs(bytes) < thresh) {
+        return bytes + ' B';
+    }
+    var units = si
+        ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+        : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+    var u = -1;
+    do {
+        bytes /= thresh;
+        ++u;
+    } while (Math.abs(bytes) >= thresh && u < units.length - 1);
+    return bytes.toFixed(fix ? fix : 2) + ' ' + units[u];
+}
+
+/**
+ * 生成文件列表
+ * https://github.com/xiaomlove/nexusphp/issues/27
+ * https://ourbits.club/assets/js/common.js
+ * @param tree
+ * @param par
+ * @returns {string}
+ */
+ function build_tree(tree, par = '') {
+    let ret = '';
+    for (let k in tree) {
+        let v = tree[k];
+        let dep = (par.match(/\//g) || []).length;
+        if (typeof v == 'object') {
+            ret += "<tr " + (par === "" ? "" : "style='display:none' data-par = \"" + par + "\" ") + "><td class='rowfollow' data-name='" + k + "'>" + "&ensp;".repeat(dep * 2) + "<a href='javascript: void(0);'><b>" + k + "</b></a></td>";
+            ret += build_tree(v, par + "/" + k);
+        } else {
+            ret += "<tr " + (par === "" ? "" : "style='display:none' data-par = \"" + par + "\" ") + "><td class=rowfollow data-name='" + k + "'>" + "&ensp;".repeat(dep * 2) + k + "</td><td class=rowfollow align='right' data-size='" + v + "'>" + humanFileSize(v, 2, false) + "</td></tr>";
+        }
+    }
+    return ret;
+}
+
 
 function viewfilelist(torrentid)
 {
-var result=ajax.gets('viewfilelist.php?id='+torrentid);
-document.getElementById("showfl").style.display = 'none';
-document.getElementById("hidefl").style.display = 'block';
-showlist(result);
-}
+	$.get('viewfilelist.php', {"id": torrentid}, data => {
+		document.getElementById("showfl").style.display = 'none';
+		document.getElementById("hidefl").style.display = 'block';
 
-function showlist(filelist)
-{
-document.getElementById("filelist").innerHTML=filelist;
+		let file_list_html = "<table class=\"main\" border=\"1\" cellspacing=0 cellpadding=\"5\">";
+		file_list_html += "<tr><td class=colhead>路径</td><td class=colhead align=center><img class=\"size\" src=\"/pic/trans.gif\" alt=\"size\" /></td></tr>";
+		file_list_html += build_tree(data);
+		file_list_html += "</table>";
+		$('#filelist').html(file_list_html);
+		$('#filelist a').click(function () {
+			let that = $(this);
+			let parent = that.parents('tr:eq(0)');
+			let par = parent.attr('data-par');
+			let expand = (par ? par: "") + "/" + that.text();
+
+			$('#filelist tr[data-par^="'+ expand +'/"]').hide();  // 首先隐藏所有对应子项
+			$('#filelist tr[data-par$="'+ expand +'"]').toggle();  // 然后对当前项可见性进行切换
+		})
+	});
 }
 
 function hidefilelist()

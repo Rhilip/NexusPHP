@@ -881,8 +881,7 @@ INSERT INTO `faq` (`id`, `link_id`, `lang_id`, `type`, `question`, `answer`, `fl
 CREATE TABLE IF NOT EXISTS `files` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `torrent` mediumint(8) unsigned NOT NULL DEFAULT '0',
-  `filename` varchar(255) NOT NULL DEFAULT '',
-  `size` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `files` text,
   PRIMARY KEY (`id`),
   KEY `torrent` (`torrent`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;

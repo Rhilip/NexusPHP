@@ -13,6 +13,8 @@
 
 | 时间 | 目的 | 介绍 | 相关commit或pr |
 |:---:|:---:|:---:|:---:|
+| 2022.03.10 | 优化`files`表 | <https://github.com/xiaomlove/nexusphp/issues/27> |  |
+| 2022.03.10 | 屏蔽Bittorrent v2 | ... | <https://github.com/Rhilip/NexusPHP/pull/5> |
 | 2020.05.30 | 修复前一commit错误，合并一些更新 | ... | <https://github.com/Rhilip/NexusPHP/pull/3> |
 | 2020.02.07 | 支援PHP7 + Redis | [NexusPHP 建站优化 (3) 升级NPHP到PHP 7](https://blog.rhilip.info/archives/1188/) | <https://github.com/Rhilip/NexusPHP/pull/2> |
 | 2020.02.06 | 更换Bencode库为`rhilip/bencode` | [NexusPHP 建站优化 (2) 替换 Bencode 库](https://blog.rhilip.info/archives/1187/)  |  <https://github.com/Rhilip/NexusPHP/pull/1> | 

@@ -136,6 +136,12 @@ function checkTorrentDict($dict, $key, $type = null)
 }
 
 $info = checkTorrentDict($dict, 'info');
+
+// 屏蔽Bittorrent v2种子上传
+if (isset($dict['piece layers']) || isset($info['files tree']) || (isset($info['meta version']) && $info['meta version'] == 2)) {
+    bark('Torrent files created with Bittorrent Protocol v2, or hybrid torrents are not suppored.');
+}
+
 $plen = checkTorrentDict($info, 'piece length', 'integer');  // Only Check without use
 $dname = checkTorrentDict($info, 'name', 'string');
 $pieces = checkTorrentDict($info, 'pieces', 'string');

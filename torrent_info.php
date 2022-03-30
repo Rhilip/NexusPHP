@@ -1,21 +1,30 @@
 <?php
 
-use Rhilip\Bencode\Bencode;
-
 require "include/bittorrent.php";
 
-if (!function_exists('is_indexed_array')) {
-    /** 索引数组：所有键名都为数值型，注意字符串类型的数字键名会被转换为数值型。
-     * 判断数组是否为索引数组
-     * @param array $arr
-     * @return bool
+use Rhilip\Bencode\Bencode;
+
+if (!function_exists('array_is_list')) {
+    /**
+     * polyfill of array_key_last for PHP < 8.1.0
+     *
+     * @param array $array
      */
-    function is_indexed_array(array $arr): bool
+    function array_is_list($array)
     {
-        if (is_array($arr)) {
-            return count(array_filter(array_keys($arr), 'is_string')) === 0;
+        if ([] === $array || $array === array_values($array)) {
+            return true;
         }
-        return false;
+
+        $nextKey = -1;
+
+        foreach ($array as $k => $v) {
+            if ($k !== ++$nextKey) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
 
@@ -25,7 +34,7 @@ function torrent_structure_builder($array, $parent = "")
     foreach ($array as $item => $value) {
         $value_length = strlen(Bencode::encode($value));
         if (is_iterable($value)) {  // It may `dictionary` or `list`
-            $type = is_indexed_array($value) ? 'list' : 'dictionary';
+            $type = array_is_list($value) ? 'list' : 'dictionary';
             $ret .= "<li><div align='left' class='" . $type . "'><a href='javascript:void(0);' onclick='$(this).parent().next(\"ul\").toggle()'> + <span class=title>[" . $item . "]</span> <span class='icon'>(" . ucfirst($type) . ")</span> <span class=length>[" . $value_length . "]</span></a></div>";
             $ret .= "<ul style='display:none'>" . torrent_structure_builder($value, $item) . "</ul></li>";
         } else { // It may `interger` or `string`

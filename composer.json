@@ -1,9 +1,9 @@
 {
   "require": {
-    "php" : ">7.0",
+    "php" : ">7.3",
     "ext-redis": "*",
     "ext-mysqli": "*",
-    "rhilip/bencode": "^1.0",
+    "rhilip/bencode": "^2.0",
     "phpmailer/phpmailer": "^6.1"
   },
   "autoload": {

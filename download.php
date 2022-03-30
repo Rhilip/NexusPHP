@@ -1,6 +1,6 @@
 <?php
 
-use Rhilip\Bencode\Bencode;
+use Rhilip\Bencode\TorrentFile;
 
 require_once("include/bittorrent.php");
 dbconn();
@@ -89,18 +89,20 @@ if (strlen($CURUSER['passkey']) != 32) {
     \NexusPHP\Components\Database::query("UPDATE users SET passkey=".\NexusPHP\Components\Database::escape($CURUSER[passkey])." WHERE id=".\NexusPHP\Components\Database::escape($CURUSER[id]));
 }
 
-$dict = Bencode::load($fn);
-$dict['announce'] = $ssl_torrent . $base_announce_url . '?passkey=' . $CURUSER['passkey'];
+$dict = TorrentFile::load($fn);
+$dict->setAnnounce($ssl_torrent . $base_announce_url . '?passkey=' . $CURUSER['passkey']);
 
 // add multi-tracker
 if (count($announce_urls) > 1) {
+    $announceUrls = [];
     foreach ($announce_urls as $announce_url) {
         /** d['announce-list'] = [[ tracker1, tracker2, tracker3 ]] */
-        $dict['announce-list'][0][] = $ssl_torrent . $announce_url . '?passkey=' . $CURUSER['passkey'];
+        $announceUrls[0][] = $ssl_torrent . $announce_url . '?passkey=' . $CURUSER['passkey'];
 
         /** d['announce-list'] = [ [tracker1], [backup1], [backup2] ] */
-        //$dict['announce-list'][] = [$ssl_torrent . $announce_url . "?passkey=" . $CURUSER['passkey']];
+        //$announceUrls[] = [$ssl_torrent . $announce_url . "?passkey=" . $CURUSER['passkey']];
     }
+    $dict->setAnnounceList($announceUrls);
 }
 
 header("Content-Type: application/x-bittorrent");
@@ -117,4 +119,4 @@ if (str_replace("Gecko", "", $_SERVER['HTTP_USER_AGENT']) != $_SERVER['HTTP_USER
     header("Content-Disposition: attachment; filename=" . str_replace("+", "%20", rawurlencode("$torrentnameprefix." . $row["save_as"] . ".torrent")));
 }
 
-print(Bencode::encode($dict));
+print($dict->dumpToString());

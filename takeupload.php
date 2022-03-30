@@ -1,7 +1,8 @@
 <?php
 require_once("include/bittorrent.php");
 
-use Rhilip\Bencode;
+use Rhilip\Bencode\TorrentFile;
+use Rhilip\Bencode\ParseException;
 
 ini_set("upload_max_filesize", $max_torrent_size);
 dbconn();
@@ -110,95 +111,31 @@ if (!filesize($tmpname)) {
 }
 
 try {
-    $dict = Bencode\Bencode::load($tmpname);
-} catch (Bencode\ParseErrorException $e) {
-    bark($lang_takeupload['std_not_bencoded_file']);
+    $dict = TorrentFile::load($tmpname);
+
+    // 屏蔽Bittorrent v2及hybrid种子上传
+    if ($dict->getProtocol() !== TorrentFile::PROTOCOL_V1) {
+        bark('Torrent files created with Bittorrent Protocol v2, or hybrid torrents are not suppored.');
+    }
+
+    $dict
+        /**->setParseValidator(function ($filename, $paths) {})*/
+        ->parse();
+} catch (ParseException $e) {
+    bark($e->getMessage());
 }
-
-function checkTorrentDict($dict, $key, $type = null)
-{
-    global $lang_takeupload;
-
-    if (!is_array($dict)) {
-        bark($lang_takeupload['std_not_a_dictionary']);
-    }
-    $value = $dict[$key];
-    if (!isset($value)) {
-        bark($lang_takeupload['std_dictionary_is_missing_key']);
-    }
-    if (!is_null($type)) {
-        $isFunction = 'is_' . $type;
-        if (function_exists($isFunction) && !$isFunction($value)) {
-            bark($lang_takeupload['std_invalid_entry_in_dictionary']);
-        }
-    }
-    return $value;
-}
-
-$info = checkTorrentDict($dict, 'info');
-
-// 屏蔽Bittorrent v2种子上传
-if (isset($dict['piece layers']) || isset($info['files tree']) || (isset($info['meta version']) && $info['meta version'] == 2)) {
-    bark('Torrent files created with Bittorrent Protocol v2, or hybrid torrents are not suppored.');
-}
-
-$plen = checkTorrentDict($info, 'piece length', 'integer');  // Only Check without use
-$dname = checkTorrentDict($info, 'name', 'string');
-$pieces = checkTorrentDict($info, 'pieces', 'string');
-
-if (strlen($pieces) % 20 != 0) {
-    bark($lang_takeupload['std_invalid_pieces']);
-}
-
-$filelist = array();
-$totallen = $info['length'];
-if (isset($totallen)) {
-    $filelist[$dname] = $totallen;
-    $type = "single";
-} else {
-    $flist = checkTorrentDict($info, 'files', 'array');
-
-    if (!isset($flist)) {
-        bark($lang_takeupload['std_missing_length_and_files']);
-    }
-    if (!count($flist)) {
-        bark("no files");
-    }
-
-    $totallen = 0;
-    foreach ($flist as $fn) {
-        $ll = checkTorrentDict($fn, 'length', 'integer');
-        $path_key = isset($fn['path.utf-8']) ? 'path.utf-8' : 'path';
-        $ff = checkTorrentDict($fn, $path_key, 'list');
-
-        $totallen += $ll;
-        $ffa = array();
-        foreach ($ff as $ffe) {
-            if (!is_string($ffe)) {
-                bark($lang_takeupload['std_filename_errors']);
-            }
-            $ffa[] = $ffe["value"];
-        }
-
-        if (!count($ffa)) {
-            bark($lang_takeupload['std_filename_errors']);
-        }
-        $ffe = implode("/", $ffa);
-        $filelist[$ffe] = $ll;
-    }
-    $type = "multi";
-}
-
-$dict['announce'] = get_protocol_prefix() . $announce_urls[0];  // change announce url to local
-$dict['info']['private'] = 1;
 
 //The following line requires uploader to re-download torrents after uploading
 //even the torrent is set as private and with uploader's passkey in it.
-$dict['info']['source'] = "[$BASEURL] $SITENAME";
-unset($dict['announce-list']); // remove multi-tracker capability
-unset($dict['nodes']); // remove cached peers (Bitcomet & Azareus)
+$dict->clean()
+    ->setAnnounce(get_protocol_prefix() . $announce_urls[0])
+    ->setPrivate(true)
+    ->setSouce("[$BASEURL] $SITENAME");  // change announce url to local
 
-$infohash = pack("H*", sha1(Bencode\Bencode::encode($dict['info'])));   // double up on the becoding solves the occassional misgenerated infohash
+$type = $dict->getFileMode();
+$totallen = $dict->getSize();
+$fileCount = $dict->getFileCount();
+$infohash = $dict->getInfoHashV1ForAnnounce();   // NexusPHP store binary infoHash in database
 
 // ------------- start: check upload authority ------------------//
 $allowtorrents = user_can_upload("torrents");
@@ -329,7 +266,7 @@ if ($prorules_torrent == 'yes') {
     }
 }
 
-$ret = \NexusPHP\Components\Database::query("INSERT INTO torrents (filename, owner, visible, anonymous, name, size, numfiles, type, url, small_descr, descr, ori_descr, category, source, medium, codec, audiocodec, standard, processing, team, save_as, sp_state, added, last_action, nfo, info_hash) VALUES (".\NexusPHP\Components\Database::escape($fname).", ".\NexusPHP\Components\Database::escape($CURUSER["id"]).", 'yes', ".\NexusPHP\Components\Database::escape($anonymous).", ".\NexusPHP\Components\Database::escape($torrent).", ".\NexusPHP\Components\Database::escape($totallen).", ".count($filelist).", ".\NexusPHP\Components\Database::escape($type).", ".\NexusPHP\Components\Database::escape($url).", ".\NexusPHP\Components\Database::escape($small_descr).", ".\NexusPHP\Components\Database::escape($descr).", ".\NexusPHP\Components\Database::escape($descr).", ".\NexusPHP\Components\Database::escape($catid).", ".\NexusPHP\Components\Database::escape($sourceid).", ".\NexusPHP\Components\Database::escape($mediumid).", ".\NexusPHP\Components\Database::escape($codecid).", ".\NexusPHP\Components\Database::escape($audiocodecid).", ".\NexusPHP\Components\Database::escape($standardid).", ".\NexusPHP\Components\Database::escape($processingid).", ".\NexusPHP\Components\Database::escape($teamid).", ".\NexusPHP\Components\Database::escape($dname).", ".\NexusPHP\Components\Database::escape($sp_state) .
+$ret = \NexusPHP\Components\Database::query("INSERT INTO torrents (filename, owner, visible, anonymous, name, size, numfiles, type, url, small_descr, descr, ori_descr, category, source, medium, codec, audiocodec, standard, processing, team, save_as, sp_state, added, last_action, nfo, info_hash) VALUES (".\NexusPHP\Components\Database::escape($fname).", ".\NexusPHP\Components\Database::escape($CURUSER["id"]).", 'yes', ".\NexusPHP\Components\Database::escape($anonymous).", ".\NexusPHP\Components\Database::escape($torrent).", ".\NexusPHP\Components\Database::escape($totallen).", ".$fileCount.", ".\NexusPHP\Components\Database::escape($type).", ".\NexusPHP\Components\Database::escape($url).", ".\NexusPHP\Components\Database::escape($small_descr).", ".\NexusPHP\Components\Database::escape($descr).", ".\NexusPHP\Components\Database::escape($descr).", ".\NexusPHP\Components\Database::escape($catid).", ".\NexusPHP\Components\Database::escape($sourceid).", ".\NexusPHP\Components\Database::escape($mediumid).", ".\NexusPHP\Components\Database::escape($codecid).", ".\NexusPHP\Components\Database::escape($audiocodecid).", ".\NexusPHP\Components\Database::escape($standardid).", ".\NexusPHP\Components\Database::escape($processingid).", ".\NexusPHP\Components\Database::escape($teamid).", ".\NexusPHP\Components\Database::escape($dname).", ".\NexusPHP\Components\Database::escape($sp_state) .
 ", " . \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s")) . ", " . \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s")) . ", ".\NexusPHP\Components\Database::escape($nfo).", " . \NexusPHP\Components\Database::escape($infohash). ")");
 if (!$ret) {
     if (\NexusPHP\Components\Database::errno() == 1062) {
@@ -340,47 +277,11 @@ if (!$ret) {
 }
 $id = \NexusPHP\Components\Database::insert_id();
 
-function getFileTree($array, $delimiter = '/')
-{
-    if (!is_array($array)) {
-        return [];
-    }
 
-    $splitRE = '/' . preg_quote($delimiter, '/') . '/';
-    $returnArr = [];
-    foreach ($array as $key => $val) {
-        // Get parent parts and the current leaf
-        $parts = preg_split($splitRE, $key, -1, PREG_SPLIT_NO_EMPTY);
-        $leafPart = array_pop($parts);
-
-        // Build parent structure
-        // Might be slow for really deep and large structures
-        $parentArr = &$returnArr;
-        foreach ($parts as $part) {
-            if (!isset($parentArr[$part])) {
-                $parentArr[$part] = [];
-            } elseif (!is_array($parentArr[$part])) {
-                $parentArr[$part] = [];
-            }
-            $parentArr = &$parentArr[$part];
-        }
-
-        // Add the final part to the structure
-        if (empty($parentArr[$leafPart])) {
-            $parentArr[$leafPart] = $val;
-        }
-    }
-    return $returnArr;
-}
-
-$fileTreeJson = getFileTree($filelist);
-if ($type === "multi") {
-    $fileTreeJson = [$dname => $fileTreeJson];
-}
-
+$fileTreeJson = $dict->getFileTree();
 \NexusPHP\Components\Database::query("INSERT INTO files (torrent, files) VALUES ($id, " . sqlesc(json_encode($fileTreeJson)) . ")");
 
-Bencode\Bencode::dump("$torrent_dir/$id.torrent", $dict);
+$dict->dump("$torrent_dir/$id.torrent");
 
 //===add karma
 KPS("+", $uploadtorrent_bonus, $CURUSER["id"]);

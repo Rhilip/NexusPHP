@@ -9,7 +9,6 @@ if ($showextinfo['imdb'] == 'yes') {
 }
 
 $addparams = [];  // 用于生成 分页所需要的 params
-$wherea = [];  // 用于生成SQL语句
 
 $searchstr = trim($_GET['search'] ?? '');  // 搜索字符串
 $options = [
@@ -274,8 +273,36 @@ $search_options['offset'] = $offset_page * $limit;
 
 $torrents_index = \NexusPHP\Components\Meili::getMeiliSearch()->index('torrents');
 $search = $torrents_index->search($searchstr, $options);
-$res = $search->getHits();
 $count = $search->getHitsCount();
+$hits = $search->getHits();
+
+// 对Meilisearch返回的搜索结果做一些处理
+function get_peer_status ($tids) {
+    global $Cache;
+    $peer_status_map = [];
+    foreach ($tids as $tid) {
+        $peer_status_map[] = $tid . ':seeders';
+        $peer_status_map[] = $tid . ':leechers';
+    }
+
+    return $Cache->hMGet('torrent_peer_count_content', $peer_status_map);
+}
+
+$peer_status = get_peer_status(array_column($hits, 'id'));
+$can_viewanonymous = get_user_class() >= $viewanonymous_class;
+
+$res = array_map(function ($t) use ($peer_status, $can_viewanonymous) {
+    foreach (['seeders', 'leechers'] as $key) {  // 合并peers
+        if (isset($t[$key])) {
+            $t[$key] = $peer_status[$t['id'] . ':' . $key] ?? 0;
+        }
+    }
+
+    if (!$can_viewanonymous && $t['anonymous']) {
+        $t['owner'] = -1;
+    }
+    return $t;
+}, $hits);
 
 list($pagertop, $pagerbottom, $limit) = pager($limit, $search->getEstimatedTotalHits(), "?" . implode("&", $addparams));
 

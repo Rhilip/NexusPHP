@@ -210,7 +210,8 @@ function docleanup($forceAll = 0, $printProgress = false)
     }
 
     //4.update count of seeders, leechers, comments for torrents
-    $torrents = array();
+    $torrents = [];
+    $peer_count_content = [];
     $res = \NexusPHP\Components\Database::query("SELECT torrent, seeder, COUNT(*) AS c FROM peers GROUP BY torrent, seeder") or sqlerr(__FILE__, __LINE__);
     while ($row = mysqli_fetch_assoc($res)) {
         if ($row["seeder"] == "yes") {
@@ -219,7 +220,14 @@ function docleanup($forceAll = 0, $printProgress = false)
             $key = "leechers";
         }
         $torrents[$row["torrent"]][$key] = $row["c"];
+        $peer_count_content[$row['torrent'] . ':' . $key] = (int)$row['c'];
     }
+
+    // 更新peer_count缓存
+    $Cache->multi()
+        ->del('torrent_peer_count_content')
+        ->hMSet('torrent_peer_count_content', $peer_count_content)
+        ->exec();
 
     $res = \NexusPHP\Components\Database::query("SELECT torrent, COUNT(*) AS c FROM comments GROUP BY torrent") or sqlerr(__FILE__, __LINE__);
     while ($row = mysqli_fetch_assoc($res)) {

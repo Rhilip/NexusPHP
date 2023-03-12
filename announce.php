@@ -341,7 +341,7 @@ if (!isset($event)) {
 if (isset($self) && $event == "stopped") {
     \NexusPHP\Components\Database::query("DELETE FROM peers WHERE $selfwhere") or err("D Err");
     if (\NexusPHP\Components\Database::affected_rows()) {
-        $updateset[] = ($self["seeder"] == "yes" ? "seeders = seeders - 1" : "leechers = leechers - 1");
+        $Cache->hIncrBy('torrent_peer_count_content', $torrentid . ':' . ($seeder == 'yes' ? 'seeders' : 'leechers'), -1);
         \NexusPHP\Components\Database::query("UPDATE snatched SET uploaded = uploaded + $trueupthis, downloaded = downloaded + $truedownthis, to_go = $left, $announcetime, last_action = ".$dt." WHERE torrentid = $torrentid AND userid = $userid") or err("SL Err 1");
     }
 } elseif (isset($self)) {
@@ -356,7 +356,8 @@ if (isset($self) && $event == "stopped") {
 
     if (\NexusPHP\Components\Database::affected_rows()) {
         if ($seeder <> $self["seeder"]) {
-            $updateset[] = ($seeder == "yes" ? "seeders = seeders + 1, leechers = leechers - 1" : "seeders = seeders - 1, leechers = leechers + 1");
+            $Cache->hIncrBy('torrent_peer_count_content', $torrentid . ':seeders', $seeder == "yes" ? 1 : -1);
+            $Cache->hIncrBy('torrent_peer_count_content', $torrentid . ':leechers', $seeder == "yes" ? -1 : 1);
         }
         \NexusPHP\Components\Database::query("UPDATE snatched SET uploaded = uploaded + $trueupthis, downloaded = downloaded + $truedownthis, to_go = $left, $announcetime, last_action = ".$dt." $finished_snatched WHERE torrentid = $torrentid AND userid = $userid") or err("SL Err 2");
     }
@@ -371,7 +372,7 @@ if (isset($self) && $event == "stopped") {
     \NexusPHP\Components\Database::query("INSERT INTO peers (torrent, userid, peer_id, ip, port, connectable, uploaded, downloaded, to_go, started, last_action, seeder, agent, downloadoffset, uploadoffset, passkey) VALUES ($torrentid, $userid, ".\NexusPHP\Components\Database::escape($peer_id).", ".\NexusPHP\Components\Database::escape($ip).", $port, '$connectable', $uploaded, $downloaded, $left, $dt, $dt, '$seeder', ".\NexusPHP\Components\Database::escape($agent).", $downloaded, $uploaded, ".\NexusPHP\Components\Database::escape($passkey).")") or err("PL Err 2");
 
     if (\NexusPHP\Components\Database::affected_rows()) {
-        $updateset[] = ($seeder == "yes" ? "seeders = seeders + 1" : "leechers = leechers + 1");
+        $Cache->hIncrBy('torrent_peer_count_content', $torrentid . ':' . ($seeder == 'yes' ? 'seeders' : 'leechers'), 1);
 
         $check = @mysqli_fetch_row(@\NexusPHP\Components\Database::query("SELECT COUNT(*) FROM snatched WHERE torrentid = $torrentid AND userid = $userid"));
         if (!$check['0']) {

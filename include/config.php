@@ -5,61 +5,11 @@ if (!defined('IN_TRACKER')) {
 }
 
 $CONFIGURATIONS = array('ACCOUNT', 'ADVERTISEMENT', 'ATTACHMENT', 'AUTHORITY', 'BASIC', 'BONUS', 'CODE', 'MAIN', 'SECURITY', 'SMTP', 'TORRENT', 'TWEAK');
-function ReadConfig($configname = null)
-{
-    global $CONFIGURATIONS;
-    if ($configname) {
-        $configname = basename($configname);
-        $tmp = oldReadConfig($configname);
-        WriteConfig($configname, $tmp);
-        @unlink('./config/'.$configname);
-        return $tmp;
-    } else {
-        foreach ($CONFIGURATIONS as $CONFIGURATION) {
-            $GLOBALS[$CONFIGURATION] = ReadConfig($CONFIGURATION);
-        }
-    }
-}
-
-function oldReadConfig($configname)
-{
-    if (strstr($configname, ',')) {
-        $configlist = explode(',', $configname);
-        foreach ($configlist as $key=>$configname) {
-            ReadConfig(trim($configname));
-        }
-    } else {
-        $configname = basename($configname);
-        $path = './config/'.$configname;
-        if (!file_exists($path)) {
-            die("Error! File <b>".htmlspecialchars($configname)."</b> doesn't exist!</font><br /><font color=blue>Before the setup starts, please ensure that you have properly configured file and directory access permissions. Please see below.</font><br /><br />chmod 777 config/<br />chmod 777 config/".$configname);
-        }
-
-        $fp = fopen($path, 'r');
-        $content = '';
-        while (!feof($fp)) {
-            $content .= fread($fp, 102400);
-        }
-        fclose($fp);
-
-        if (empty($content)) {
-            return array();
-        }
-        $tmp = @unserialize($content);
-
-        if (empty($tmp)) {
-            die("Error! <font color=red>Cannot read configuration file <b>".htmlspecialchars($configname)."</b></font><br /><font color=blue>Before the setup starts, please ensure that you have properly configured file and directory access permissions. For *nix system, please see below.</font><br />chmod 777 config <br />chmod 777 config/".$configname."<br /><br /> If access permission is alright, perhaps there's some misconfiguration or the configuration file is corrupted. Please check config/".$configname);
-        }
-        $GLOBALS[$configname] = $tmp;
-        return $tmp;
-    }
-}
-
 
 if (file_exists('config/allconfig.php')) {
     require('config/allconfig.php');
 } else {
-    ReadConfig();
+    die("Error! <font color=red>Cannot read configuration file </font>");
 }
 
 $SITENAME = $BASIC['SITENAME'];
@@ -70,7 +20,8 @@ $mysql_host = $BASIC['mysql_host'];
 $mysql_user = $BASIC['mysql_user'];
 $mysql_pass = $BASIC['mysql_pass'];
 $mysql_db = $BASIC['mysql_db'];
-
+$meilisearch_host = $BASIC['meilisearch_host'] ?? 'http://localhost:7700';
+$meilisearch_key = $BASIC['meilisearch_key'];
 
 $SITE_ONLINE = $MAIN['site_online'];
 $max_torrent_size = $MAIN['max_torrent_size'];

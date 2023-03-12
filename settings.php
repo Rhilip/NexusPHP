@@ -53,7 +53,7 @@ if ($action == 'savesettings_main') {	// save main
     go_back();
 } elseif ($action == 'savesettings_basic') { 	// save basic
     stdhead($lang_settings['head_save_basic_settings']);
-    $validConfig = array('SITENAME', 'BASEURL', 'announce_url', 'mysql_host', 'mysql_user', 'mysql_pass', 'mysql_db');
+    $validConfig = array('SITENAME', 'BASEURL', 'announce_url', 'mysql_host', 'mysql_user', 'mysql_pass', 'mysql_db', 'meilisearch_host', 'meilisearch_key');
     GetVar($validConfig);
     if (!mysqli_connect($mysql_host, $mysql_user, $mysql_pass)) {
         stdmsg($lang_settings['std_error'], $lang_settings['std_mysql_connect_error'].$lang_settings['std_click']."<a class=\"altlink\" href=\"settings.php\">".$lang_settings['std_here']."</a>".$lang_settings['std_to_go_back']);
@@ -331,6 +331,9 @@ if ($action == 'savesettings_main') {	// save main
     tr($lang_settings['row_mysql_user'], "<input type='text' style=\"width: 300px\" name=mysql_user value='".($BASIC["mysql_user"] ? $BASIC["mysql_user"] : "root")."'> ".$lang_settings['text_mysql_user_note'], 1);
     tr($lang_settings['row_mysql_password'], "<input type='password' style=\"width: 300px\" name=mysql_pass value=''> ".$lang_settings['text_mysql_password_note'], 1);
     tr($lang_settings['row_mysql_database_name'], "<input type='text' style=\"width: 300px\" name=mysql_db value='".($BASIC["mysql_db"] ? $BASIC["mysql_db"] : "nexus")."'> ".$lang_settings['text_mysql_database_name_note'], 1);
+    tr('Meilisearch 地址', "<input type='text' style='width: 300px' name='meilisearch_host' value='" . ($BASIC['meilisearch_host'] ?: 'http://localhost:7700') . "'>", 1);
+    tr('Meilisearch 密钥', "<input type='text' style='width: 300px' name='meilisearch_key' value='" . ($BASIC['meilisearch_key'] ?: '') . "'>", 1);
+
     tr($lang_settings['row_save_settings'], "<input type='submit' name='save' value='".$lang_settings['submit_save_settings']."'>", 1);
     print("</form>");
 } elseif ($action == 'attachmentsettings') {	// basic settings

@@ -2899,18 +2899,11 @@ if (get_user_class() >= $torrentmanage_class) { ?>
 </tr>
 <?php
 $caticonrow = get_category_icon_row($CURUSER['caticon']);
-    if ($caticonrow['secondicon'] == 'yes') {
-        $has_secondicon = true;
-    } else {
-        $has_secondicon = false;
-    }
+    $has_secondicon = $caticonrow['secondicon'] == 'yes';
     $counter = 0;
-    if ($smalldescription_main == 'no' || $CURUSER['showsmalldescr'] == 'no') {
-        $displaysmalldescr = false;
-    } else {
-        $displaysmalldescr = true;
-    }
-    while ($row = mysqli_fetch_assoc($res)) {
+    $displaysmalldescr = !($smalldescription_main == 'no' || $CURUSER['showsmalldescr'] == 'no');
+
+    foreach ($res as $row) {
         $id = $row["id"];
         $sphighlight = get_torrent_bg_color($row['sp_state']);
         print("<tr" . $sphighlight . ">\n");
@@ -2999,11 +2992,11 @@ $caticonrow = get_category_icon_row($CURUSER['caticon']);
                 $picked_torrent = " <b>[<font class='recommended'>".$lang_functions['text_recommended']."</font>]</b>";
             }
         }
-        if ($CURUSER['appendnew'] != 'no' && strtotime($row["added"]) >= $last_browse) {
+        if ($CURUSER['appendnew'] != 'no' && $row["added"] >= $last_browse) {
             print("<b> (<font class='new'>".$lang_functions['text_new_uppercase']."</font>)</b>");
         }
 
-        $banned_torrent = ($row["banned"] == 'yes' ? " <b>(<font class=\"striking\">".$lang_functions['text_banned']."</font>)</b>" : "");
+        $banned_torrent = ($row["banned"] ? " <b>(<font class=\"striking\">".$lang_functions['text_banned']."</font>)</b>" : "");
         print($banned_torrent.$picked_torrent.$sp_torrent);
         if ($displaysmalldescr) {
             //small descr
@@ -3041,10 +3034,8 @@ $caticonrow = get_category_icon_row($CURUSER['caticon']);
 
         if ($CURUSER['showcomnum'] != 'no') {
             print("<td class=\"rowfollow\">");
-            $nl = "";
 
             //comments
-
             $nl = "<br />";
             if (!$row["comments"]) {
                 print("<a href=\"comment.php?action=add&amp;pid=".$id."&amp;type=torrent\" title=\"".$lang_functions['title_add_comments']."\">" . $row["comments"] .  "</a>");
@@ -3055,7 +3046,7 @@ $caticonrow = get_category_icon_row($CURUSER['caticon']);
                         $lastcom = mysqli_fetch_array($res2);
                         $Cache->cache_value('torrent_'.$id.'_last_comment_content', $lastcom, 1855);
                     }
-                    $timestamp = strtotime($lastcom["added"]);
+                    $timestamp = $lastcom["added"];
                     $hasnewcom = ($lastcom['user'] != $CURUSER['id'] && $timestamp >= $last_browse);
                     if ($lastcom) {
                         if ($CURUSER['timetype'] != 'timealive') {
@@ -3077,8 +3068,7 @@ $caticonrow = get_category_icon_row($CURUSER['caticon']);
             print("</td>");
         }
 
-        $time = $row["added"];
-        $time = gettime($time, false, true);
+        $time = gettime(date("Y-m-d H:i:s", $row["added"]), false, true);
         print("<td class=\"rowfollow nowrap\">". $time. "</td>");
 
         //size
@@ -3101,21 +3091,21 @@ $caticonrow = get_category_icon_row($CURUSER['caticon']);
         }
 
         if ($row["times_completed"] >=1) {
-            print("<td class=\"rowfollow\"><a href=\"viewsnatches.php?id=".$row[id]."\"><b>" . number_format($row["times_completed"]) . "</b></a></td>\n");
+            print("<td class=\"rowfollow\"><a href=\"viewsnatches.php?id=".$row['id']."\"><b>" . number_format($row["times_completed"]) . "</b></a></td>\n");
         } else {
             print("<td class=\"rowfollow\">" . number_format($row["times_completed"]) . "</td>\n");
         }
 
-        if ($row["anonymous"] == "yes" && get_user_class() >= $torrentmanage_class) {
+        if ($row["anonymous"] && get_user_class() >= $torrentmanage_class) {
             print("<td class=\"rowfollow\" align=\"center\"><i>".$lang_functions['text_anonymous']."</i><br />".(isset($row["owner"]) ? "(" . get_username($row["owner"]) .")" : "<i>".$lang_functions['text_orphaned']."</i>") . "</td>\n");
-        } elseif ($row["anonymous"] == "yes") {
+        } elseif ($row["anonymous"]) {
             print("<td class=\"rowfollow\"><i>".$lang_functions['text_anonymous']."</i></td>\n");
         } else {
             print("<td class=\"rowfollow\">" . (isset($row["owner"]) ? get_username($row["owner"]) : "<i>".$lang_functions['text_orphaned']."</i>") . "</td>\n");
         }
 
         if (get_user_class() >= $torrentmanage_class) {
-            print("<td class=\"rowfollow\"><a href=\"".htmlspecialchars("fastdelete.php?id=".$row[id])."\"><img class=\"staff_delete\" src=\"pic/trans.gif\" alt=\"D\" title=\"".$lang_functions['text_delete']."\" /></a>");
+            print("<td class=\"rowfollow\"><a href=\"".htmlspecialchars("fastdelete.php?id=".$row['id'])."\"><img class=\"staff_delete\" src=\"pic/trans.gif\" alt=\"D\" title=\"".$lang_functions['text_delete']."\" /></a>");
             print("<br /><a href=\"edit.php?returnto=" . rawurlencode($_SERVER["REQUEST_URI"]) . "&amp;id=" . $row["id"] . "\"><img class=\"staff_edit\" src=\"pic/trans.gif\" alt=\"E\" title=\"".$lang_functions['text_edit']."\" /></a></td>\n");
         }
         print("</tr>\n");
@@ -3500,7 +3490,7 @@ function gettime($time, $withago = true, $twoline = false, $forceago = false, $o
             $newtime = str_replace(" ", "<br />", $newtime);
         }
     } else {
-        $timestamp = strtotime($time);
+        $timestamp = is_string($time) ? strtotime($time) : $time;
         if ($isfuturetime && $timestamp < TIMENOW) {
             $newtime = false;
         } else {
@@ -3639,15 +3629,23 @@ function get_torrent_promotion_append($promotion = 1, $forcemode = "", $showtime
 
     $sp_torrent = "";
     $onmouseover = "";
+
+    if (is_string($promotionUntil)) {
+        $promotionUntil = strtotime($promotionUntil);
+    }
+    if (is_string($added)) {
+        $added = strtotime($added);
+    }
+
     if (get_global_sp_state() == 1) {
         switch ($promotion) {
         case 2:
         {
             if ($showtimeleft && (($expirefree_torrent && $promotionTimeType == 0) || $promotionTimeType == 2)) {
                 if ($promotionTimeType == 2) {
-                    $futuretime = strtotime($promotionUntil);
+                    $futuretime = $promotionUntil;
                 } else {
-                    $futuretime = strtotime($added) + $expirefree_torrent * 86400;
+                    $futuretime = $added + $expirefree_torrent * 86400;
                 }
                 $timeout = gettime(date("Y-m-d H:i:s", $futuretime), false, false, true, false, true);
                 if ($timeout) {
@@ -3662,9 +3660,9 @@ function get_torrent_promotion_append($promotion = 1, $forcemode = "", $showtime
         {
             if ($showtimeleft && (($expiretwoup_torrent && $promotionTimeType == 0) || $promotionTimeType == 2)) {
                 if ($promotionTimeType == 2) {
-                    $futuretime = strtotime($promotionUntil);
+                    $futuretime = $promotionUntil;
                 } else {
-                    $futuretime = strtotime($added) + $expiretwoup_torrent * 86400;
+                    $futuretime = $added + $expiretwoup_torrent * 86400;
                 }
                 $timeout = gettime(date("Y-m-d H:i:s", $futuretime), false, false, true, false, true);
                 if ($timeout) {
@@ -3679,9 +3677,9 @@ function get_torrent_promotion_append($promotion = 1, $forcemode = "", $showtime
         {
             if ($showtimeleft && (($expiretwoupfree_torrent && $promotionTimeType == 0) || $promotionTimeType == 2)) {
                 if ($promotionTimeType == 2) {
-                    $futuretime = strtotime($promotionUntil);
+                    $futuretime = $promotionUntil;
                 } else {
-                    $futuretime = strtotime($added) + $expiretwoupfree_torrent * 86400;
+                    $futuretime = $added + $expiretwoupfree_torrent * 86400;
                 }
                 $timeout = gettime(date("Y-m-d H:i:s", $futuretime), false, false, true, false, true);
                 if ($timeout) {
@@ -3696,9 +3694,9 @@ function get_torrent_promotion_append($promotion = 1, $forcemode = "", $showtime
         {
             if ($showtimeleft && (($expirehalfleech_torrent && $promotionTimeType == 0) || $promotionTimeType == 2)) {
                 if ($promotionTimeType == 2) {
-                    $futuretime = strtotime($promotionUntil);
+                    $futuretime = $promotionUntil;
                 } else {
-                    $futuretime = strtotime($added) + $expirehalfleech_torrent * 86400;
+                    $futuretime = $added + $expirehalfleech_torrent * 86400;
                 }
                 $timeout = gettime(date("Y-m-d H:i:s", $futuretime), false, false, true, false, true);
                 if ($timeout) {
@@ -3713,9 +3711,9 @@ function get_torrent_promotion_append($promotion = 1, $forcemode = "", $showtime
         {
             if ($showtimeleft && (($expiretwouphalfleech_torrent && $promotionTimeType == 0) || $promotionTimeType == 2)) {
                 if ($promotionTimeType == 2) {
-                    $futuretime = strtotime($promotionUntil);
+                    $futuretime = $promotionUntil;
                 } else {
-                    $futuretime = strtotime($added) + $expiretwouphalfleech_torrent * 86400;
+                    $futuretime = $added + $expiretwouphalfleech_torrent * 86400;
                 }
                 $timeout = gettime(date("Y-m-d H:i:s", $futuretime), false, false, true, false, true);
                 if ($timeout) {
@@ -3730,9 +3728,9 @@ function get_torrent_promotion_append($promotion = 1, $forcemode = "", $showtime
         {
             if ($showtimeleft && (($expirethirtypercentleech_torrent && $promotionTimeType == 0) || $promotionTimeType == 2)) {
                 if ($promotionTimeType == 2) {
-                    $futuretime = strtotime($promotionUntil);
+                    $futuretime = $promotionUntil;
                 } else {
-                    $futuretime = strtotime($added) + $expirethirtypercentleech_torrent * 86400;
+                    $futuretime = $added + $expirethirtypercentleech_torrent * 86400;
                 }
                 $timeout = gettime(date("Y-m-d H:i:s", $futuretime), false, false, true, false, true);
                 if ($timeout) {

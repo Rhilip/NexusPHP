@@ -11,6 +11,68 @@ if ($showextinfo['imdb'] == 'yes') {
 $addparams = [];  // 用于生成 分页所需要的 params
 $wherea = [];  // 用于生成SQL语句
 
+$searchstr = trim($_GET['search'] ?? '');  // 搜索字符串
+$options = [
+    'sort' => [],
+    'filter' => [],
+];
+
+$searchstr_ori = htmlspecialchars($searchstr);
+if (strlen($searchstr) > 0) {
+    if (!$_GET['notnewword']) {
+        insert_suggest($searchstr, $CURUSER['id'], false);
+    } else {
+        $addparams[] = "notnewword=1";
+    }
+
+    $search_area = filter_int_input('search_area', 0, [0, 1, 3, 4]);
+    if ($search_area == 3) {  // owner
+        // 查出对应username的uid，并清空 searchstr，都用filter来解决搜索问题
+        $uid = get_user_id_from_name($searchstr);
+        $searchstr = '';
+
+        // 更新filter
+        $search_options['filter'][] = "owner = {$uid}";
+        if (get_user_class() < $viewanonymous_class && $CURUSER['id'] !== $uid) {
+            $search_options['filter'][] = 'anonymous = 0'; // $viewanonymous_class以下用户仅搜索自己时才开放非匿名种子
+        }
+    } elseif ($search_area == 4) {  // imdb url
+        $imdb_id = parse_imdb_id($searchstr) ?: -1;
+        $searchstr = '';
+
+        $search_options['filter'][] = "url = {$imdb_id}";
+    } else {  // default, name and small descr
+        $search_mode = $this->filter_int_input('search_mode', 0, [0, 1, 2]);
+        if ($search_mode !== 2) {  // 与, 或
+            $searchstr_elements = explode(" ", str_replace(".", " ", $searchstr));
+            $searchstr_exploded = [];
+            foreach ($searchstr_elements as $searchstr_element) {
+                $searchstr_element = trim($searchstr_element);    // furthur trim to ensure that multi space seperated words still work
+                if (strlen($searchstr_element) < 2) {
+                    continue;
+                }
+
+                // 此处将拆分出来的每一个token都加上双引号，以触发meilisearch使用 Phrase search
+                if ($search_mode == 0) {
+                    $searchstr_element = '"' . $searchstr_element . '"';
+                }
+                $searchstr_exploded[] = $searchstr_element;
+
+                if (count($searchstr_exploded) > 10) {    // maximum 10 keywords
+                    break;
+                }
+            }
+
+            $searchstr = implode(' ', $searchstr_exploded);
+        }
+
+        $addparam[] = "search_mode=" . $search_mode;
+    }
+
+    $addparam[] = "search_area=" . $search_area;
+    $addparam[] = "search=" . rawurlencode($searchstr);
+}
+
 // 1. 最先处理分类相关的字段
 $sectiontype = $browsecatmode;
 $catsperrow = get_searchbox_value($sectiontype, 'catsperrow'); //show how many cats per line in search box
@@ -91,53 +153,13 @@ if (!$all) {
             foreach ($class_get as $class) {
                 $addparams[] = $key . "[]=" . $class;
             }
-            $wherea[] = ($value['tk'] ?? $key) . "IN (" . implode(',', $class_get) . ")";
+            $field_key = $value['tk'] ?? $key;
+            $options['filter'] = array_map(function ($a) use ($field_key) {
+                return $field_key . ' = ' . $a;
+            }, $class_get);
         }
     }
 }
-
-$searchstr_ori = htmlspecialchars(trim($_GET["search"]));
-$searchstr = \NexusPHP\Components\Database::real_escape_string(trim($_GET["search"]));
-if (empty($searchstr)) {
-    unset($searchstr);
-}
-
-// sorting by MarkoStamcar
-if ($_GET['sort'] && $_GET['type']) {
-    $column = '';
-    $ascdesc = '';
-
-    switch ($_GET['sort']) {
-        case '1': $column = "name"; break;
-        case '2': $column = "numfiles"; break;
-        case '3': $column = "comments"; break;
-        case '4': $column = "added"; break;
-        case '5': $column = "size"; break;
-        case '6': $column = "times_completed"; break;
-        case '7': $column = "seeders"; break;
-        case '8': $column = "leechers"; break;
-        case '9': $column = "owner"; break;
-        default: $column = "id"; break;
-    }
-
-    switch ($_GET['type']) {
-        case 'asc': $ascdesc = "ASC"; $linkascdesc = "asc"; break;
-        case 'desc': $ascdesc = "DESC"; $linkascdesc = "desc"; break;
-        default: $ascdesc = "DESC"; $linkascdesc = "desc"; break;
-    }
-
-    if ($column == "owner") {
-        $orderby = "ORDER BY pos_state DESC, torrents.anonymous, users.username " . $ascdesc;
-    } else {
-        $orderby = "ORDER BY pos_state DESC, torrents." . $column . " " . $ascdesc;
-    }
-
-    $addparams[] = "sort=" . intval($_GET['sort']);
-    $addparams[] = "type=" . $linkascdesc;
-} else {
-    $orderby = "ORDER BY pos_state DESC, torrents.id DESC";
-}
-
 
 /**
  * @param string $field
@@ -180,17 +202,17 @@ if (isset($CURUSER)) {
     $inclbookmarked = filter_int_input('inclbookmarked', 0, [0, 1, 2], 'inclbookmarked');
     $addparams[] = 'inclbookmarked=' . $inclbookmarked;
 
-    if ($inclbookmarked == 1) {        //bookmarked
-        $wherea[] = "torrents.id IN (SELECT torrentid FROM bookmarks WHERE userid=" . $CURUSER['id'] . ")";
-    } elseif ($inclbookmarked == 2) {        //not bookmarked
-        $wherea[] = "torrents.id NOT IN (SELECT torrentid FROM bookmarks WHERE userid=" . $CURUSER['id'] . ")";
+    if ($inclbookmarked != 0) {
+        $bookmarked_torrent = return_torrent_bookmark_array($CURUSER['id']);
+        $search_options['filter'][] = array_map(function ($a) use ($inclbookmarked) {
+            return 'id' . ($inclbookmarked == 1 ? ' = ' : ' != ') . $a;
+        }, $bookmarked_torrent);
     }
 }
-
 // ----------------- end bookmarked ---------------------//
 
 if (!isset($CURUSER) || get_user_class() < $seebanned_class) {
-    $wherea[] = "banned != 'yes'";
+    $search_options['filter'][] = 'banned = 0';
 }
 
 // ----------------- start include dead ---------------------//
@@ -198,167 +220,66 @@ $include_dead = filter_int_input('incldead', 1, [0 /* all(active, dead) */, 1 /*
 $addparams[] = "incldead=" . $include_dead;
 
 if ($include_dead == 1) {        //active
-    $wherea[] = "visible = 'yes'";
+    $search_options['filter'][] = 'visible = 1';
 } elseif ($include_dead == 2) {        //dead
-    $wherea[] = "visible = 'no'";
+    $search_options['filter'][] = 'visible = 0';
 }
 // ----------------- end include dead ---------------------//
 $special_state = filter_int_input('spstate', 0, range(0, 7), 'spstate');
 
 $addparams[] = "spstate=" . $special_state;
 if ($special_state != 0 &&  get_global_sp_state() == 1) {
-    $wherea[] = "sp_state = " . $special_state;
+    $search_options['filter'][] = "sp_state = {$special_state}";
 }
-
-if (isset($searchstr)) {
-    if (!$_GET['notnewword']) {
-        insert_suggest($searchstr, $CURUSER['id']);
-    } else {
-        $addparams[] = "notnewword=1";
-    }
-
-    $search_mode = filter_int_input('search_mode', 0, [0, 1, 2]);
-    $search_area = filter_int_input('search_area', 0, [0, 1, 3, 4]);
-
-    if ($search_area == 4) {
-        $searchstr = (int)parse_imdb_id($searchstr);
-    }
-
-    $like_expression_array = [];
-    switch ($search_mode) {
-        case 0:    // AND, OR
-        case 1:
-        {
-            $searchstr = str_replace(".", " ", $searchstr);
-            $searchstr_exploded = explode(" ", $searchstr);
-            $searchstr_exploded_count = 0;
-            foreach ($searchstr_exploded as $searchstr_element) {
-                $searchstr_element = trim($searchstr_element);    // furthur trim to ensure that multi space seperated words still work
-                $searchstr_exploded_count++;
-                if ($searchstr_exploded_count > 10) {    // maximum 10 keywords
-                    break;
-                }
-                $like_expression_array[] = " LIKE '%" . $searchstr_element . "%'";
-            }
-            break;
-        }
-        case 2:    // exact
-        {
-            $like_expression_array[] = " LIKE '%" . $searchstr . "%'";
-            break;
-        }
-        /*case 3 :	// parsed
-        {
-        $like_expression_array[] = $searchstr;
-        break;
-        }*/
-    }
-    $ANDOR = ($search_mode == 0 ? " AND " : " OR ");    // only affects mode 0 and mode 1
-
-    switch ($search_area) {
-        case 0:    // torrent name
-        {
-            foreach ($like_expression_array as &$like_expression_array_element) {
-                $like_expression_array_element = "(torrents.name" . $like_expression_array_element . " OR torrents.small_descr" . $like_expression_array_element . ")";
-            }
-            $wherea[] = implode($ANDOR, $like_expression_array);
-            break;
-        }
-        case 1:    // torrent description
-        {
-            foreach ($like_expression_array as &$like_expression_array_element) {
-                $like_expression_array_element = "torrents.descr" . $like_expression_array_element;
-            }
-            $wherea[] = implode($ANDOR, $like_expression_array);
-            break;
-        }
-        /*case 2	:	// torrent small description
-        {
-            foreach ($like_expression_array as &$like_expression_array_element)
-            $like_expression_array_element =  "torrents.small_descr". $like_expression_array_element;
-            $wherea[] =  implode($ANDOR, $like_expression_array);
-            break;
-        }*/
-        case 3:    // torrent uploader
-        {
-            foreach ($like_expression_array as &$like_expression_array_element) {
-                $like_expression_array_element = "users.username" . $like_expression_array_element;
-            }
-
-            if (!isset($CURUSER)) {    // not registered user, only show not anonymous torrents
-                $wherea[] = implode($ANDOR, $like_expression_array) . " AND torrents.anonymous = 'no'";
-            } else {
-                if (get_user_class() > $torrentmanage_class) {    // moderator or above, show all
-                    $wherea[] = implode($ANDOR, $like_expression_array);
-                } else { // only show normal torrents and anonymous torrents from hiself
-                    $wherea[] = "(" . implode($ANDOR, $like_expression_array) . " AND torrents.anonymous = 'no') OR (" . implode($ANDOR, $like_expression_array) . " AND torrents.anonymous = 'yes' AND users.id=" . $CURUSER["id"] . ") ";
-                }
-            }
-            break;
-        }
-        case 4:  //imdb url
-            foreach ($like_expression_array as &$like_expression_array_element) {
-                $like_expression_array_element = "torrents.url" . $like_expression_array_element;
-            }
-            $wherea[] = implode($ANDOR, $like_expression_array);
-            break;
-        default:    // unkonwn
-        {
-            $search_area = 0;
-            $wherea[] = "torrents.name LIKE '%" . $searchstr . "%'";
-            write_log("User " . $CURUSER["username"] . "," . $CURUSER["ip"] . " is hacking search_area field in" . $_SERVER['SCRIPT_NAME'], 'mod');
-            break;
-        }
-    }
-    $addparam[] = "search_area=" . $search_area;
-    $addparam[] = "search=" . rawurlencode($searchstr);
-    $addparam[] = "search_mode=" . $search_mode;
-}
-
-$where = implode(" AND ", $wherea);
 
 $allsec = 0 + $_GET["allsec"];
 if ($allsec == 1) {		//show torrents from all sections
     $addparams[] = "allsec=1";
 }
 
-if ($allsec == 1 || $enablespecial != 'yes') {
-    if ($where != "") {
-        $where = "WHERE $where ";
-    } else {
-        $where = "";
-    }
-    $sql = "SELECT COUNT(*) FROM torrents " . ($search_area == 3 || $column == "owner" ? "LEFT JOIN users ON torrents.owner = users.id " : "") . $where;
+// sorting by
+$sort = filter_int_input('sort', 0, [0, 1, 3, 4, 5, 6, 7, 8, 9]);
+$sort_type = strtolower($_GET['type']) == 'asc' ? 'asc' : 'desc';
+
+switch ($_GET['sort']) {
+    case '1': $sort_by = "name"; break;
+    // case '2': $column = "numfiles"; break;  // removed in this commit
+    case '3': $sort_by = "comments"; break;
+    // case '4': $column = "added"; break;  // order by added is same as id
+    case '5': $sort_by = "size"; break;
+    case '6': $sort_by = "times_completed"; break;
+    case '7': $sort_by = "seeders"; break;
+    case '8': $sort_by = "leechers"; break;
+    case '9': $sort_by = "owner"; break;
+    default: $sort_by = "id"; break;
+}
+
+$options['sort'][] = 'pos_group:desc';
+if ($sort_by == "owner") {
+    $options['sort'][] = 'anonymous:asc';
+    $options['sort'][] = 'owner:' . $sort_type;
 } else {
-    if ($where != "") {
-        $where = "WHERE $where AND categories.mode = '$sectiontype'";
-    } else {
-        $where = "WHERE categories.mode = '$sectiontype'";
-    }
-    $sql = "SELECT COUNT(*), categories.mode FROM torrents LEFT JOIN categories ON category = categories.id " . ($search_area == 3 || $column == "owner" ? "LEFT JOIN users ON torrents.owner = users.id " : "") . $where . " GROUP BY categories.mode";
+    $options['sort'][] = "{$sort_by}:{$sort_type}";
 }
 
-$res = \NexusPHP\Components\Database::query($sql) or die(\NexusPHP\Components\Database::error());
-$count = 0;
-while ($row = mysqli_fetch_array($res)) {
-    $count += $row[0];
-}
+$addparams[] = "sort=" . $sort;
+$addparams[] = "type=" . $sort_type;
 
-if ($count) {
-    $torrentsperpage = $CURUSER["torrentsperpage"] ?? $torrentsperpage_main ?? 50;
+// 额外处理下分页信息
+$limit = (int)($CURUSER["torrentsperpage"] ?: $torrentsperpage_main ?: 50);
+$offset_page = filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT) ?: 0;
 
-    list($pagertop, $pagerbottom, $limit) = pager((int)$torrentsperpage, $count, "?" . implode("&", $addparams));
-    if ($allsec == 1 || $enablespecial != 'yes') {
-        $query = "SELECT torrents.id, torrents.sp_state, torrents.promotion_time_type, torrents.promotion_until, torrents.banned, torrents.picktype, torrents.pos_state, torrents.category, torrents.source, torrents.medium, torrents.codec, torrents.standard, torrents.processing, torrents.team, torrents.audiocodec, torrents.leechers, torrents.seeders, torrents.name, torrents.small_descr, torrents.times_completed, torrents.size, torrents.added, torrents.comments,torrents.anonymous,torrents.owner,torrents.url,torrents.cache_stamp FROM torrents " . ($search_area == 3 || $column == "owner" ? "LEFT JOIN users ON torrents.owner = users.id " : "") . " $where $orderby $limit";
-    } else {
-        $query = "SELECT torrents.id, torrents.sp_state, torrents.promotion_time_type, torrents.promotion_until, torrents.banned, torrents.picktype, torrents.pos_state, torrents.category, torrents.source, torrents.medium, torrents.codec, torrents.standard, torrents.processing, torrents.team, torrents.audiocodec, torrents.leechers, torrents.seeders, torrents.name, torrents.small_descr, torrents.times_completed, torrents.size, torrents.added, torrents.comments,torrents.anonymous,torrents.owner,torrents.url,torrents.cache_stamp FROM torrents " . ($search_area == 3 || $column == "owner" ? "LEFT JOIN users ON torrents.owner = users.id " : "") . " LEFT JOIN categories ON torrents.category=categories.id $where $orderby $limit";
-    }
+$search_options['limit'] = $limit;
+$search_options['offset'] = $offset_page * $limit;
 
-    $res = \NexusPHP\Components\Database::query($query) or die(\NexusPHP\Components\Database::error());
-} else {
-    unset($res);
-}
-if (isset($searchstr)) {
+$torrents_index = \NexusPHP\Components\Meili::getMeiliSearch()->index('torrents');
+$search = $torrents_index->search($searchstr, $options);
+$res = $search->getHits();
+$count = $search->getHitsCount();
+
+list($pagertop, $pagerbottom, $limit) = pager($limit, $search->getEstimatedTotalHits(), "?" . implode("&", $addparams));
+
+if (strlen($searchstr) > 0) {
     stdhead($lang_torrents['head_search_results_for'].$searchstr_ori);
 } elseif ($sectiontype == $browsecatmode) {
     stdhead($lang_torrents['head_torrents']);
@@ -366,7 +287,7 @@ if (isset($searchstr)) {
     stdhead($lang_torrents['head_music']);
 }
 print("<table width=\"940\" class=\"main\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\"><tr><td class=\"embedded\">");
-if ($allsec != 1 || $enablespecial != 'yes') { //do not print searchbox if showing bookmarked torrents from all sections;
+if ($allsec != 1) { //do not print searchbox if showing bookmarked torrents from all sections;
     function printcat($cbname, $showimg = false)
     {
         global $catpadding, $catsperrow, $lang_torrents;

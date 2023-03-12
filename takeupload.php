@@ -279,9 +279,16 @@ $id = \NexusPHP\Components\Database::insert_id();
 
 
 $fileTreeJson = $dict->getFileTree();
-\NexusPHP\Components\Database::query("INSERT INTO files (torrent, files) VALUES ($id, " . sqlesc(json_encode($fileTreeJson)) . ")");
+\NexusPHP\Components\Database::query("INSERT INTO files (torrent, files) VALUES ($id, " . \NexusPHP\Components\Database::escape(json_encode($fileTreeJson)) . ")");
 
 $dict->dump("$torrent_dir/$id.torrent");
+
+global $copy_keys;
+
+$query = \NexusPHP\Components\Database::one("SELECT `" . implode('`, `',$copy_keys) . "` FROM torrents WHERE id = $id");
+$torrent_index =\NexusPHP\Components\Meili::getMeiliSearch()->index('torrents');
+$torrent_index->addDocuments(convert_torrent_mysql2meili($query));
+
 
 //===add karma
 KPS("+", $uploadtorrent_bonus, $CURUSER["id"]);
@@ -296,7 +303,7 @@ if ($is_offer) {
 
     while ($row = mysqli_fetch_assoc($res)) {
         $pn_msg = $lang_takeupload_target[get_user_lang($row["userid"])]['msg_offer_you_voted'].$torrent.$lang_takeupload_target[get_user_lang($row["userid"])]['msg_was_uploaded_by']. $CURUSER["username"] .$lang_takeupload_target[get_user_lang($row["userid"])]['msg_you_can_download'] ."[url=" . get_protocol_prefix() . "$BASEURL/details.php?id=$id&hit=1]".$lang_takeupload_target[get_user_lang($row["userid"])]['msg_here']."[/url]";
-        
+
         //=== use this if you DO have subject in your PMs
         $subject = $lang_takeupload_target[get_user_lang($row["userid"])]['msg_offer'].$torrent.$lang_takeupload_target[get_user_lang($row["userid"])]['msg_was_just_uploaded'];
         //=== use this if you DO NOT have subject in your PMs

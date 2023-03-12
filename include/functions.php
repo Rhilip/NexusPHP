@@ -353,7 +353,7 @@ function get_user_class_name($class, $compact = false, $b_colored = false, $I18N
         }
         $this_lang_functions = $current_user_lang_functions;
     }
-    
+
     $class_name = "";
     switch ($class) {
         case UC_PEASANT: {$class_name = $this_lang_functions['text_peasant']; break;}
@@ -375,7 +375,7 @@ function get_user_class_name($class, $compact = false, $b_colored = false, $I18N
         case UC_SYSOP: {$class_name = $this_lang_functions['text_sysops']; break;}
         case UC_STAFFLEADER: {$class_name = $this_lang_functions['text_staff_leader']; break;}
     }
-    
+
     switch ($class) {
         case UC_PEASANT: {$class_name_color = $en_lang_functions['text_peasant']; break;}
         case UC_USER: {$class_name_color = $en_lang_functions['text_user']; break;}
@@ -396,7 +396,7 @@ function get_user_class_name($class, $compact = false, $b_colored = false, $I18N
         case UC_SYSOP: {$class_name_color = $en_lang_functions['text_sysops']; break;}
         case UC_STAFFLEADER: {$class_name_color = $en_lang_functions['text_staff_leader']; break;}
     }
-    
+
     $class_name = ($compact == true ? str_replace(" ", "", $class_name) : $class_name);
     if ($class_name) {
         return ($b_colored == true ? "<b class='" . str_replace(" ", "", $class_name_color) . "_Name'>" . $class_name . "</b>" : $class_name);
@@ -2035,7 +2035,7 @@ function stdhead($title = "", $msgalert = true, $script = "", $place = "")
     global $Advertisement;
 
     $Cache->setLanguage($CURLANGDIR);
-    
+
     $Advertisement = new NexusPHP\Advertisement($CURUSER['id']);
     $cssupdatedate = $cssdate_tweak;
     // Variable for Start Time
@@ -2206,7 +2206,7 @@ if ($logo_main == "") {
             $unread = \NexusPHP\Components\Database::count("messages", "WHERE receiver=" . \NexusPHP\Components\Database::escape($CURUSER["id"]) . " AND unread='yes'");
             $Cache->cache_value('user_'.$CURUSER["id"].'_unread_message_count', $unread, 60);
         }
-    
+
         $inboxpic = "<img class=\"".($unread ? "inboxnew" : "inbox")."\" src=\"pic/trans.gif\" alt=\"inbox\" title=\"".($unread ? $lang_functions['title_inbox_new_messages'] : $lang_functions['title_inbox_no_new_messages'])."\" />"; ?>
 
 <table id="info_block" cellpadding="4" cellspacing="0" border="0" width="100%"><tr>
@@ -2551,6 +2551,10 @@ function deletetorrent($id)
         \NexusPHP\Components\Database::query("DELETE FROM $x WHERE torrent = ".\NexusPHP\Components\Database::real_escape_string($id));
     }
     unlink("$torrent_dir/$id.torrent");
+
+    // 清理meilisearch
+    $meilisearch = \NexusPHP\Components\Meili::getMeiliSearch();
+    $meilisearch->index('torrents')->deleteDocument($id);
 }
 
 function pager($rpp, $count, $href, $opts = array(), $pagename = "page")
@@ -2982,7 +2986,7 @@ $caticonrow = get_category_icon_row($CURUSER['caticon']);
         } else {
             $stickyicon = "";
         }
-    
+
         print("<td class=\"rowfollow\" width=\"100%\" align=\"left\"><table class=\"torrentname\" width=\"100%\"><tr" . $sphighlight . "><td class=\"embedded\">".$stickyicon."<a $short_torrent_name_alt $mouseovertorrent href=\"details.php?id=".$id."&amp;hit=1\"><b>".htmlspecialchars($dispname)."</b></a>");
         $sp_torrent = get_torrent_promotion_append($row['sp_state'], "", true, $row["added"], $row['promotion_time_type'], $row['promotion_until']);
         $picked_torrent = "";
@@ -3034,7 +3038,7 @@ $caticonrow = get_category_icon_row($CURUSER['caticon']);
                 print("<td class=\"rowfollow nowrap\">".$lang_functions['text_none']."</td>\n");
             }
         }
-    
+
         if ($CURUSER['showcomnum'] != 'no') {
             print("<td class=\"rowfollow\">");
             $nl = "";
@@ -4225,4 +4229,103 @@ function return_category_image($categoryid, $link="")
     }
     return $catimg;
 }
-?>
+
+$sort_keys = ["id", "pos_group", "name", "comments", "size", "times_completed", "seeders", "leechers", "owner", "anonymous"];
+$show_keys = ["info_hash", "promotion_time_type", "promotion_until"];
+
+$copy_keys = [
+    "id", "name", 'small_descr', "size", "info_hash", "owner", "added",
+    "category", "source", "medium", "codec", "standard", "processing", "team", "audiocodec",
+    "comments", "times_completed", "leechers", "seeders",
+    "url", "visible", "banned", 'anonymous',
+    "sp_state", "promotion_time_type", "promotion_until",
+];
+
+function convert_torrent_mysql2meili($raw_torrent) {
+    global $copy_keys;
+    $torrent = [];
+    foreach ($copy_keys as $copy_key) {
+        if (isset($raw_torrent[$copy_key])) {
+            $copy_value = $raw_torrent[$copy_key];
+
+            if (in_array($copy_key, [
+                "id", "size", "owner",
+                "category", "source", "medium", "codec", "standard", "processing", "team", "audiocodec",
+                "comments", "times_completed", "leechers", "seeders",
+                "sp_state", "promotion_time_type", "url"
+            ])) {  // 转换int类型的值
+                $copy_value = (int)$copy_value;
+            } elseif (in_array($copy_keys, ["visible", "banned", 'anonymous'])) {
+                $copy_value = $copy_value === 'yes' ? 1 : 0;
+            } elseif (in_array($copy_key, ['added', 'promotion_until'])) {
+                $copy_value = strtotime($copy_value);
+                if ($copy_value < 0) {
+                    $copy_value = 0;
+                }
+            } elseif ($copy_key === 'info_hash') {
+                $copy_value = bin2hex($copy_value);
+            }
+
+            if (in_array($copy_key, ['url']) && $copy_value == '') {
+                $copy_value = 0;
+            }
+
+            $torrent[$copy_key] = $copy_value;
+        }
+    }
+    return $torrent;
+}
+
+function full_sync_mysql2meili() {
+    global $copy_keys;
+
+    $meilisearch = \NexusPHP\Components\Meili::getMeiliSearch();
+    $stats = $meilisearch->stats();
+
+    $should_swap = isset($stats['indexes']['torrents']);
+    $add_index = $should_swap ? 'torrents_new' : 'torrents';
+
+    // 保证建立新的index
+    if (isset($stats['indexes'][$add_index])) {
+        $meilisearch->deleteIndex($add_index);
+    }
+    $torrent_index = $meilisearch->index($add_index);
+    $torrent_index->updateSettings([
+        "searchableAttributes" => [
+            'name', 'small_descr'
+        ],  // 此处将搜索字段限制在 name和small_descr
+        "sortableAttributes" => [
+            "id", "pos_group", "name", "comments", "size", "times_completed", "seeders", "leechers", "owner", "anonymous"
+        ],
+        "filterableAttributes" => [
+            "id", "size", "owner", "added",
+            "category", "source", "medium", "codec", "standard", "processing", "team", "audiocodec",
+            "sp_state", "comments", "times_completed", "leechers", "seeders", "url", "anonymous", "visible", "banned"
+        ],
+        'rankingRules' => [
+            "sort",
+            "words",
+        ],  // 此处修改meilisearch的默认排序规则，以便基本和NPHP原来使用mysql的规则相同. https://docs.meilisearch.com/learn/core_concepts/relevancy.html#built-in-rules
+        'pagination' => [
+            'maxTotalHits' => 500000
+        ]   // 将 maxTotalHits 设置为一个远超过目前种子数的值，以防止meilisearch在搜索时丢失结果
+    ]);
+
+    $torrents_count = \NexusPHP\Components\Database::count("torrents");
+    for ($offset = 0; $offset < $torrents_count; $offset += 2000) {
+        $query = \NexusPHP\Components\Database::query("SELECT `" . implode('`, `', $copy_keys) . "` FROM torrents LIMIT $offset, 2000");
+
+        $torrents = [];
+        while ($raw = $query->fetch_assoc()) {
+            $torrents[] = convert_torrent_mysql2meili($raw);
+        }
+
+        $torrent_index->addDocuments($torrents);
+    }
+
+    // 交换新老index，并删除老index
+    if ($should_swap) {
+        $meilisearch->swapIndexes([['torrents_new', 'torrents']]);
+        $meilisearch->deleteIndex('torrents_new');
+    }
+}

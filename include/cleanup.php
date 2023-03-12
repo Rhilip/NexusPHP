@@ -89,12 +89,6 @@ function docleanup($forceAll = 0, $printProgress = false)
         \NexusPHP\Components\Database::query("UPDATE avps SET value_u = ".\NexusPHP\Components\Database::escape($now)." WHERE arg='lastcleantime2'") or sqlerr(__FILE__, __LINE__);
     }
 
-    //2.5.update torrents' visibility
-    $deadtime = deadtime() - $max_dead_torrent_time;
-    \NexusPHP\Components\Database::query("UPDATE torrents SET visible='no' WHERE visible='yes' AND last_action < FROM_UNIXTIME($deadtime) AND seeders=0") or sqlerr(__FILE__, __LINE__);
-    if ($printProgress) {
-        printProgress("update torrents' visibility");
-    }
     //Priority Class 3: cleanup every 60 mins
     $res = \NexusPHP\Components\Database::query("SELECT value_u FROM avps WHERE arg = 'lastcleantime3'");
     $row = mysqli_fetch_array($res);
@@ -109,8 +103,115 @@ function docleanup($forceAll = 0, $printProgress = false)
         \NexusPHP\Components\Database::query("UPDATE avps SET value_u = ".\NexusPHP\Components\Database::escape($now)." WHERE arg='lastcleantime3'") or sqlerr(__FILE__, __LINE__);
     }
 
+    //2.5.update torrents' visibility
+    $deadtime = deadtime() - $max_dead_torrent_time;
+    \NexusPHP\Components\Database::query("UPDATE torrents SET visible='no' WHERE visible='yes' AND last_action < FROM_UNIXTIME($deadtime) AND seeders=0") or sqlerr(__FILE__, __LINE__);
+    if ($printProgress) {
+        printProgress("update torrents' visibility");
+    }
+
+    //15.cleanup torrents
+    //Start: expire torrent promotion
+    function torrent_promotion_expire($days, $type = 2, $targettype = 1)
+    {
+        $secs = (int)($days * 86400); //XX days
+        $dt = \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s", (TIMENOW - ($secs))));
+        $res = \NexusPHP\Components\Database::query("SELECT id, name FROM torrents WHERE added < $dt AND sp_state = ".\NexusPHP\Components\Database::escape($type).' AND promotion_time_type=0') or sqlerr(__FILE__, __LINE__);
+        switch ($targettype) {
+            case 1: //normal
+            {
+                $sp_state = 1;
+                $become = "normal";
+                break;
+            }
+            case 2: //Free
+            {
+                $sp_state = 2;
+                $become = "Free";
+                break;
+            }
+            case 3: //2X
+            {
+                $sp_state = 3;
+                $become = "2X";
+                break;
+            }
+            case 4: //2X Free
+            {
+                $sp_state = 4;
+                $become = "2X Free";
+                break;
+            }
+            case 5: //Half Leech
+            {
+                $sp_state = 5;
+                $become = "50%";
+                break;
+            }
+            case 6: //2X Half Leech
+            {
+                $sp_state = 6;
+                $become = "2X 50%";
+                break;
+            }
+            default: //normal
+            {
+                $sp_state = 1;
+                $become = "normal";
+                break;
+            }
+        }
+        while ($arr = mysqli_fetch_assoc($res)) {
+            \NexusPHP\Components\Database::query("UPDATE torrents SET sp_state = ".\NexusPHP\Components\Database::escape($sp_state)." WHERE id=$arr[id]") or sqlerr(__FILE__, __LINE__);
+            if ($sp_state == 1) {
+                write_log("Torrent $arr[id] ($arr[name]) is no longer on promotion (time expired)", 'normal');
+            } else {
+                write_log("Promotion type for torrent $arr[id] ($arr[name]) is changed to ".$become." (time expired)", 'normal');
+            }
+        }
+    }
+    if ($expirehalfleech_torrent) {
+        torrent_promotion_expire($expirehalfleech_torrent, 5, $halfleechbecome_torrent);
+    }
+    if ($expirefree_torrent) {
+        torrent_promotion_expire($expirefree_torrent, 2, $freebecome_torrent);
+    }
+    if ($expiretwoup_torrent) {
+        torrent_promotion_expire($expiretwoup_torrent, 3, $twoupbecome_torrent);
+    }
+    if ($expiretwoupfree_torrent) {
+        torrent_promotion_expire($expiretwoupfree_torrent, 4, $twoupfreebecome_torrent);
+    }
+    if ($expiretwouphalfleech_torrent) {
+        torrent_promotion_expire($expiretwouphalfleech_torrent, 6, $twouphalfleechbecome_torrent);
+    }
+    if ($expirethirtypercentleech_torrent) {
+        torrent_promotion_expire($expirethirtypercentleech_torrent, 7, $thirtypercentleechbecome_torrent);
+    }
+    if ($expirenormal_torrent) {
+        torrent_promotion_expire($expirenormal_torrent, 1, $normalbecome_torrent);
+    }
+
+    //expire individual torrent promotion
+    \NexusPHP\Components\Database::query("UPDATE torrents SET sp_state = 1, promotion_time_type=0, promotion_until='0000-00-00 00:00:00' WHERE promotion_time_type=2 AND promotion_until < ".\NexusPHP\Components\Database::escape(date("Y-m-d H:i:s", TIMENOW))) or sqlerr(__FILE__, __LINE__);
+
+    //End: expire torrent promotion
+    if ($printProgress) {
+        printProgress("expire torrent promotion");
+    }
+    //automatically pick hot
+    if ($hotdays_torrent) {
+        $secs = (int)($hotdays_torrent * 86400); //XX days
+        $dt = \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s", (TIMENOW - ($secs))));
+        \NexusPHP\Components\Database::query("UPDATE torrents SET picktype = 'hot' WHERE added > $dt AND picktype = 'normal' AND seeders > ".\NexusPHP\Components\Database::escape($hotseeder_torrent)) or sqlerr(__FILE__, __LINE__);
+    }
+    if ($printProgress) {
+        printProgress("automatically pick hot");
+    }
+
     //4.update count of seeders, leechers, comments for torrents
-    $torrents = array();
+    $torrents = [];
+    $peer_count_content = [];
     $res = \NexusPHP\Components\Database::query("SELECT torrent, seeder, COUNT(*) AS c FROM peers GROUP BY torrent, seeder") or sqlerr(__FILE__, __LINE__);
     while ($row = mysqli_fetch_assoc($res)) {
         if ($row["seeder"] == "yes") {
@@ -119,7 +220,14 @@ function docleanup($forceAll = 0, $printProgress = false)
             $key = "leechers";
         }
         $torrents[$row["torrent"]][$key] = $row["c"];
+        $peer_count_content[$row['torrent'] . ':' . $key] = (int)$row['c'];
     }
+
+    // 更新peer_count缓存
+    $Cache->multi()
+        ->del('torrent_peer_count_content')
+        ->hMSet('torrent_peer_count_content', $peer_count_content)
+        ->exec();
 
     $res = \NexusPHP\Components\Database::query("SELECT torrent, COUNT(*) AS c FROM comments GROUP BY torrent") or sqlerr(__FILE__, __LINE__);
     while ($row = mysqli_fetch_assoc($res)) {
@@ -146,8 +254,15 @@ function docleanup($forceAll = 0, $printProgress = false)
             \NexusPHP\Components\Database::query("UPDATE torrents SET " . implode(",", $update) . " WHERE id = $id") or sqlerr(__FILE__, __LINE__);
         }
     }
+
+    \NexusPHP\Components\Database::exec("UPDATE `torrents` SET visible = 'yes' WHERE visible = 'no' and seeders != 0");
     if ($printProgress) {
         printProgress("update count of seeders, leechers, comments for torrents");
+    }
+
+    full_sync_mysql2meili();
+    if ($printProgress) {
+        printProgress("full sync torrents table from mysql to meilisearch");
     }
 
     //set no-advertisement-by-bonus time out
@@ -204,105 +319,6 @@ function docleanup($forceAll = 0, $printProgress = false)
     }
     if ($printProgress) {
         printProgress("delete offers if not uploaded after being voted on for some time.");
-    }
-
-    //15.cleanup torrents
-    //Start: expire torrent promotion
-    function torrent_promotion_expire($days, $type = 2, $targettype = 1)
-    {
-        $secs = (int)($days * 86400); //XX days
-        $dt = \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s", (TIMENOW - ($secs))));
-        $res = \NexusPHP\Components\Database::query("SELECT id, name FROM torrents WHERE added < $dt AND sp_state = ".\NexusPHP\Components\Database::escape($type).' AND promotion_time_type=0') or sqlerr(__FILE__, __LINE__);
-        switch ($targettype) {
-        case 1: //normal
-        {
-            $sp_state = 1;
-            $become = "normal";
-            break;
-        }
-        case 2: //Free
-        {
-            $sp_state = 2;
-            $become = "Free";
-            break;
-        }
-        case 3: //2X
-        {
-            $sp_state = 3;
-            $become = "2X";
-            break;
-        }
-        case 4: //2X Free
-        {
-            $sp_state = 4;
-            $become = "2X Free";
-            break;
-        }
-        case 5: //Half Leech
-        {
-            $sp_state = 5;
-            $become = "50%";
-            break;
-        }
-        case 6: //2X Half Leech
-        {
-            $sp_state = 6;
-            $become = "2X 50%";
-            break;
-        }
-        default: //normal
-        {
-            $sp_state = 1;
-            $become = "normal";
-            break;
-        }
-    }
-        while ($arr = mysqli_fetch_assoc($res)) {
-            \NexusPHP\Components\Database::query("UPDATE torrents SET sp_state = ".\NexusPHP\Components\Database::escape($sp_state)." WHERE id=$arr[id]") or sqlerr(__FILE__, __LINE__);
-            if ($sp_state == 1) {
-                write_log("Torrent $arr[id] ($arr[name]) is no longer on promotion (time expired)", 'normal');
-            } else {
-                write_log("Promotion type for torrent $arr[id] ($arr[name]) is changed to ".$become." (time expired)", 'normal');
-            }
-        }
-    }
-    if ($expirehalfleech_torrent) {
-        torrent_promotion_expire($expirehalfleech_torrent, 5, $halfleechbecome_torrent);
-    }
-    if ($expirefree_torrent) {
-        torrent_promotion_expire($expirefree_torrent, 2, $freebecome_torrent);
-    }
-    if ($expiretwoup_torrent) {
-        torrent_promotion_expire($expiretwoup_torrent, 3, $twoupbecome_torrent);
-    }
-    if ($expiretwoupfree_torrent) {
-        torrent_promotion_expire($expiretwoupfree_torrent, 4, $twoupfreebecome_torrent);
-    }
-    if ($expiretwouphalfleech_torrent) {
-        torrent_promotion_expire($expiretwouphalfleech_torrent, 6, $twouphalfleechbecome_torrent);
-    }
-    if ($expirethirtypercentleech_torrent) {
-        torrent_promotion_expire($expirethirtypercentleech_torrent, 7, $thirtypercentleechbecome_torrent);
-    }
-    if ($expirenormal_torrent) {
-        torrent_promotion_expire($expirenormal_torrent, 1, $normalbecome_torrent);
-    }
-
-    //expire individual torrent promotion
-    \NexusPHP\Components\Database::query("UPDATE torrents SET sp_state = 1, promotion_time_type=0, promotion_until='0000-00-00 00:00:00' WHERE promotion_time_type=2 AND promotion_until < ".\NexusPHP\Components\Database::escape(date("Y-m-d H:i:s", TIMENOW))) or sqlerr(__FILE__, __LINE__);
-
-    //End: expire torrent promotion
-    if ($printProgress) {
-        printProgress("expire torrent promotion");
-    }
-    //automatically pick hot
-    if ($hotdays_torrent) {
-        $secs = (int)($hotdays_torrent * 86400); //XX days
-        $dt = \NexusPHP\Components\Database::escape(date("Y-m-d H:i:s", (TIMENOW - ($secs))));
-        \NexusPHP\Components\Database::query("UPDATE torrents SET picktype = 'hot' WHERE added > $dt AND picktype = 'normal' AND seeders > ".\NexusPHP\Components\Database::escape($hotseeder_torrent)) or sqlerr(__FILE__, __LINE__);
-    }
-    if ($printProgress) {
-        printProgress("automatically pick hot");
     }
 
     //Priority Class 4: cleanup every 24 hours
@@ -588,10 +604,10 @@ function docleanup($forceAll = 0, $printProgress = false)
         //die("s" . $arr['id']);
         $res2 = \NexusPHP\Components\Database::query("SELECT SUM(seedtime) as st, SUM(leechtime) as lt FROM snatched where userid = " . $arr['id'] . " LIMIT 1") or sqlerr(__FILE__, __LINE__);
         $arr2 = mysqli_fetch_assoc($res2) or sqlerr(__FILE__, __LINE__);
-        
+
         //die("ss" . $arr2['st']);
         //die("sss" . "UPDATE users SET seedtime = " . $arr2['st'] . ", leechtime = " . $arr2['lt'] . " WHERE id = " . $arr['id']);
-        
+
         \NexusPHP\Components\Database::query("UPDATE users SET seedtime = " . intval($arr2['st']) . ", leechtime = " . intval($arr2['lt']) . " WHERE id = " . $arr['id']) or sqlerr(__FILE__, __LINE__);
     }
     if ($printProgress) {

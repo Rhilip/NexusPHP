@@ -176,6 +176,12 @@ if (get_user_class()>=$torrentmanage_class && $CURUSER['picker'] == 'yes') {
 }
 \NexusPHP\Components\Database::query("UPDATE torrents SET " . join(",", $updateset) . " WHERE id = $id") or sqlerr(__FILE__, __LINE__);
 
+global $copy_keys;
+
+$query = \NexusPHP\Components\Database::one("SELECT `" . implode('`, `',$copy_keys) . "` FROM torrents WHERE id = $id");
+$torrent_index =\NexusPHP\Components\Meili::getMeiliSearch()->index('torrents');
+$torrent_index->addDocuments(convert_torrent_mysql2meili($query));
+
 if ($CURUSER["id"] == $row["owner"]) {
     if ($row["anonymous"]=='yes') {
         write_log("Torrent $id ($name) was edited by Anonymous" . $pick_info . $place_info);

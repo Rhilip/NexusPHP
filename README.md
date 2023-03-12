@@ -13,6 +13,7 @@
 
 | 时间 | 目的 | 介绍 | 相关commit或pr |
 |:---:|:---:|:---:|:---:|
+| 2023.03.12 | 迁移搜索至Meilisearch | <https://blog.rhilip.info/archives/1275/> | <https://github.com/Rhilip/NexusPHP/pull/6> |
 | 2022.03.10 | 优化`files`表 | <https://github.com/xiaomlove/nexusphp/issues/27> |  |
 | 2022.03.10 | 屏蔽Bittorrent v2 | ... | <https://github.com/Rhilip/NexusPHP/pull/5> |
 | 2020.05.30 | 修复前一commit错误，合并一些更新 | ... | <https://github.com/Rhilip/NexusPHP/pull/3> |

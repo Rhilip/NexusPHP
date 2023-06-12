@@ -11,7 +11,7 @@ if ($showextinfo['imdb'] == 'yes') {
 $addparams = [];  // 用于生成 分页所需要的 params
 
 $searchstr = trim($_GET['search'] ?? '');  // 搜索字符串
-$options = [
+$search_options = [
     'sort' => [],
     'filter' => [],
 ];
@@ -153,7 +153,7 @@ if (!$all) {
                 $addparams[] = $key . "[]=" . $class;
             }
             $field_key = $value['tk'] ?? $key;
-            $options['filter'] = array_map(function ($a) use ($field_key) {
+            $search_options['filter'] = array_map(function ($a) use ($field_key) {
                 return $field_key . ' = ' . $a;
             }, $class_get);
         }
@@ -253,12 +253,12 @@ switch ($_GET['sort']) {
     default: $sort_by = "id"; break;
 }
 
-$options['sort'][] = 'pos_group:desc';
+$search_options['sort'][] = 'pos_group:desc';
 if ($sort_by == "owner") {
-    $options['sort'][] = 'anonymous:asc';
-    $options['sort'][] = 'owner:' . $sort_type;
+    $search_options['sort'][] = 'anonymous:asc';
+    $search_options['sort'][] = 'owner:' . $sort_type;
 } else {
-    $options['sort'][] = "{$sort_by}:{$sort_type}";
+    $search_options['sort'][] = "{$sort_by}:{$sort_type}";
 }
 
 $addparams[] = "sort=" . $sort;
@@ -272,7 +272,7 @@ $search_options['limit'] = $limit;
 $search_options['offset'] = $offset_page * $limit;
 
 $torrents_index = \NexusPHP\Components\Meili::getMeiliSearch()->index('torrents');
-$search = $torrents_index->search($searchstr, $options);
+$search = $torrents_index->search($searchstr, $search_options);
 $count = $search->getHitsCount();
 $hits = $search->getHits();
 

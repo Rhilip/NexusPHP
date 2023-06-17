@@ -153,7 +153,7 @@ if (!$all) {
                 $addparams[] = $key . "[]=" . $class;
             }
             $field_key = $value['tk'] ?? $key;
-            $search_options['filter'] = array_map(function ($a) use ($field_key) {
+            $search_options['filter'][] = array_map(function ($a) use ($field_key) {
                 return $field_key . ' = ' . $a;
             }, $class_get);
         }
